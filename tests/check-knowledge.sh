@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 K="$ROOT/knowledge"
 
-for f in milestones.md sleep.md nutrition.md; do
+for f in milestones.md sleep.md nutrition.md emotion.md activities.md; do
   [ -f "$K/$f" ] || { echo "FAIL: knowledge/$f missing"; exit 1; }
 done
 

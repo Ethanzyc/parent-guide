@@ -27,4 +27,4 @@ for f in sleep.md nutrition.md; do
   grep -q "自写综述" "$K/$f" || { echo "FAIL: $f must declare itself a self-written review"; exit 1; }
 done
 
-echo "PASS: knowledge base structure OK (milestones 11 verified sections + 15mo stub, sleep, nutrition)"
+echo "PASS: knowledge base structure OK (milestones 11 verified sections + 15mo stub; sleep, nutrition, emotion, activities reviews)"

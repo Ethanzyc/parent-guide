@@ -18,6 +18,16 @@ Actions:
 
 Every action prints an evidence summary -- the agent quotes it as proof the
 record was written (evidence before claims).
+
+Structure-change SOP (child.json has four mirrors; keep them in sync):
+  1. skills/parent-guide/data-templates/child.json  -- the template users copy
+  2. skills/parent-guide/scripts/hot-context.sh     -- reader (contract in header)
+  3. THIS FILE: STRUCT constants + _check rules      -- writer + validator
+  4. web/src/components/cards/                      -- renderer (defensive reads,
+     NO red light there -- eyeball after changes)
+  Then run: bash tests/test-hot-context.sh && bash tests/test-update-child.sh
+  (the red lights for renames/removals live in these two suites + the
+  publish gate's `check` on fixtures).
 """
 import argparse
 import json
@@ -26,7 +36,17 @@ import sys
 from datetime import date
 from pathlib import Path
 
+# ═══ STRUCT: field-structure contract (single point of truth) ═══
+# Change the structure here FIRST, then walk the SOP above. Enums below are
+# shared by write actions and `check`, so they can never drift apart.
 VALID_STATUS = {"active", "effective", "partial", "ineffective", "suspended", "absorbed"}
+MILESTONE_STATUS = {"ok", "watch", "todo"}
+DATE_FULL = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # birthdate
+DATE_SHORT = re.compile(r"^\d{2}-\d{2}$")        # MM-DD everywhere else
+# template placeholder values: "not filled yet" is guidance, not an error
+PLACEHOLDERS = {"MM-DD", "YYYY-MM-DD", "HH:MM", "女|男",
+                "effective|partial|ineffective", "孩子小名"}
+# ═══ end STRUCT ═══
 
 
 def _today():
@@ -153,14 +173,6 @@ def execute(argv=None):
 
     _save(path, doc)
     return 0, msg + f" | saved {path.name} (backup: child.json.bak)"
-
-
-DATE_FULL = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-DATE_SHORT = re.compile(r"^\d{2}-\d{2}$")
-MILESTONE_STATUS = {"ok", "watch", "todo"}
-# template placeholder values: "not filled yet" is guidance, not an error
-PLACEHOLDERS = {"MM-DD", "YYYY-MM-DD", "HH:MM", "女|男",
-                "effective|partial|ineffective", "孩子小名"}
 
 
 def _check(child):

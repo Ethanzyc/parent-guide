@@ -1,0 +1,58 @@
+{
+  "version": 2,
+  "title": "孩子的成长视图",
+  "child": "child",
+  "layout": {
+    "cols": 12,
+    "rowHeight": 72,
+    "margin": 12
+  },
+  "blocks": [
+    {
+      "id": "profile",
+      "type": "profile",
+      "x": 0,
+      "y": 0,
+      "w": 4,
+      "h": 6
+    },
+    {
+      "id": "milestone",
+      "type": "milestone",
+      "x": 4,
+      "y": 0,
+      "w": 4,
+      "h": 6,
+      "props": {
+        "months": 30
+      }
+    },
+    {
+      "id": "sleep-7d",
+      "type": "sleep-week",
+      "x": 8,
+      "y": 0,
+      "w": 4,
+      "h": 6
+    },
+    {
+      "id": "strategy-effect",
+      "type": "strategy-effect",
+      "x": 0,
+      "y": 6,
+      "w": 7,
+      "h": 6,
+      "props": {
+        "status": "all"
+      }
+    },
+    {
+      "id": "followup",
+      "type": "followup",
+      "x": 7,
+      "y": 6,
+      "w": 5,
+      "h": 5
+    }
+  ]
+}

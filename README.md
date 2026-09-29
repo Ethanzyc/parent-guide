@@ -57,9 +57,9 @@
 
 | 宿主 | 安装方式 | 状态 |
 |------|---------|------|
-| zcode | `cp -R skills/parent-guide ~/.zcode/skills/` | ✅ 实证:自动触发+15 题全量验收 |
-| Claude Code | **零安装**:clone 后在项目目录里直接用(仓库已内置 `.claude/skills/` 项目级安装);或复制到 `~/.claude/skills/` 全局使用 | ✅ 实证(2026-09-29,交互式):自动触发+分档+热区脚本+档案关联全链路;`/parent-guide` 显式调用亦验证。headless 单轮(`claude -p`)自动触发依模型而定,建议交互使用 |
-| Codex | 复制到 `~/.codex/skills/`(用户级)或项目 `.agent/skills/` | ✅ 官方确认读取 SKILL.md |
+| Claude Code | **零安装**:clone 后在项目目录里直接用(已预制 `.claude/skills/`);或复制到 `~/.claude/skills/` 全局使用 | ✅ 实证(2026-09-29,交互式):自动触发+分档+热区脚本+档案关联全链路;`/parent-guide` 显式调用亦验证。headless 单轮(`claude -p`)自动触发依模型而定,建议交互使用 |
+| Codex | **零安装**:clone 后在项目目录里直接用(已预制 `.agent/skills/`);或复制到 `~/.codex/skills/` 全局使用 | ✅ 官方确认读取 SKILL.md |
+| zcode | `cp -R skills/parent-guide ~/.zcode/skills/` 装到用户级(项目内对话时模型也常能通过探索项目文件遵循规范,但稳定走 skill 机制需安装) | ✅ 实证:自动触发+15 题全量验收 |
 | DeepSeek Harness (dsh) | 按 dsh 文档的 skills 目录装入 | ✅ dsh 原生支持 SKILL.md 格式 |
 | 其他 47+ 宿主(OpenClaw / Gemini CLI / …) | 见 agentskills.io | 兼容为目标,非验证重点 |
 

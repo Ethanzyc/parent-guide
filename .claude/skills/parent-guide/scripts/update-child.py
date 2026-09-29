@@ -44,6 +44,7 @@ from pathlib import Path
 # shared by write actions and `check`, so they can never drift apart.
 VALID_STATUS = {"active", "effective", "partial", "ineffective", "suspended", "absorbed"}
 MILESTONE_STATUS = {"ok", "watch", "todo"}
+NOTE_PRECISION = {"day", "week", "month"}
 DATE_FULL = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # birthdate
 DATE_SHORT = re.compile(r"^\d{2}-\d{2}$")        # MM-DD everywhere else
 # template placeholder values: "not filled yet" is guidance, not an error
@@ -54,6 +55,11 @@ PLACEHOLDERS = {"MM-DD", "YYYY-MM-DD", "HH:MM", "女|男",
 
 def _today():
     return date.today().strftime("%m-%d")
+
+
+def _days_ago(n):
+    from datetime import timedelta
+    return (date.today() - timedelta(days=n)).isoformat()
 
 
 def _load(path):
@@ -99,7 +105,12 @@ def execute(argv=None):
     p.add_argument("--topic", required=True)
 
     p = sub.add_parser("add-note")
-    p.add_argument("--date", default=None)
+    p.add_argument("--date", default=None,
+                   help="YYYY-MM-DD (preferred) or MM-DD (current year assumed)")
+    p.add_argument("--approx-days", default=None,
+                   help="fuzzy recollection: N days ago; precision auto-graded "
+                        "(<=7 day, <=21 week, else month) -- never invent exactness")
+    p.add_argument("--tags", default=None, help="comma-separated event tags")
     p.add_argument("--text", required=True)
 
     p = sub.add_parser("mark-revisited")
@@ -193,9 +204,31 @@ def execute(argv=None):
         msg = f"recorded followup {args.due}「{args.topic}」"
 
     elif args.action == "add-note":
+        if (args.date is None) == (args.approx_days is None):
+            return 1, "ERROR: give exactly one of --date or --approx-days"
+        precision = "day"
+        if args.date:
+            if DATE_FULL.match(args.date):
+                iso = args.date
+            elif DATE_SHORT.match(args.date):
+                iso = f"{date.today().year}-{args.date}"
+            else:
+                return 1, (f"ERROR: --date must be YYYY-MM-DD or MM-DD (got {args.date!r});"
+                           " fuzzy recollections belong to --approx-days")
+        else:
+            try:
+                back = int(args.approx_days)
+                assert back >= 0
+            except (ValueError, AssertionError):
+                return 1, f"ERROR: --approx-days must be a non-negative integer (got {args.approx_days!r})"
+            iso = _days_ago(back)
+            precision = "day" if back <= 7 else ("week" if back <= 21 else "month")
+        tags = [t.strip() for t in (args.tags or "").split(",") if t.strip()]
         child.setdefault("notes", []).append(
-            {"date": args.date or _today(), "text": args.text})
-        msg = f"recorded note {args.date or _today()}: {args.text[:40]}"
+            {"date": iso, "precision": precision, "tags": tags, "text": args.text})
+        prefix = iso if precision == "day" else f"≈{iso}"
+        tagpart = f" [{'/'.join(tags)}]" if tags else ""
+        msg = f"recorded note {prefix}({precision}){tagpart}: {args.text[:40]}"
 
     elif args.action == "mark-revisited":
         s = next((s for s in child.get("strategies", []) if s.get("id") == args.id), None)
@@ -284,7 +317,16 @@ def _check(child):
     for i, f in enumerate(child.get("followups", [])):
         short_date(f"followups[{i}].due", f.get("due"))
     for i, n in enumerate(child.get("notes", [])):
-        short_date(f"notes[{i}].date", n.get("date"))
+        nd = str(n.get("date") or "")
+        if not (DATE_FULL.match(nd) or DATE_SHORT.match(nd)):
+            problems.append(f"notes[{i}].date: 须为 YYYY-MM-DD(新)或 MM-DD(旧,视为当年;"
+                            f"现在是 {nd!r})")
+        prec = n.get("precision", "day")
+        if prec not in NOTE_PRECISION:
+            problems.append(f"notes[{i}].precision: 不在枚举 day/week/month(现在是 {prec!r})")
+        tags = n.get("tags", [])
+        if not isinstance(tags, list) or not all(isinstance(t, str) for t in tags):
+            problems.append(f"notes[{i}].tags: 须为字符串数组(现在是 {tags!r})")
 
     for i, d in enumerate(child.get("sleep", {}).get("days", [])):
         for field in ("wakings", "totalHours"):

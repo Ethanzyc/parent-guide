@@ -5,7 +5,11 @@
   "taozi": {
     "name": "桃子",
     "birthdate": "2024-04-10",
-    "currentFocus": ["自主进食", "如厕训练", "夜醒回落"],
+    "currentFocus": [
+      "自主进食",
+      "如厕训练",
+      "夜醒回落"
+    ],
     "profile": {
       "gender": "女",
       "caregivers": "妈妈为主;工作日白天外婆带,晚上父母",
@@ -19,31 +23,98 @@
       }
     },
     "activeConcerns": [
-      { "since": "09-05", "text": "就餐时要求看动画片,不给则哭闹", "status": "观察中" }
+      {
+        "since": "09-05",
+        "text": "就餐时要求看动画片,不给则哭闹",
+        "status": "观察中"
+      }
     ],
     "milestones": {
       "30": {
         "source": "CDC「Learn the Signs. Act Early.」2.5 岁检查表(公有领域,中文化示例)",
         "items": [
-          { "domain": "社交/情感", "status": "ok", "text": "和其他孩子玩耍时,会注意到对方受伤或不开心" },
-          { "domain": "社交/情感", "status": "watch", "text": "可能开始轮流玩游戏(观察中)" },
-          { "domain": "语言/沟通", "status": "ok", "text": "会说约 50 个以上的词,能说两个词以上的句子" },
-          { "domain": "语言/沟通", "status": "ok", "text": "会问「是什么」「为什么」" },
-          { "domain": "认知", "status": "watch", "text": "会用物体玩假装游戏(如把积木当电话)" },
-          { "domain": "动作", "status": "ok", "text": "会用脚尖站立、踢球" },
-          { "domain": "动作", "status": "todo", "text": "单脚跳尚未出现(30 月龄内属正常范围,持续观察)" }
+          {
+            "domain": "社交/情感",
+            "status": "ok",
+            "text": "和其他孩子玩耍时,会注意到对方受伤或不开心"
+          },
+          {
+            "domain": "社交/情感",
+            "status": "watch",
+            "text": "可能开始轮流玩游戏(观察中)"
+          },
+          {
+            "domain": "语言/沟通",
+            "status": "ok",
+            "text": "会说约 50 个以上的词,能说两个词以上的句子"
+          },
+          {
+            "domain": "语言/沟通",
+            "status": "ok",
+            "text": "会问「是什么」「为什么」"
+          },
+          {
+            "domain": "认知",
+            "status": "watch",
+            "text": "会用物体玩假装游戏(如把积木当电话)"
+          },
+          {
+            "domain": "动作",
+            "status": "ok",
+            "text": "会用脚尖站立、踢球"
+          },
+          {
+            "domain": "动作",
+            "status": "todo",
+            "text": "单脚跳尚未出现(30 月龄内属正常范围,持续观察)"
+          }
         ]
       }
     },
     "sleep": {
       "days": [
-        { "date": "09-22", "bedtime": "21:35", "wakings": 2, "totalHours": 10.2 },
-        { "date": "09-23", "bedtime": "21:10", "wakings": 1, "totalHours": 10.8 },
-        { "date": "09-24", "bedtime": "21:50", "wakings": 2, "totalHours": 9.9 },
-        { "date": "09-25", "bedtime": "21:20", "wakings": 1, "totalHours": 10.6 },
-        { "date": "09-26", "bedtime": "21:05", "wakings": 1, "totalHours": 10.9 },
-        { "date": "09-27", "bedtime": "21:40", "wakings": 0, "totalHours": 11.1 },
-        { "date": "09-28", "bedtime": "21:15", "wakings": 1, "totalHours": 10.7 }
+        {
+          "date": "09-22",
+          "bedtime": "21:35",
+          "wakings": 2,
+          "totalHours": 10.2
+        },
+        {
+          "date": "09-23",
+          "bedtime": "21:10",
+          "wakings": 1,
+          "totalHours": 10.8
+        },
+        {
+          "date": "09-24",
+          "bedtime": "21:50",
+          "wakings": 2,
+          "totalHours": 9.9
+        },
+        {
+          "date": "09-25",
+          "bedtime": "21:20",
+          "wakings": 1,
+          "totalHours": 10.6
+        },
+        {
+          "date": "09-26",
+          "bedtime": "21:05",
+          "wakings": 1,
+          "totalHours": 10.9
+        },
+        {
+          "date": "09-27",
+          "bedtime": "21:40",
+          "wakings": 0,
+          "totalHours": 11.1
+        },
+        {
+          "date": "09-28",
+          "bedtime": "21:15",
+          "wakings": 1,
+          "totalHours": 10.7
+        }
       ],
       "note": "入睡时间目标 21:30 前;夜醒回落中(上周均 2.4 次 → 本周均 1.1 次)"
     },
@@ -68,7 +139,11 @@
       }
     ],
     "suspended": [
-      { "since": "07-06", "topic": "戒奶嘴计划(原定 7 月启动,因夏季全家出行延期)", "status": "延期待重启" }
+      {
+        "since": "07-06",
+        "topic": "戒奶嘴计划(原定 7 月启动,因夏季全家出行延期)",
+        "status": "延期待重启"
+      }
     ],
     "experiments": [
       {
@@ -78,15 +153,62 @@
       }
     ],
     "followups": [
-      { "due": "10-03", "topic": "S12 注意力转移:预告撤除后是否稳定(第三次回访)", "status": "pending" },
-      { "due": "10-10", "topic": "夜醒:验证「睡前 30 分钟无屏幕」满两周后的夜醒次数", "status": "pending" }
+      {
+        "due": "10-03",
+        "topic": "S12 注意力转移:预告撤除后是否稳定(第三次回访)",
+        "status": "pending"
+      },
+      {
+        "due": "10-10",
+        "topic": "夜醒:验证「睡前 30 分钟无屏幕」满两周后的夜醒次数",
+        "status": "pending"
+      }
     ],
     "notes": [
-      { "date": "09-20", "text": "第一次完全自己穿上鞋子(左右还经常反)" },
-      { "date": "09-21", "text": "和表哥争抢玩具时推了对方一次" },
-      { "date": "09-24", "text": "在游乐场主动把秋千让给排队的小妹妹" },
-      { "date": "09-26", "text": "又推了抢玩具的表哥一次,被隔离冷静 2 分钟后恢复" },
-      { "date": "09-27", "text": "夜里 23:40 哭醒,喝水后 5 分钟内自己睡着(以前要抱睡 20 分钟)" }
+      {
+        "date": "2026-09-20",
+        "text": "第一次完全自己穿上鞋子(左右还经常反)",
+        "precision": "day",
+        "tags": [
+          "自理",
+          "精细动作"
+        ]
+      },
+      {
+        "date": "2026-09-21",
+        "text": "和表哥争抢玩具时推了对方一次",
+        "precision": "day",
+        "tags": [
+          "社交",
+          "管教冲突"
+        ]
+      },
+      {
+        "date": "2026-09-24",
+        "text": "在游乐场主动把秋千让给排队的小妹妹",
+        "precision": "day",
+        "tags": [
+          "社交",
+          "可爱瞬间"
+        ]
+      },
+      {
+        "date": "2026-09-26",
+        "text": "又推了抢玩具的表哥一次,被隔离冷静 2 分钟后恢复",
+        "precision": "day",
+        "tags": [
+          "社交",
+          "管教冲突"
+        ]
+      },
+      {
+        "date": "2026-09-27",
+        "text": "夜里 23:40 哭醒,喝水后 5 分钟内自己睡着(以前要抱睡 20 分钟)",
+        "precision": "day",
+        "tags": [
+          "睡眠"
+        ]
+      }
     ]
   }
 }

@@ -164,5 +164,49 @@ class T(unittest.TestCase):
         code, msg = run(self.tmp, "set-profile", "--field", "evil.path", "--value", "X")
         self.assertNotEqual(code, 0)
 
+    def test_16_add_note_with_tags_and_full_date(self):
+        code, msg = run(self.tmp, "add-note", "--date", "2026-08-01",
+                        "--tags", "社交,分享", "--text", "主动拿车换警车")
+        self.assertEqual(code, 0, msg)
+        n = self.child()["notes"][-1]
+        self.assertEqual(n["date"], "2026-08-01")
+        self.assertEqual(n["precision"], "day")
+        self.assertEqual(n["tags"], ["社交", "分享"])
+
+    def test_17_add_note_short_date_gets_current_year(self):
+        code, msg = run(self.tmp, "add-note", "--date", "09-29", "--text", "x")
+        self.assertEqual(code, 0, msg)
+        n = self.child()["notes"][-1]
+        self.assertRegex(n["date"], r"^\d{4}-09-29$")
+
+    def test_18_add_note_approx_days(self):
+        code, msg = run(self.tmp, "add-note", "--approx-days", "35",
+                        "--tags", "社交", "--text", "大概一个月前开始愿意分享")
+        self.assertEqual(code, 0, msg)
+        n = self.child()["notes"][-1]
+        self.assertRegex(n["date"], r"^\d{4}-\d{2}-\d{2}$")
+        self.assertEqual(n["precision"], "month")
+        code, msg = run(self.tmp, "add-note", "--approx-days", "10",
+                        "--text", "一周多前")
+        n = self.child()["notes"][-1]
+        self.assertEqual(n["precision"], "week")
+        self.assertIn("≈", msg)   # evidence marks the fuzzy date
+
+    def test_19_add_note_rejects_bad_date_format_on_write(self):
+        code, msg = run(self.tmp, "add-note", "--date", "2026/9/1", "--text", "x")
+        self.assertNotEqual(code, 0, "fail fast: bad format must be rejected at write time")
+        code, msg = run(self.tmp, "add-note", "--approx-days", "abc", "--text", "x")
+        self.assertNotEqual(code, 0)
+
+    def test_20_check_validates_new_note_fields(self):
+        c = self.child()
+        c["notes"] = [{"date": "08-01", "precision": "month", "tags": "社交", "text": "x"}]
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+        code, msg = run(self.tmp, "check")
+        self.assertNotEqual(code, 0)
+        self.assertIn("tags", msg)
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

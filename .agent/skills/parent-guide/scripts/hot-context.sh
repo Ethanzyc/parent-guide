@@ -55,5 +55,9 @@ for fu in c.get("followups", []):
 print()
 print("[近期事件]")
 for n in c.get("notes", [])[-3:]:
-    print(f"- {n['date']} {n['text']}")
+    d = str(n.get("date", ""))
+    shown = d if n.get("precision", "day") == "day" else f"≈{d}"
+    tags = n.get("tags") or []
+    tagpart = f" [{'/'.join(tags)}]" if tags else ""
+    print(f"- ({shown}){tagpart} {n['text']}")
 PY

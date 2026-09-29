@@ -209,9 +209,14 @@ class T(unittest.TestCase):
         self.assertIn("tags", msg)
 
     def test_21_profile_placeholders_counted(self):
+        c = self.child()
+        c["profile"]["preferences"]["books"] = "绘本偏好"   # inject a placeholder
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
         code, msg = run(self.tmp, "check")
-        self.assertEqual(code, 0)
-        self.assertIn("占位", msg)   # fixture has gender 女|男 placeholder -> counted
+        self.assertEqual(code, 0, msg)                       # placeholder != error
+        self.assertIn("1 处模板占位值", msg)                  # but it is counted
 
     def test_22_set_profile_sleep_note(self):
         code, msg = run(self.tmp, "set-profile", "--field", "sleep.note",

@@ -21,7 +21,7 @@ season = ["冬", "冬", "春", "春", "春", "夏", "夏", "夏", "秋", "秋", 
 
 p = c.get("profile", {})
 print(f"== {c['name']} 热区 | {today} ==")
-print(f"月龄:{months} 个月(生日 {c['birthdate']})| 季节:{season}")
+print(f"月龄:{months} 个月(生日 {c['birthdate']})| 今日季节:{season}")
 print(f"照顾:{p.get('caregivers', '-')} | 安抚物:{p.get('comfortObject', '-')}")
 print(f"当前重点:{'、'.join(c.get('currentFocus', []))}")
 print()

@@ -83,5 +83,27 @@ class T(unittest.TestCase):
         code, _ = run(self.tmp, "add-note", "--date", "09-29", "--text", "x")
         self.assertNotEqual(code, 0)
 
+    def test_08_check_passes_on_valid_fixture(self):
+        code, msg = run(self.tmp, "check")
+        self.assertEqual(code, 0, msg)
+        self.assertIn("PASS", msg)
+
+    def test_09_check_reports_each_violation(self):
+        c = self.child()
+        c["name"] = ""                       # required empty
+        c["birthdate"] = "2024/4/10"         # wrong date format
+        c["strategies"][0]["status"] = "有效"  # off-enum
+        c["strategies"][1]["id"] = "M1"      # duplicate id
+        c["strategies"][1]["started"] = "9月8日"  # wrong MM-DD
+        c["sleep"] = {"days": [{"date": "09-22", "bedtime": "21:35", "wakings": "两次", "totalHours": 10.2}]}
+        c.setdefault("milestones", {})["30"] = {"source": "x", "items": [{"domain": "认知", "status": "良好", "text": "t"}]}
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False, indent=2), encoding="utf-8")
+        code, msg = run(self.tmp, "check")
+        self.assertNotEqual(code, 0)
+        for kw in ["name", "birthdate", "status", "重复", "started", "wakings", "milestones"]:
+            self.assertIn(kw, msg, f"missing report for {kw}")
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

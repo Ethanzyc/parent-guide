@@ -89,6 +89,10 @@ def execute(argv=None):
     p.add_argument("--status", required=True, choices=sorted(VALID_STATUS))
     p.add_argument("--note", default=None)
 
+    sub.add_parser("check", help="validate the archive: required fields, date "
+                  "formats (YYYY-MM-DD / MM-DD), status enums, numeric fields, "
+                  "id uniqueness; human-readable problem list")
+
     args = ap.parse_args(argv)
     path = Path(args.data) / "child.json"
     try:
@@ -136,11 +140,73 @@ def execute(argv=None):
             s["followup"] = f"{s.get('followup', '')} {args.note}".strip()
         msg = f"strategy {args.id} status -> {args.status}" + (f" ({args.note})" if args.note else "")
 
+    elif args.action == "check":
+        problems = _check(child)
+        if problems:
+            return 1, (f"FAIL: 档案有 {len(problems)} 处问题\n"
+                       + "\n".join(f"  - {p}" for p in problems))
+        return 0, f"PASS: 档案结构合规(孩子:{child.get('name', '?')})"
+
     else:  # pragma: no cover
         return 1, "ERROR: unknown action"
 
     _save(path, doc)
     return 0, msg + f" | saved {path.name} (backup: child.json.bak)"
+
+
+DATE_FULL = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+DATE_SHORT = re.compile(r"^\d{2}-\d{2}$")
+MILESTONE_STATUS = {"ok", "watch", "todo"}
+
+
+def _check(child):
+    """Validate one child dict; returns a list of human-readable problems."""
+    problems = []
+
+    if not str(child.get("name") or "").strip():
+        problems.append("name: 必填(孩子小名)")
+    if not DATE_FULL.match(str(child.get("birthdate") or "")):
+        problems.append("birthdate: 必须是 YYYY-MM-DD 格式(现在是 "
+                        f"{child.get('birthdate')!r})")
+
+    def short_date(where, value):
+        if not DATE_SHORT.match(str(value or "")):
+            problems.append(f"{where}: 日期须为 MM-DD(现在是 {value!r})")
+
+    for i, x in enumerate(child.get("activeConcerns", [])):
+        short_date(f"activeConcerns[{i}].since", x.get("since"))
+    for i, s in enumerate(child.get("strategies", [])):
+        short_date(f"strategies[{i}].started", s.get("started"))
+        if s.get("status") not in VALID_STATUS:
+            problems.append(f"strategies[{i}].status: 不在枚举内(现在是 {s.get('status')!r},"
+                            f"可选 {'/'.join(sorted(VALID_STATUS))})")
+        if not re.match(r"^[SM]\d+$", str(s.get("id") or "")):
+            problems.append(f"strategies[{i}].id: 须形如 S1/M12(现在是 {s.get('id')!r})")
+    ids = [s.get("id") for s in child.get("strategies", []) if s.get("id")]
+    dup = {i for i in ids if ids.count(i) > 1}
+    if dup:
+        problems.append(f"strategies[].id: 重复 {sorted(dup)}")
+    for i, s in enumerate(child.get("suspended", [])):
+        short_date(f"suspended[{i}].since", s.get("since"))
+    for i, e in enumerate(child.get("experiments", [])):
+        short_date(f"experiments[{i}].since", e.get("since"))
+    for i, f in enumerate(child.get("followups", [])):
+        short_date(f"followups[{i}].due", f.get("due"))
+    for i, n in enumerate(child.get("notes", [])):
+        short_date(f"notes[{i}].date", n.get("date"))
+
+    for i, d in enumerate(child.get("sleep", {}).get("days", [])):
+        for field in ("wakings", "totalHours"):
+            if not isinstance(d.get(field), (int, float)):
+                problems.append(f"sleep.days[{i}].{field}: 须为数字(现在是 {d.get(field)!r})")
+
+    for months, pack in (child.get("milestones") or {}).items():
+        for j, item in enumerate(pack.get("items", [])):
+            if item.get("status") not in MILESTONE_STATUS:
+                problems.append(f"milestones.{months}.items[{j}].status: 不在枚举 "
+                                f"ok/watch/todo(现在是 {item.get('status')!r})")
+
+    return problems
 
 
 def main():

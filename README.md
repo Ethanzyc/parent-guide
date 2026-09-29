@@ -69,9 +69,9 @@ git clone https://github.com/Ethanzyc/parent-guide.git && cd parent-guide
 # 1) 装 skill(以 zcode 为例,其他宿主见上表)
 cp -R skills/parent-guide ~/.zcode/skills/
 
-# 2) 建立孩子的档案(纯本地,绝不入 git)
-mkdir -p data && cp skills/parent-guide/data-templates/child.json data/
-#    编辑 data/child.json:孩子小名、生日、当前情况(不会被上传)
+# 2) 建档:直接开一段对话说「帮我给孩子建档」——
+#    它会问你三件事(小名/生日/谁带),按月龄亮出该阶段常见主题让你挑,
+#    然后用脚本生成孩子的档案(data/child.json,只存在你电脑上)
 
 # 3) 成长视图(可选)
 python3 server.py --open     # 打开 http://127.0.0.1:8765
@@ -81,6 +81,10 @@ python3 server.py --open     # 打开 http://127.0.0.1:8765
 然后直接问你的 AI 助手育儿问题即可;完整语料库在 `knowledge/`(发育里程碑中文化、睡眠、营养专题),skill 会按需引用。
 
 > **数据与隐私**:所有孩子数据在 `data/` 目录(已被 .gitignore 排除);页面只监听 127.0.0.1;没有任何遥测。skill 只读 `data/` 目录,不碰你机器上的其他文件。
+>
+> **适用范围**:当前版本适配 **0-5 岁**(发育里程碑/喂养/睡眠/情绪管教的实证区间);学龄儿童仅睡眠口径与就医红线。
+>
+> **进阶**:手编 `data/child.json` 可以但不建议(编辑后跑 `python3 skills/parent-guide/scripts/update-child.py --data data check` 自检)。孩子年龄段超出官方覆盖,或有过敏/早产等特殊情况?在 `knowledge/` 里写你自己的笔记(如 `6y-school.md`、`allergy-notes.md`),skill 会自动发现、引用时标注「家庭自建笔记」。
 
 ## 仓库结构
 

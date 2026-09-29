@@ -105,5 +105,45 @@ class T(unittest.TestCase):
         for kw in ["name", "birthdate", "status", "重复", "started", "wakings", "milestones"]:
             self.assertIn(kw, msg, f"missing report for {kw}")
 
+    def test_10_init_creates_clean_skeleton(self):
+        (self.tmp / "child.json").unlink()   # fresh user, no archive yet
+        code, msg = run(self.tmp, "init", "--name", "小明", "--birthdate", "2023-06-15",
+                        "--caregivers", "妈妈为主", "--focus", "如厕,睡眠")
+        self.assertEqual(code, 0, msg)
+        c = self.child()
+        self.assertEqual(c["name"], "小明")
+        self.assertEqual(c["birthdate"], "2023-06-15")
+        self.assertEqual(c["profile"]["caregivers"], "妈妈为主")
+        self.assertEqual(c["currentFocus"], ["如厕", "睡眠"])
+        for empty in ("strategies", "followups", "notes", "suspended", "experiments"):
+            self.assertEqual(c[empty], [], f"{empty} must start empty, not carry template samples")
+        self.assertEqual(c["milestones"], {})
+        self.assertEqual(c["sleep"]["days"], [])
+        code2, msg2 = run(self.tmp, "check")
+        self.assertEqual(code2, 0, msg2)
+
+    def test_11_init_refuses_existing_real_archive(self):
+        before = (self.tmp / "child.json").read_text("utf-8")
+        code, msg = run(self.tmp, "init", "--name", "别人", "--birthdate", "2020-01-01",
+                        "--caregivers", "x")
+        self.assertNotEqual(code, 0, "must refuse to overwrite a real archive")
+        self.assertIn("已存在", msg)
+        self.assertEqual((self.tmp / "child.json").read_text("utf-8"), before, "file untouched")
+
+    def test_12_init_allows_placeholder_template_state(self):
+        # replace current fixture archive with the unfilled template -> init must proceed
+        shutil.copy(ROOT / "skills/parent-guide/data-templates/child.json",
+                    self.tmp / "child.json")
+        code, msg = run(self.tmp, "init", "--name", "朵朵", "--birthdate", "2024-01-20",
+                        "--caregivers", "父母")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["name"], "朵朵")
+
+    def test_13_init_on_missing_file(self):
+        (self.tmp / "child.json").unlink()
+        code, msg = run(self.tmp, "init", "--name", "新新", "--birthdate", "2025-12-01",
+                        "--caregivers", "妈妈")
+        self.assertEqual(code, 0, msg)
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

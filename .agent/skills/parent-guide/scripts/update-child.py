@@ -10,6 +10,9 @@ atomic write with one-generation backup, and duplicate guards.
 Usage (run from anywhere; paths parameterized):
   update-child.py [--data DIR] <action> [options]
 Actions:
+  init          --name --birthdate --caregivers [--temperament] [--focus a,b]
+                  create the archive skeleton (guided onboarding; refuses
+                  to overwrite an existing real archive)
   add-strategy  --name --applied [--started MM-DD]   new strategy, auto id
   add-followup  --due MM-DD --topic                  append follow-up (dup-guarded)
   add-note      --date MM-DD --text                  append journal note
@@ -113,8 +116,54 @@ def execute(argv=None):
                   "formats (YYYY-MM-DD / MM-DD), status enums, numeric fields, "
                   "id uniqueness; human-readable problem list")
 
+    p = sub.add_parser("init", help="create the archive skeleton via guided "
+                  "onboarding; refuses to overwrite an existing real archive")
+    p.add_argument("--name", required=True)
+    p.add_argument("--birthdate", required=True)
+    p.add_argument("--caregivers", required=True)
+    p.add_argument("--temperament", default=None)
+    p.add_argument("--focus", default=None, help="comma-separated currentFocus items")
+
     args = ap.parse_args(argv)
     path = Path(args.data) / "child.json"
+    template = Path(__file__).parent.parent / "data-templates" / "child.json"
+
+    # init works on a missing file or an unfilled template; never on real data
+    if args.action == "init":
+        if not DATE_FULL.match(args.birthdate):
+            return 1, "ERROR: --birthdate must be YYYY-MM-DD"
+        existing = None
+        if path.exists():
+            try:
+                _, _, existing = _load(path)
+            except (OSError, ValueError, StopIteration):
+                return 1, f"ERROR: {path} exists but is unreadable; fix or remove it first"
+            if str(existing.get("name", "")) not in PLACEHOLDERS and str(existing.get("name", "")).strip():
+                return 1, (f"ERROR: 档案已存在(孩子:{existing.get('name')}),init 拒绝覆盖;"
+                           "如确要重建,请先手动删除/移走 child.json(备份在 .bak)")
+        doc = json.loads(template.read_text("utf-8"))
+        key = next(k for k in doc if not k.startswith("_"))
+        child = doc[key]
+        child["name"] = args.name
+        child["birthdate"] = args.birthdate
+        child["profile"]["caregivers"] = args.caregivers
+        if args.temperament:
+            child["profile"]["temperament"] = args.temperament
+        child["currentFocus"] = [f.strip() for f in (args.focus or "").split(",") if f.strip()]
+        # drop teaching samples from the template: a fresh archive starts empty
+        for section in ("strategies", "suspended", "experiments", "followups", "notes"):
+            child[section] = []
+        child["activeConcerns"] = []
+        child["milestones"] = {}
+        child["sleep"] = {"days": [], "note": ""}
+        problems, _ph = _check(child)
+        if problems:
+            return 1, "ERROR: init produced an invalid archive:\n" + "\n".join(problems)
+        _save(path, doc)
+        return 0, (f"recorded archive for {args.name}(birthday {args.birthdate}, "
+                   f"caregivers: {args.caregivers}) | saved {path.name} (backup: child.json.bak) "
+                   f"| 建议接着跑: hot-context 看一眼系统眼里的孩子")
+
     try:
         doc, key, child = _load(path)
     except (OSError, ValueError, StopIteration) as e:

@@ -124,6 +124,13 @@ def execute(argv=None):
     p.add_argument("--temperament", default=None)
     p.add_argument("--focus", default=None, help="comma-separated currentFocus items")
 
+    p = sub.add_parser("set-profile", help="update one whitelisted profile field "
+                  "(guided onboarding follow-up; replaces manual JSON edits)")
+    p.add_argument("--field", required=True,
+                   choices=["gender", "language", "temperament", "comfortObject",
+                            "familyNotes", "preferences.books", "preferences.activities"])
+    p.add_argument("--value", required=True)
+
     args = ap.parse_args(argv)
     path = Path(args.data) / "child.json"
     template = Path(__file__).parent.parent / "data-templates" / "child.json"
@@ -208,6 +215,14 @@ def execute(argv=None):
         if args.note:
             s["followup"] = f"{s.get('followup', '')} {args.note}".strip()
         msg = f"strategy {args.id} status -> {args.status}" + (f" ({args.note})" if args.note else "")
+
+    elif args.action == "set-profile":
+        child.setdefault("profile", {}).setdefault("preferences", {})
+        if args.field.startswith("preferences."):
+            child["profile"]["preferences"][args.field.split(".", 1)[1]] = args.value
+        else:
+            child["profile"][args.field] = args.value
+        msg = f"recorded profile.{args.field} = {args.value[:40]}"
 
     elif args.action == "check":
         problems, ph = _check(child)

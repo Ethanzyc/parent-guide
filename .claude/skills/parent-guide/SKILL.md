@@ -41,6 +41,7 @@ description: >
 | 档 | 信号 | 启动动作 | 输出 |
 |----|------|---------|------|
 | L1 紧急 | 正在哭闹/当场冲突/安全风险 | **只 Run** `scripts/hot-context.sh data`(约 30 行热区,别的不读) | 动作卡 ≤150 字(templates.md,strict) |
+| E 评估 | 「我们现在是这样做的,对吗/行不行」——家长报告自家做法求评判 | Run hot-context + 查 knowledge-index 相关口径 | 评估卡:口径判定(T 级+来源)→差距或肯定→三选菜单(追踪/微调/保持),决定权留家长 |
 | L2 计划 | 习惯养成/行为改善/戒断 | Run hot-context + 读 child.json 追踪区 + See knowledge-index 相关条目 | L2 计划;写入追踪用 Run update-child.py(证据=脚本输出) |
 | L3 发育 | 发展观察/里程碑担忧 | Run hot-context + See knowledge-index §2 | L3 观察报告 |
 | guide 日常 | 活动安排/月龄玩法 | Run hot-context | guide 建议 |

@@ -18,7 +18,10 @@ _spec.loader.exec_module(uc)
 FIXTURE = ROOT / "tests/fixtures/test-env/data/child.json"
 
 def run(data_dir, *args):
-    return uc.execute(["--data", str(data_dir), *args])
+    try:
+        return uc.execute(["--data", str(data_dir), *args])
+    except SystemExit as e:
+        return (int(e.code) if isinstance(e.code, int) else 1, "(rejected: field not whitelisted)")
 
 class T(unittest.TestCase):
     def setUp(self):
@@ -144,6 +147,22 @@ class T(unittest.TestCase):
         code, msg = run(self.tmp, "init", "--name", "新新", "--birthdate", "2025-12-01",
                         "--caregivers", "妈妈")
         self.assertEqual(code, 0, msg)
+
+    def test_14_set_profile_updates_whitelisted_field(self):
+        code, msg = run(self.tmp, "set-profile", "--field", "comfortObject",
+                        "--value", "奶嘴")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["profile"]["comfortObject"], "奶嘴")
+        code, msg = run(self.tmp, "set-profile", "--field", "preferences.books",
+                        "--value", "小金鱼逃走了")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["profile"]["preferences"]["books"], "小金鱼逃走了")
+
+    def test_15_set_profile_rejects_unknown_field(self):
+        code, msg = run(self.tmp, "set-profile", "--field", "name", "--value", "X")
+        self.assertNotEqual(code, 0, "name is not a profile field; must be rejected")
+        code, msg = run(self.tmp, "set-profile", "--field", "evil.path", "--value", "X")
+        self.assertNotEqual(code, 0)
 
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

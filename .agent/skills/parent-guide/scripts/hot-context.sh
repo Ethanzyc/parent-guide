@@ -20,9 +20,16 @@ months = (today.year - b.year) * 12 + (today.month - b.month) - (today.day < b.d
 season = ["冬", "冬", "春", "春", "春", "夏", "夏", "夏", "秋", "秋", "秋", "冬"][today.month - 1]
 
 p = c.get("profile", {})
+ph = {"安抚物(如有)", "孩子小名", "主要照顾人与分工"}
+caregivers = p.get("caregivers", "-")
+comfort = p.get("comfortObject", "-")
+if caregivers in ph or not str(caregivers).strip():
+    caregivers = "未填"
+if comfort in ph or not str(comfort).strip():
+    comfort = "未填"
 print(f"== {c['name']} 热区 | {today} ==")
 print(f"月龄:{months} 个月(生日 {c['birthdate']})| 今日季节:{season}")
-print(f"照顾:{p.get('caregivers', '-')} | 安抚物:{p.get('comfortObject', '-')}")
+print(f"照顾:{caregivers} | 安抚物:{comfort}")
 print(f"当前重点:{'、'.join(c.get('currentFocus', []))}")
 print()
 print("[活跃问题]")

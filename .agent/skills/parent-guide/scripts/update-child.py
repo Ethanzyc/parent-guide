@@ -120,6 +120,16 @@ def execute(argv=None):
     p.add_argument("--result", required=True)
     p.add_argument("--status", default=None, choices=["effective", "partial", "ineffective"])
 
+    p = sub.add_parser("add-reminder")
+    p.add_argument("--due", required=True, help="MM-DD")
+    p.add_argument("--topic", required=True)
+    p.add_argument("--source", required=True, help="e.g. 疫苗/入园准备/自定义")
+
+    p = sub.add_parser("set-reminder-status")
+    p.add_argument("--due", required=True)
+    p.add_argument("--topic", required=True)
+    p.add_argument("--status", required=True, choices=["pending", "done", "skipped"])
+
     p = sub.add_parser("set-status")
     p.add_argument("--id", required=True)
     p.add_argument("--status", required=True, choices=sorted(VALID_STATUS))
@@ -142,7 +152,7 @@ def execute(argv=None):
     p.add_argument("--field", required=True,
                    choices=["gender", "language", "temperament", "comfortObject",
                             "familyNotes", "preferences.books", "preferences.activities",
-                            "sleep.note"])
+                            "sleep.note", "childcarePlan"])
     p.add_argument("--value", required=True)
 
     args = ap.parse_args(argv)
@@ -172,7 +182,8 @@ def execute(argv=None):
             child["profile"]["temperament"] = args.temperament
         child["currentFocus"] = [f.strip() for f in (args.focus or "").split(",") if f.strip()]
         # drop teaching samples from the template: a fresh archive starts empty
-        for section in ("strategies", "suspended", "experiments", "followups", "notes"):
+        for section in ("strategies", "suspended", "experiments", "followups", "notes",
+                         "reminders"):
             child[section] = []
         child["activeConcerns"] = []
         child["milestones"] = {}
@@ -262,6 +273,22 @@ def execute(argv=None):
             child["profile"][args.field] = args.value
         msg = f"recorded {args.field} = {args.value[:40]}"
 
+    elif args.action == "add-reminder":
+        items = child.setdefault("reminders", [])
+        if any(r.get("due") == args.due and r.get("topic") == args.topic for r in items):
+            return 1, f"ERROR: reminder {args.due}「{args.topic}」already exists"
+        items.append({"due": args.due, "topic": args.topic,
+                      "source": args.source, "status": "pending"})
+        msg = f"recorded reminder {args.due}「{args.topic}」({args.source})"
+
+    elif args.action == "set-reminder-status":
+        r = next((r for r in child.get("reminders", [])
+                  if r.get("due") == args.due and r.get("topic") == args.topic), None)
+        if r is None:
+            return 1, f"ERROR: reminder {args.due}「{args.topic}」not found"
+        r["status"] = args.status
+        msg = f"reminder {args.due}「{args.topic}」-> {args.status}"
+
     elif args.action == "check":
         problems, ph = _check(child)
         note = f"\n  提示: 还有 {ph} 处模板占位值待替换为真实内容" if ph else ""
@@ -344,6 +371,13 @@ def _check(child):
         for field in ("wakings", "totalHours"):
             if not isinstance(d.get(field), (int, float)):
                 problems.append(f"sleep.days[{i}].{field}: 须为数字(现在是 {d.get(field)!r})")
+
+    REMINDER_STATUS = {"pending", "done", "skipped"}
+    for i, r in enumerate(child.get("reminders", [])):
+        short_date(f"reminders[{i}].due", r.get("due"))
+        if r.get("status") not in REMINDER_STATUS:
+            problems.append(f"reminders[{i}].status: 不在枚举 pending/done/skipped"
+                            f"(现在是 {r.get('status')!r})")
 
     for months, pack in (child.get("milestones") or {}).items():
         for j, item in enumerate(pack.get("items", [])):

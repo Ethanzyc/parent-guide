@@ -47,6 +47,9 @@ description: >
 | guide 日常 | 活动安排/月龄玩法 | Run hot-context | guide 建议 |
 
 Run=执行脚本(确定性操作交给代码);See=按需阅读,不提前加载。
+每次对话跑完热区后做一次**前瞻检查**:月龄+日期 vs knowledge/anticipatory.md,
+有临近节点则顺带提**最多一条**(时效分级与克制规则见 conversation.md §2.6;
+家长认领后 Run update-child.py add-reminder 落档)。
 脚本路径相对 skill 目录,数据路径相对当前工作目录;云沙箱与本地同构。
 
 ## 知识路由(压缩)
@@ -58,6 +61,7 @@ Run=执行脚本(确定性操作交给代码);See=按需阅读,不提前加载�
 | 发育里程碑/专题深度 | knowledge/ 完整库(含用户自建笔记,引用时标注「家庭自建」;缺失走 §4 降级) |
 | 输出结构 | templates.md |
 | 档案写入/状态感知/断言边界 | conversation.md |
+| 前瞻节点(疫苗/入园/流感季) | knowledge/anticipatory.md + conversation.md §2.6 |
 | 页面配置 | blocks-spec.md(用户 AI 改 page.json 用) |
 
 ## 红线判例(一行一条,新增入 references/cases/)

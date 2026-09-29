@@ -224,5 +224,31 @@ class T(unittest.TestCase):
         self.assertEqual(code, 0, msg)
         self.assertEqual(self.child()["sleep"]["note"], "21:30 前入睡,午睡 1.5h")
 
+    def test_23_add_reminder_and_hot_context_field(self):
+        code, msg = run(self.tmp, "add-reminder", "--due", "12-15",
+                        "--topic", "入园作息准备:开始渐进前移", "--source", "入园准备")
+        self.assertEqual(code, 0, msg)
+        r = self.child()["reminders"][-1]
+        self.assertEqual(r["due"], "12-15")
+        self.assertEqual(r["status"], "pending")
+        # duplicate guard
+        code, msg = run(self.tmp, "add-reminder", "--due", "12-15",
+                        "--topic", "入园作息准备:开始渐进前移", "--source", "入园准备")
+        self.assertNotEqual(code, 0)
+
+    def test_24_reminder_status_transition(self):
+        run(self.tmp, "add-reminder", "--due", "11-10", "--topic", "流感疫苗", "--source", "疫苗")
+        code, msg = run(self.tmp, "set-reminder-status", "--due", "11-10",
+                        "--topic", "流感疫苗", "--status", "done")
+        self.assertEqual(code, 0, msg)
+        r = [x for x in self.child()["reminders"] if x["due"] == "11-10"][0]
+        self.assertEqual(r["status"], "done")
+
+    def test_25_childcare_plan_in_set_profile(self):
+        code, msg = run(self.tmp, "set-profile", "--field", "childcarePlan",
+                        "--value", "计划36月入托,本地公办优先")
+        self.assertEqual(code, 0, msg)
+        self.assertIn("入托", self.child()["profile"]["childcarePlan"])
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

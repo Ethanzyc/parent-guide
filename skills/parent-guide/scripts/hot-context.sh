@@ -53,6 +53,11 @@ print("[待回访]")
 for fu in c.get("followups", []):
     print(f"- {fu['due']} {fu['topic']} [{fu['status']}]")
 print()
+print("[前瞻提醒](已认领,到期临近)")
+for r in c.get("reminders", []):
+    if r.get("status") == "pending":
+        print(f"- {r['due']} {r['topic']} [{r.get('source', '')}]")
+print()
 print("[近期事件]")
 for n in c.get("notes", [])[-3:]:
     d = str(n.get("date", ""))

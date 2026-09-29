@@ -20,7 +20,8 @@
       "preferences": {
         "books": "喜欢重复读同一本《小金鱼逃走了》;睡前 3 本是固定惯例",
         "activities": "秋千、玩水、假装游戏(把积木当电话)"
-      }
+      },
+      "childcarePlan": "计划36月入托"
     },
     "activeConcerns": [
       {
@@ -208,6 +209,20 @@
         "tags": [
           "睡眠"
         ]
+      }
+    ],
+    "reminders": [
+      {
+        "due": "10-15",
+        "topic": "流感疫苗(每年 9-11 月窗口)",
+        "source": "疫苗",
+        "status": "pending"
+      },
+      {
+        "due": "04-20",
+        "topic": "幼儿园报名政策了解(以本地为准)",
+        "source": "入园准备",
+        "status": "done"
       }
     ]
   }

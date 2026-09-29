@@ -17,13 +17,23 @@
 
 ## 快速开始
 
-需要:一个支持 Agent Skills 的 AI 助手(zcode / Claude Code / OpenClaw / Claude 桌面端等 47+ 宿主,或任何能读 Markdown 的 LLM 客户端)+ Python 3(页面功能,可选)。
+需要:一个支持 Agent Skills 的 AI 助手 + Python 3(页面功能,可选)。
+
+**宿主兼容**(主战场宿主;skill 按跨平台子集编写:≤6 字段 frontmatter、无宿主专属语法、脚本路径参数化):
+
+| 宿主 | 安装方式 | 状态 |
+|------|---------|------|
+| zcode | `cp -R skills/parent-guide ~/.zcode/skills/` | ✅ 实证(15 题验收测试在此宿主运行) |
+| Claude Code | `cp -R skills/parent-guide ~/.claude/skills/` | ✅ 格式对齐官方最佳实践 |
+| Codex | 复制到 `~/.codex/skills/`(用户级)或项目 `.agent/skills/` | ✅ 官方确认读取 SKILL.md |
+| DeepSeek Harness (dsh) | 按 dsh 文档的 skills 目录装入 | ✅ dsh 原生支持 SKILL.md 格式 |
+| 其他 47+ 宿主(OpenClaw / Gemini CLI / …) | 见 agentskills.io | 兼容为目标,非验证重点 |
 
 ```bash
 git clone https://github.com/Ethanzyc/parent-guide.git && cd parent-guide
 
-# 1) 装 skill 到你的 AI 助手(以 zcode / Claude Code 为例)
-cp -R skills/parent-guide ~/.zcode/skills/        # 或 ~/.claude/skills/
+# 1) 装 skill(以 zcode 为例,其他宿主见上表)
+cp -R skills/parent-guide ~/.zcode/skills/
 
 # 2) 建立孩子的档案(纯本地,绝不入 git)
 mkdir -p data && cp skills/parent-guide/data-templates/child.json data/

@@ -23,8 +23,8 @@
 
 | 宿主 | 安装方式 | 状态 |
 |------|---------|------|
-| zcode | `cp -R skills/parent-guide ~/.zcode/skills/` | ✅ 实证(15 题验收测试在此宿主运行) |
-| Claude Code | `cp -R skills/parent-guide ~/.claude/skills/` | ✅ 格式对齐官方最佳实践 |
+| zcode | `cp -R skills/parent-guide ~/.zcode/skills/` | ✅ 实证:自动触发+15 题全量验收 |
+| Claude Code | `cp -R skills/parent-guide ~/.claude/skills/` | ✅ 实证:安装发现与 `/parent-guide` 显式调用(输出 L1 动作卡正确);headless 单轮下的自动触发取决于所配模型(实测 GLM 配置未自动触发,建议交互使用或显式 `/parent-guide`) |
 | Codex | 复制到 `~/.codex/skills/`(用户级)或项目 `.agent/skills/` | ✅ 官方确认读取 SKILL.md |
 | DeepSeek Harness (dsh) | 按 dsh 文档的 skills 目录装入 | ✅ dsh 原生支持 SKILL.md 格式 |
 | 其他 47+ 宿主(OpenClaw / Gemini CLI / …) | 见 agentskills.io | 兼容为目标,非验证重点 |

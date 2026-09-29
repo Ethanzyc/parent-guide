@@ -208,5 +208,16 @@ class T(unittest.TestCase):
         self.assertNotEqual(code, 0)
         self.assertIn("tags", msg)
 
+    def test_21_profile_placeholders_counted(self):
+        code, msg = run(self.tmp, "check")
+        self.assertEqual(code, 0)
+        self.assertIn("占位", msg)   # fixture has gender 女|男 placeholder -> counted
+
+    def test_22_set_profile_sleep_note(self):
+        code, msg = run(self.tmp, "set-profile", "--field", "sleep.note",
+                        "--value", "21:30 前入睡,午睡 1.5h")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["sleep"]["note"], "21:30 前入睡,午睡 1.5h")
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

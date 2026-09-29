@@ -49,7 +49,9 @@ DATE_FULL = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # birthdate
 DATE_SHORT = re.compile(r"^\d{2}-\d{2}$")        # MM-DD everywhere else
 # template placeholder values: "not filled yet" is guidance, not an error
 PLACEHOLDERS = {"MM-DD", "YYYY-MM-DD", "HH:MM", "女|男",
-                "effective|partial|ineffective", "孩子小名"}
+                "effective|partial|ineffective", "孩子小名",
+                "绘本偏好", "活动偏好", "气质特点一句话", "语言发展一句话",
+                "家庭管教口径、长辈观点等背景"}
 # ═══ end STRUCT ═══
 
 
@@ -139,7 +141,8 @@ def execute(argv=None):
                   "(guided onboarding follow-up; replaces manual JSON edits)")
     p.add_argument("--field", required=True,
                    choices=["gender", "language", "temperament", "comfortObject",
-                            "familyNotes", "preferences.books", "preferences.activities"])
+                            "familyNotes", "preferences.books", "preferences.activities",
+                            "sleep.note"])
     p.add_argument("--value", required=True)
 
     args = ap.parse_args(argv)
@@ -251,11 +254,13 @@ def execute(argv=None):
 
     elif args.action == "set-profile":
         child.setdefault("profile", {}).setdefault("preferences", {})
-        if args.field.startswith("preferences."):
+        if args.field == "sleep.note":
+            child.setdefault("sleep", {})["note"] = args.value
+        elif args.field.startswith("preferences."):
             child["profile"]["preferences"][args.field.split(".", 1)[1]] = args.value
         else:
             child["profile"][args.field] = args.value
-        msg = f"recorded profile.{args.field} = {args.value[:40]}"
+        msg = f"recorded {args.field} = {args.value[:40]}"
 
     elif args.action == "check":
         problems, ph = _check(child)
@@ -327,6 +332,13 @@ def _check(child):
         tags = n.get("tags", [])
         if not isinstance(tags, list) or not all(isinstance(t, str) for t in tags):
             problems.append(f"notes[{i}].tags: 须为字符串数组(现在是 {tags!r})")
+
+    # profile free-text fields: placeholder originals count as "not filled yet"
+    prof = child.get("profile", {})
+    for f in ("gender", "language", "temperament", "comfortObject", "familyNotes"):
+        is_ph(f"profile.{f}", prof.get(f))
+    for f in ("books", "activities"):
+        is_ph(f"profile.preferences.{f}", (prof.get("preferences") or {}).get(f))
 
     for i, d in enumerate(child.get("sleep", {}).get("days", [])):
         for field in ("wakings", "totalHours"):

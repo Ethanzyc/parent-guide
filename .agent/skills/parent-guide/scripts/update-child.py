@@ -141,11 +141,12 @@ def execute(argv=None):
         msg = f"strategy {args.id} status -> {args.status}" + (f" ({args.note})" if args.note else "")
 
     elif args.action == "check":
-        problems = _check(child)
+        problems, ph = _check(child)
+        note = f"\n  提示: 还有 {ph} 处模板占位值待替换为真实内容" if ph else ""
         if problems:
             return 1, (f"FAIL: 档案有 {len(problems)} 处问题\n"
-                       + "\n".join(f"  - {p}" for p in problems))
-        return 0, f"PASS: 档案结构合规(孩子:{child.get('name', '?')})"
+                       + "\n".join(f"  - {p}" for p in problems) + note)
+        return 0, f"PASS: 档案结构合规(孩子:{child.get('name', '?')})" + note
 
     else:  # pragma: no cover
         return 1, "ERROR: unknown action"
@@ -157,27 +158,41 @@ def execute(argv=None):
 DATE_FULL = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 DATE_SHORT = re.compile(r"^\d{2}-\d{2}$")
 MILESTONE_STATUS = {"ok", "watch", "todo"}
+# template placeholder values: "not filled yet" is guidance, not an error
+PLACEHOLDERS = {"MM-DD", "YYYY-MM-DD", "HH:MM", "女|男",
+                "effective|partial|ineffective", "孩子小名"}
 
 
 def _check(child):
-    """Validate one child dict; returns a list of human-readable problems."""
+    """Validate one child dict; returns (problems, placeholder_count)."""
     problems = []
+    placeholders = [0]
+
+    def is_ph(where, value):
+        if str(value) in PLACEHOLDERS:
+            placeholders[0] += 1
+            return True
+        return False
 
     if not str(child.get("name") or "").strip():
         problems.append("name: 必填(孩子小名)")
+    else:
+        is_ph("name", child.get("name"))
     if not DATE_FULL.match(str(child.get("birthdate") or "")):
-        problems.append("birthdate: 必须是 YYYY-MM-DD 格式(现在是 "
-                        f"{child.get('birthdate')!r})")
+        if not is_ph("birthdate", child.get("birthdate")):
+            problems.append("birthdate: 必须是 YYYY-MM-DD 格式(现在是 "
+                            f"{child.get('birthdate')!r})")
 
     def short_date(where, value):
         if not DATE_SHORT.match(str(value or "")):
-            problems.append(f"{where}: 日期须为 MM-DD(现在是 {value!r})")
+            if not is_ph(where, value):
+                problems.append(f"{where}: 日期须为 MM-DD(现在是 {value!r})")
 
     for i, x in enumerate(child.get("activeConcerns", [])):
         short_date(f"activeConcerns[{i}].since", x.get("since"))
     for i, s in enumerate(child.get("strategies", [])):
         short_date(f"strategies[{i}].started", s.get("started"))
-        if s.get("status") not in VALID_STATUS:
+        if s.get("status") not in VALID_STATUS and not is_ph(f"strategies[{i}].status", s.get("status")):
             problems.append(f"strategies[{i}].status: 不在枚举内(现在是 {s.get('status')!r},"
                             f"可选 {'/'.join(sorted(VALID_STATUS))})")
         if not re.match(r"^[SM]\d+$", str(s.get("id") or "")):
@@ -206,7 +221,7 @@ def _check(child):
                 problems.append(f"milestones.{months}.items[{j}].status: 不在枚举 "
                                 f"ok/watch/todo(现在是 {item.get('status')!r})")
 
-    return problems
+    return problems, placeholders[0]
 
 
 def main():

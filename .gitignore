@@ -1,0 +1,6 @@
+# user data (single JSON, never committed)
+/data/
+# tooling
+.DS_Store
+web/node_modules/
+.test-runs/

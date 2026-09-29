@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>parent-guide · 成长视图</title>
+<!-- Embedded defaults: served as fallbacks in file mode (no backend) and
+     replaced wholesale when exporting a single-file report. Fictional demo data. -->
+<script id="pg-embedded-page" type="application/json">
+{
+  "version": 2, "title": "桃子的成长视图", "child": "demo-child",
+  "layout": { "cols": 12, "rowHeight": 72, "margin": 12 },
+  "blocks": [
+    { "id": "profile", "type": "profile", "x": 0, "y": 0, "w": 4, "h": 5 },
+    { "id": "milestone-30m", "type": "milestone", "x": 4, "y": 0, "w": 4, "h": 7, "props": { "months": 30 } },
+    { "id": "sleep-7d", "type": "sleep-week", "x": 8, "y": 0, "w": 4, "h": 6 },
+    { "id": "strategy-effect", "type": "strategy-effect", "x": 0, "y": 7, "w": 7, "h": 6, "props": { "status": "all" } },
+    { "id": "followup", "type": "followup", "x": 7, "y": 7, "w": 5, "h": 5 },
+    { "id": "notes", "type": "note", "x": 0, "y": 13, "w": 12, "h": 4, "props": { "limit": 5 } }
+  ]
+}
+</script>
+<script id="pg-embedded-data" type="application/json">
+{
+  "_meta": { "notice": "示例数据(虚构)。真实数据存用户本地 data/ 目录,绝不随页面分发。" },
+  "demo-child": {
+    "name": "桃子(示例)", "birthdate": "2024-04-10",
+    "currentFocus": ["自主进食", "如厕训练", "夜醒回落"],
+    "activeConcerns": [{ "since": "09-05", "text": "就餐时要求看动画片,不给则哭闹", "status": "观察中" }],
+    "milestones": { "30": { "source": "CDC「Learn the Signs. Act Early.」2.5 岁检查表(公有领域,中文化示例)", "items": [
+      { "domain": "社交/情感", "status": "ok", "text": "和其他孩子玩耍时,会注意到对方受伤或不开心" },
+      { "domain": "社交/情感", "status": "watch", "text": "可能开始轮流玩游戏(观察中)" },
+      { "domain": "语言/沟通", "status": "ok", "text": "会说约 50 个以上的词,能说两个词以上的句子" },
+      { "domain": "语言/沟通", "status": "ok", "text": "会问「是什么」「为什么」" },
+      { "domain": "认知", "status": "watch", "text": "会用物体玩假装游戏(如把积木当电话)" },
+      { "domain": "动作", "status": "ok", "text": "会用脚尖站立、踢球" },
+      { "domain": "动作", "status": "todo", "text": "单脚跳尚未出现(30 月龄内属正常范围,持续观察)" }
+    ] } },
+    "sleep": { "days": [
+      { "date": "09-22", "bedtime": "21:35", "wakings": 2, "totalHours": 10.2 },
+      { "date": "09-23", "bedtime": "21:10", "wakings": 1, "totalHours": 10.8 },
+      { "date": "09-24", "bedtime": "21:50", "wakings": 2, "totalHours": 9.9 },
+      { "date": "09-25", "bedtime": "21:20", "wakings": 1, "totalHours": 10.6 },
+      { "date": "09-26", "bedtime": "21:05", "wakings": 1, "totalHours": 10.9 },
+      { "date": "09-27", "bedtime": "21:40", "wakings": 0, "totalHours": 11.1 },
+      { "date": "09-28", "bedtime": "21:15", "wakings": 1, "totalHours": 10.7 }
+    ], "note": "入睡时间目标 21:30 前;夜醒回落中(上周均 2.4 次 → 本周均 1.1 次)" },
+    "strategies": [
+      { "id": "M1", "name": "正面强化", "applied": "如厕:每次成功坐盆后立即具体表扬(「你自己走到小马桶,真厉害」),不物质奖励", "started": "09-08", "followup": "09-22 回访:白天尿裤从 4 次/天降到 1 次/天,午睡起床会主动说「要小便」", "evidence": "回访 ×2,持续有效", "status": "effective" },
+      { "id": "S12", "name": "注意力转移", "applied": "就餐看动画片哭闹:预告+替代选择(「吃饭时不看动画片,你可以选用蓝色碗还是黄色碗」)", "started": "09-12", "followup": "09-19 回访:哭闹时长从 8 分钟缩短到 2 分钟内,但取消预告时仍反弹", "evidence": "回访 ×1,部分有效", "status": "partial" }
+    ],
+    "followups": [
+      { "due": "10-03", "topic": "S12 注意力转移:预告撤除后是否稳定(第三次回访)", "status": "pending" },
+      { "due": "10-10", "topic": "夜醒:验证「睡前 30 分钟无屏幕」满两周后的夜醒次数", "status": "pending" }
+    ],
+    "notes": [
+      { "date": "09-20", "text": "第一次完全自己穿上鞋子(左右还经常反)" },
+      { "date": "09-24", "text": "在游乐场主动把秋千让给排队的小妹妹" },
+      { "date": "09-27", "text": "夜里 23:40 哭醒一次,喝水后 5 分钟内自己睡着(以前要抱睡 20 分钟)" }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+<div id="app"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

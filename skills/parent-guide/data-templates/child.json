@@ -1,0 +1,55 @@
+{
+  "_meta": {
+    "notice": "孩子档案模板:复制到你的 data/ 目录改名为 child.json 并填入真实内容。此文件存你本地,绝不入库/上传。字段结构是 hot-context.sh 的契约,改字段名需同步改脚本。birthdate 先用示例日期保证脚本开箱即跑,建档后务必改成真实生日。"
+  },
+  "child": {
+    "name": "孩子小名",
+    "birthdate": "2024-04-10",
+    "currentFocus": ["当前关注点,如:自主进食"],
+    "profile": {
+      "gender": "女|男",
+      "caregivers": "主要照顾人与分工",
+      "language": "语言发展一句话",
+      "temperament": "气质特点一句话",
+      "comfortObject": "安抚物(如有)",
+      "familyNotes": "家庭管教口径、长辈观点等背景",
+      "preferences": {
+        "books": "绘本偏好",
+        "activities": "活动偏好"
+      }
+    },
+    "activeConcerns": [
+      { "since": "MM-DD", "text": "正在观察的问题", "status": "观察中" }
+    ],
+    "milestones": {},
+    "sleep": {
+      "days": [
+        { "date": "MM-DD", "bedtime": "HH:MM", "wakings": 0, "totalHours": 0.0 }
+      ],
+      "note": "睡眠目标与趋势一句话"
+    },
+    "strategies": [
+      {
+        "id": "S1",
+        "name": "策略名",
+        "applied": "具体怎么用",
+        "started": "MM-DD",
+        "followup": "回访日期:观察到什么",
+        "evidence": "回访 ×N,效果",
+        "status": "effective|partial|ineffective"
+      }
+    ],
+    "suspended": [
+      { "since": "MM-DD", "topic": "挂起的计划与原因", "status": "延期待重启" }
+    ],
+    "experiments": [
+      { "since": "MM-DD", "name": "试验名", "detail": "设计:变量、配合、单变量原则" }
+    ],
+    "followups": [
+      { "due": "MM-DD", "topic": "回访什么", "status": "pending" }
+    ],
+    "notes": [
+      { "date": "MM-DD", "text": "今天发生的一件事" }
+    ]
+  }
+}

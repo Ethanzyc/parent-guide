@@ -20,7 +20,7 @@
 需要:一个支持 Agent Skills 的 AI 助手(zcode / Claude Code / OpenClaw / Claude 桌面端等 47+ 宿主,或任何能读 Markdown 的 LLM 客户端)+ Python 3(页面功能,可选)。
 
 ```bash
-git clone <repo-url> parent-guide && cd parent-guide
+git clone https://github.com/Ethanzyc/parent-guide.git && cd parent-guide
 
 # 1) 装 skill 到你的 AI 助手(以 zcode / Claude Code 为例)
 cp -R skills/parent-guide ~/.zcode/skills/        # 或 ~/.claude/skills/

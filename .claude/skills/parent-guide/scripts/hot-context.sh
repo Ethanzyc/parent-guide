@@ -31,6 +31,21 @@ print(f"== {c['name']} 热区 | {today} ==")
 print(f"月龄:{months} 个月(生日 {c['birthdate']})| 今日季节:{season}")
 print(f"照顾:{caregivers} | 安抚物:{comfort}")
 print(f"当前重点:{'、'.join(c.get('currentFocus', []))}")
+
+# milestone status: latest assessed month-age at/below current age (gap visibility)
+ms = c.get("milestones") or {}
+ks = sorted(int(k) for k in ms if str(k).isdigit())
+if not ks:
+    print("里程碑:未盘点(首次发育话题先做基线盘点,Run update-child.py set-milestone 落档)")
+else:
+    fit = [k for k in ks if k <= months]
+    mk = (fit or ks)[-1]
+    pack = ms[str(mk)]
+    it = pack.get("items", [])
+    cnt = {s: sum(1 for x in it if x.get("status") == s) for s in ("ok", "watch", "todo")}
+    ap = f",盘于{pack['assessed']}" if pack.get("assessed") else ""
+    print(f"里程碑:{mk}月已盘{ap} 已会{cnt['ok']}/观察{cnt['watch']}/未现{cnt['todo']}"
+          f"(L3 对照变化;重盘整组覆盖)")
 print()
 print("[活跃问题]")
 for x in c.get("activeConcerns", []):

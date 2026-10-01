@@ -17,7 +17,7 @@ const dots = (w) => '●'.repeat(w || 0) || '—'
     <div class="src">{{ kid.sleep?.note || '' }} · 第三列=总时长,第四列=夜醒次数</div>
   </template>
   <template v-else>
-    <h3>📦 卡片</h3>
-    <div class="src">数据缺失:近 7 天睡眠数据</div>
+    <h3>😴 一周睡眠</h3>
+    <div class="src">逐日睡眠默认不记(策略回访以对话与事件记录为准);此卡可在编辑布局中移除。</div>
   </template>
 </template>

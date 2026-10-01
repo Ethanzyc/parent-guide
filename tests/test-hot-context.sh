@@ -13,5 +13,6 @@ printf '%s\n' "$OUT" | grep -q "S12"        || { echo "FAIL: no active strategy"
 printf '%s\n' "$OUT" | grep -q "10-03"      || { echo "FAIL: no followup date"; exit 1; }
 printf '%s\n' "$OUT" | grep -q "戒奶嘴"      || { echo "FAIL: no suspended item"; exit 1; }
 printf '%s\n' "$OUT" | grep -q "桃子"        || { echo "FAIL: no child name"; exit 1; }
+printf '%s\n' "$OUT" | grep -q "里程碑"      || { echo "FAIL: no milestone status line"; exit 1; }
 
 echo "PASS: hot-context ($LINES lines)"

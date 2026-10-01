@@ -28,14 +28,6 @@
       }
     },
     {
-      "id": "sleep-7d",
-      "type": "sleep-week",
-      "x": 8,
-      "y": 0,
-      "w": 4,
-      "h": 6
-    },
-    {
       "id": "strategy-effect",
       "type": "strategy-effect",
       "x": 0,

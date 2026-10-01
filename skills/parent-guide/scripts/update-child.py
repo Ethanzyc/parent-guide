@@ -135,6 +135,13 @@ def execute(argv=None):
     p.add_argument("--status", required=True, choices=sorted(VALID_STATUS))
     p.add_argument("--note", default=None)
 
+    p = sub.add_parser("set-milestone", help="record an L3 assessment for one "
+                      "month-age: whole-set replace (re-assessment overwrites)")
+    p.add_argument("--months", required=True, type=int)
+    p.add_argument("--items", required=True,
+                   help='JSON array [{"domain","text","status":ok|watch|todo},...]')
+    p.add_argument("--source", default=None, help="e.g. CDC X 岁检查表")
+
     sub.add_parser("check", help="validate the archive: required fields, date "
                   "formats (YYYY-MM-DD / MM-DD), status enums, numeric fields, "
                   "id uniqueness; human-readable problem list")
@@ -289,6 +296,33 @@ def execute(argv=None):
         r["status"] = args.status
         msg = f"reminder {args.due}「{args.topic}」-> {args.status}"
 
+    elif args.action == "set-milestone":
+        try:
+            items = json.loads(args.items)
+        except ValueError:
+            return 1, "ERROR: --items must be a JSON array of {domain,text,status}"
+        if not isinstance(items, list) or not items:
+            return 1, "ERROR: --items must be a non-empty JSON array"
+        clean = []
+        for i, it in enumerate(items):
+            if (not isinstance(it, dict) or not str(it.get("domain", "")).strip()
+                    or not str(it.get("text", "")).strip()):
+                return 1, f"ERROR: items[{i}] needs non-empty domain/text"
+            if it.get("status") not in MILESTONE_STATUS:
+                return 1, (f"ERROR: items[{i}].status must be one of "
+                           f"{'/'.join(('ok', 'watch', 'todo'))} (got {it.get('status')!r})")
+            clean.append({"domain": str(it["domain"]), "text": str(it["text"]),
+                          "status": it["status"]})
+        counts = {s: sum(1 for x in clean if x["status"] == s) for s in sorted(MILESTONE_STATUS)}
+        child.setdefault("milestones", {})[str(args.months)] = {
+            "source": args.source or "L3 盘点(CDC 检查表口径)",
+            "assessed": _today(),
+            "items": clean,
+        }
+        msg = (f"recorded milestone assessment {args.months}m: "
+               f"已会 {counts['ok']} / 观察 {counts['watch']} / 未现 {counts['todo']}"
+               f"(整组覆盖,重盘会替换该月龄整组)")
+
     elif args.action == "check":
         problems, ph = _check(child)
         note = f"\n  提示: 还有 {ph} 处模板占位值待替换为真实内容" if ph else ""
@@ -384,6 +418,10 @@ def _check(child):
             if item.get("status") not in MILESTONE_STATUS:
                 problems.append(f"milestones.{months}.items[{j}].status: 不在枚举 "
                                 f"ok/watch/todo(现在是 {item.get('status')!r})")
+        assessed = pack.get("assessed")
+        if assessed and not (DATE_FULL.match(str(assessed)) or DATE_SHORT.match(str(assessed))):
+            problems.append(f"milestones.{months}.assessed: 须为 YYYY-MM-DD 或 MM-DD"
+                            f"(现在是 {assessed!r})")
 
     return problems, placeholders[0]
 

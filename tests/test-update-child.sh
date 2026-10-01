@@ -250,5 +250,46 @@ class T(unittest.TestCase):
         self.assertEqual(code, 0, msg)
         self.assertIn("入托", self.child()["profile"]["childcarePlan"])
 
+    def test_26_set_milestone_records_and_replaces(self):
+        items = json.dumps([
+            {"domain": "语言/沟通", "text": "会说两个词以上的句子", "status": "ok"},
+            {"domain": "动作", "text": "单脚跳", "status": "todo"},
+        ], ensure_ascii=False)
+        code, msg = run(self.tmp, "set-milestone", "--months", "30", "--items", items,
+                        "--source", "CDC 2.5岁检查表")
+        self.assertEqual(code, 0, msg)
+        pack = self.child()["milestones"]["30"]
+        self.assertEqual(len(pack["items"]), 2)
+        self.assertEqual(pack["source"], "CDC 2.5岁检查表")
+        self.assertIn("assessed", pack)
+        self.assertIn("已会 1", msg)
+        # 重新盘点 = 整组覆盖,不追加
+        code, msg = run(self.tmp, "set-milestone", "--months", "30", "--items", items)
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(len(self.child()["milestones"]["30"]["items"]), 2)
+
+    def test_27_set_milestone_fail_fast(self):
+        code, msg = run(self.tmp, "set-milestone", "--months", "30", "--items", "not-json")
+        self.assertNotEqual(code, 0)
+        code, msg = run(self.tmp, "set-milestone", "--months", "30", "--items", "[]")
+        self.assertNotEqual(code, 0)
+        bad = json.dumps([{"domain": "x", "text": "y", "status": "great"}])
+        code, msg = run(self.tmp, "set-milestone", "--months", "30", "--items", bad)
+        self.assertNotEqual(code, 0)
+        self.assertIn("ok/watch/todo", msg)
+        miss = json.dumps([{"domain": "", "text": "y", "status": "ok"}])
+        code, msg = run(self.tmp, "set-milestone", "--months", "30", "--items", miss)
+        self.assertNotEqual(code, 0)
+
+    def test_28_check_validates_milestone_assessed_date(self):
+        c = self.child()
+        c["milestones"] = {"30": {"source": "x", "assessed": "2026/10/01", "items": []}}
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+        code, msg = run(self.tmp, "check")
+        self.assertNotEqual(code, 0)
+        self.assertIn("assessed", msg)
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

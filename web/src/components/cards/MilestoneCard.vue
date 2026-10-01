@@ -22,7 +22,7 @@ const pack = computed(() => {
     <div class="src">来源:{{ pack.data.source }}</div>
   </template>
   <template v-else>
-    <h3>📦 卡片</h3>
-    <div class="src">数据缺失:月龄 {{ pack.m }} 的里程碑数据</div>
+    <h3>🎯 {{ pack.m }} 个月里程碑<span class="tag">{{ block.type }}</span></h3>
+    <div class="src">还没盘过这个月龄。回到对话说「做个发育盘点」,几分钟判定完会显示在这里。</div>
   </template>
 </template>

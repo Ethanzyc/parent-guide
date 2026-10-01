@@ -3,10 +3,12 @@ import { onMounted, ref } from 'vue'
 import { state, init, currentChild, applyGeometry, applyJsonPage, resetDefault } from './lib/store.js'
 import GridBoard from './components/GridBoard.vue'
 import JsonDrawer from './components/JsonDrawer.vue'
+import ShareModal from './components/ShareModal.vue'
 
 onMounted(init)
 
 const drawerOpen = ref(false)
+const shareState = ref(null)   // null | { level: 'page' | 'card', block }
 const print = () => window.print()
 
 function onApplyPage(next) {
@@ -59,22 +61,27 @@ function exportReport() {
               @click="toggleEdit">{{ state.editing ? '完成编辑' : '编辑布局' }}</button>
       <button class="btn" @click="drawerOpen = true">编辑配置</button>
       <button class="btn" @click="resetDefault()">重置默认</button>
+      <button class="btn" @click="shareState = { level: 'page', block: null }">分享长图</button>
       <button class="btn" @click="exportReport">导出单文件报告</button>
       <button class="btn primary" @click="print">导出 PDF</button>
     </div>
 
     <div class="banner">
       <b>本地服务模式</b>(python3 server.py --open):「编辑布局」后整卡拖拽自由定位、右下角拉角拉伸宽高,松手自动紧凑,改动 300ms 防抖写回 data/page.json;
-      <b>文件模式</b>(双击打开):流式只读。<b>导出单文件报告</b>=转发形态。
+      <b>文件模式</b>(双击打开):流式只读。<b>分享长图</b>=发家人微信(卡片右上角 ⤴ 可单卡/单条);<b>导出单文件报告</b>=迁移/存档。
     </div>
 
     <GridBoard :key="state.version" :page="state.page" :kid="currentChild()"
                :editing="state.editing" :server-mode="state.serverMode"
-               @geometry="applyGeometry" />
+               @geometry="applyGeometry" @share-card="b => shareState = { level: 'card', block: b }" />
 
     <footer class="page">示例数据为虚构 · 布局模型:{x, y, w, h} 网格坐标(与 grid-layout-plus 同构)</footer>
 
     <JsonDrawer :open="drawerOpen" :page="state.page"
                 @close="drawerOpen = false" @apply="onApplyPage" />
+
+    <ShareModal :open="!!shareState" :level="shareState?.level || 'card'"
+                :block="shareState?.block" :page="state.page" :kid="currentChild()"
+                @close="shareState = null" />
   </template>
 </template>

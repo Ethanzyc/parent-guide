@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "gridstack": "^11.1.0",
+    "modern-screenshot": "^4.7.0",
     "vue": "^3.5.0"
   },
   "devDependencies": {

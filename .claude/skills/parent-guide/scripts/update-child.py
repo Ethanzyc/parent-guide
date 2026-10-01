@@ -44,6 +44,7 @@ from pathlib import Path
 # shared by write actions and `check`, so they can never drift apart.
 VALID_STATUS = {"active", "effective", "partial", "ineffective", "suspended", "absorbed"}
 MILESTONE_STATUS = {"ok", "watch", "todo"}
+CONCERN_STATUS = {"观察中", "已解决"}
 NOTE_PRECISION = {"day", "week", "month"}
 DATE_FULL = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # birthdate
 DATE_SHORT = re.compile(r"^\d{2}-\d{2}$")        # MM-DD everywhere else
@@ -141,6 +142,15 @@ def execute(argv=None):
     p.add_argument("--items", required=True,
                    help='JSON array [{"domain","text","status":ok|watch|todo},...]')
     p.add_argument("--source", default=None, help="e.g. CDC X 岁检查表")
+
+    p = sub.add_parser("set-focus", help="replace currentFocus wholesale "
+                      "(derived from conversation evidence; empty = all resolved)")
+    p.add_argument("--items", required=True, help="comma-separated; empty string clears")
+
+    p = sub.add_parser("set-concern-status", help="transition an activeConcern "
+                      "(resolved stays as history, hidden from hot context)")
+    p.add_argument("--text", required=True, help="exact concern text as in the archive")
+    p.add_argument("--status", required=True, choices=sorted(CONCERN_STATUS))
 
     sub.add_parser("check", help="validate the archive: required fields, date "
                   "formats (YYYY-MM-DD / MM-DD), status enums, numeric fields, "
@@ -326,6 +336,25 @@ def execute(argv=None):
                f"已会 {counts['ok']} / 观察 {counts['watch']} / 未现 {counts['todo']}"
                f"(整组覆盖,重盘会替换该月龄整组)")
 
+    elif args.action == "set-focus":
+        old = list(child.get("currentFocus", []))
+        new = [f.strip() for f in args.items.split(",") if f.strip()]
+        child["currentFocus"] = new
+        dropped = [f for f in old if f not in new]
+        msg = ("updated currentFocus -> " + ("、".join(new) if new else "(空)")
+               + (f" | 划掉:{'/'.join(dropped)}" if dropped else "")
+               + " | 整组覆盖,以对话证据为准")
+
+    elif args.action == "set-concern-status":
+        items = child.setdefault("activeConcerns", [])
+        c = next((x for x in items if x.get("text") == args.text), None)
+        if c is None:
+            existing = ";".join(x.get("text", "")[:20] for x in items) or "(无)"
+            return 1, (f"ERROR: concern not found:{args.text[:30]} | 现有:{existing}")
+        c["status"] = args.status
+        msg = f"concern「{args.text[:30]}」-> {args.status}" + \
+              ("(留在档案作历史,热区不再显示)" if args.status == "已解决" else "")
+
     elif args.action == "check":
         problems, ph = _check(child)
         note = f"\n  提示: 还有 {ph} 处模板占位值待替换为真实内容" if ph else ""
@@ -368,6 +397,9 @@ def _check(child):
 
     for i, x in enumerate(child.get("activeConcerns", [])):
         short_date(f"activeConcerns[{i}].since", x.get("since"))
+        if x.get("status") not in CONCERN_STATUS:
+            problems.append(f"activeConcerns[{i}].status: 不在枚举 观察中/已解决"
+                            f"(现在是 {x.get('status')!r})")
     for i, s in enumerate(child.get("strategies", [])):
         short_date(f"strategies[{i}].started", s.get("started"))
         if s.get("status") not in VALID_STATUS and not is_ph(f"strategies[{i}].status", s.get("status")):

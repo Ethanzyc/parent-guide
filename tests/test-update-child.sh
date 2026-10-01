@@ -305,5 +305,37 @@ class T(unittest.TestCase):
         code2, msg2 = run(self.tmp, "check")
         self.assertEqual(code2, 0, msg2)
 
+    def test_30_set_focus_replaces_whole_set(self):
+        code, msg = run(self.tmp, "set-focus", "--items", "如厕训练,吃饭要喂")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["currentFocus"], ["如厕训练", "吃饭要喂"])
+        self.assertIn("自主进食", msg)          # 划掉的旧项要在回执里可见
+        # 清空也合法(战场全部解决)
+        code, msg = run(self.tmp, "set-focus", "--items", "")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["currentFocus"], [])
+
+    def test_31_set_concern_status_flow(self):
+        code, msg = run(self.tmp, "set-concern-status",
+                        "--text", "就餐时要求看动画片,不给则哭闹", "--status", "已解决")
+        self.assertEqual(code, 0, msg)
+        c = self.child()["activeConcerns"][0]
+        self.assertEqual(c["status"], "已解决")
+        c["status"] = "观察中"
+        code, msg = run(self.tmp, "set-concern-status",
+                        "--text", "不存在的问题", "--status", "已解决")
+        self.assertNotEqual(code, 0)
+        self.assertIn("现有", msg)
+
+    def test_32_check_validates_concern_status(self):
+        c = self.child()
+        c["activeConcerns"] = [{"since": "09-05", "text": "x", "status": "好了"}]
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+        code, msg = run(self.tmp, "check")
+        self.assertNotEqual(code, 0)
+        self.assertIn("activeConcerns", msg)
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

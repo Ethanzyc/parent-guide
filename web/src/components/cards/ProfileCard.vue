@@ -1,7 +1,11 @@
 <script setup>
+import { computed } from 'vue'
 import { monthsAge } from '../../lib/util.js'
-defineProps({ block: Object, kid: Object })
+const props = defineProps({ block: Object, kid: Object })
 const age = (birthdate) => monthsAge(birthdate)
+// 已解决留档作历史,「活跃问题」区只显示仍在观察的
+const liveConcerns = computed(() =>
+  (props.kid?.activeConcerns || []).filter(c => c.status !== '已解决'))
 </script>
 
 <template>
@@ -12,9 +16,9 @@ const age = (birthdate) => monthsAge(birthdate)
     <b>当前关注</b>
     <span><span v-for="f in (kid.currentFocus || [])" :key="f" class="chip">{{ f }}</span></span>
   </div>
-  <template v-if="(kid.activeConcerns || []).length">
+  <template v-if="liveConcerns.length">
     <div class="kv" style="margin-top:6px"><b>活跃问题</b></div>
-    <div v-for="(c, i) in kid.activeConcerns" :key="i" class="kv">
+    <div v-for="(c, i) in liveConcerns" :key="i" class="kv">
       <b>{{ c.since || '' }} 起</b><span>{{ c.text }}({{ c.status }})</span>
     </div>
   </template>

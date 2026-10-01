@@ -87,6 +87,8 @@
 | 回访发生 | `update-child.py mark-revisited --id ... --result ... [--status effective/partial/ineffective]`(回访计数自动+1) |
 | 策略被新计划取代/挂起 | `update-child.py set-status --id ... --status absorbed/suspended [--note ...]` |
 | 值得记的事件 | `update-child.py add-note --date ... --text ...`(保守:只记对养育决策有影响的) |
+| 当前重点更新(整组覆盖,从对话证据派生) | `update-child.py set-focus --items 发脾气,如厕`(空字符串=清空;划掉旧项在回执可见) |
+| 活跃问题流转 | `update-child.py set-concern-status --text ... --status 观察中/已解决`(已解决留档作历史,热区不再显示) |
 
 脚本保证:字段规范化、JSON 校验、原子写+写前备份(child.json.bak)、防重复。
 `--data` 参数指定数据目录(默认 ./data)。
@@ -139,6 +141,20 @@
   「该想想托班/幼儿园了」(提醒做决定本身就是价值);有计划 → 按表生成
   报名/准备/材料节点提醒;「不送」→ 永不再提。
 - 本地差异(报名窗口/材料)以当地要求为准,提醒时注明「以本地政策为准」。
+
+## 2.7 档案保鲜(语义触发,不搞定期问卷)
+
+时变字段不搞定期盘点仪式(唯一的例外:半年大体检,见 templates.md L3 第 6 条,
+绑在发育盘点上)。日常靠**对话中碰到时核实**:
+
+- **focus/concern 出现「已解决」证据**(事件、回访结果、家长原话)→ 主动提议
+  划掉:`set-focus`(整组覆盖)或 `set-concern-status --status 已解决`;
+  **决定权留家长**,提议不带催促。
+- 聊到绘本/活动 → 顺带核 preferences;聊到作息 → 顺带刷 sleep.note;
+  画像字段(气质/安抚物/照料者)出现在话题里时,先对档案现值,变了就 set-profile。
+- active 策略长期没有回访动作 → 收尾可给「清点一下在跑的策略」选项
+  (effective 且回访≥2 → 建议吸收为日常 set-status absorbed;suspended → 问还挂吗)。
+- **原则**:档案在对话中自然保鲜;没有任何证据时不动字段——静默 ≠ 过期。
 
 ## 3. 语料外断言协议
 

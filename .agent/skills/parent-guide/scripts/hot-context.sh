@@ -49,6 +49,8 @@ else:
 print()
 print("[活跃问题]")
 for x in c.get("activeConcerns", []):
+    if x.get("status") == "已解决":
+        continue    # 留档作历史,不再是战场
     print(f"- ({x['since']}) {x['text']} —— {x['status']}")
 print()
 print("[活跃策略]")

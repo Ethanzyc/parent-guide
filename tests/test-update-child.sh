@@ -291,5 +291,19 @@ class T(unittest.TestCase):
         self.assertNotEqual(code, 0)
         self.assertIn("assessed", msg)
 
+    def test_29_init_optional_gender_first_round(self):
+        (self.tmp / "child.json").unlink()
+        code, msg = run(self.tmp, "init", "--name", "小明", "--birthdate", "2023-06-15",
+                        "--caregivers", "妈妈为主", "--gender", "女孩")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["profile"]["gender"], "女孩")
+        # 省略 --gender:模板占位保留(=未填,check 计数不报错)
+        (self.tmp / "child.json").unlink()
+        code, msg = run(self.tmp, "init", "--name", "小明", "--birthdate", "2023-06-15",
+                        "--caregivers", "妈妈为主")
+        self.assertEqual(code, 0, msg)
+        code2, msg2 = run(self.tmp, "check")
+        self.assertEqual(code2, 0, msg2)
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

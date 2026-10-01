@@ -151,6 +151,7 @@ def execute(argv=None):
     p.add_argument("--name", required=True)
     p.add_argument("--birthdate", required=True)
     p.add_argument("--caregivers", required=True)
+    p.add_argument("--gender", default=None, help="optional, first-round question")
     p.add_argument("--temperament", default=None)
     p.add_argument("--focus", default=None, help="comma-separated currentFocus items")
 
@@ -185,6 +186,8 @@ def execute(argv=None):
         child["name"] = args.name
         child["birthdate"] = args.birthdate
         child["profile"]["caregivers"] = args.caregivers
+        if args.gender:
+            child["profile"]["gender"] = args.gender
         if args.temperament:
             child["profile"]["temperament"] = args.temperament
         child["currentFocus"] = [f.strip() for f in (args.focus or "").split(",") if f.strip()]

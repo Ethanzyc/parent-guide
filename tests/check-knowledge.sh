@@ -4,9 +4,19 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 K="$ROOT/knowledge"
 
-for f in milestones.md sleep.md nutrition.md emotion.md activities.md; do
+for f in milestones.md sleep.md nutrition.md emotion.md activities.md tantrum-cdc.md anticipatory.md; do
   [ -f "$K/$f" ] || { echo "FAIL: knowledge/$f missing"; exit 1; }
 done
+
+# provenance trio (source + ingest date + verification method) in every knowledge file header
+for f in milestones.md sleep.md nutrition.md emotion.md activities.md tantrum-cdc.md anticipatory.md; do
+  head -12 "$K/$f" | grep -q "入库" || { echo "FAIL: $f header lacks ingest-date line (入库)"; exit 1; }
+  head -12 "$K/$f" | grep -q "核对=" || { echo "FAIL: $f header lacks verification method (核对=)"; exit 1; }
+done
+
+# gap backlog: cross-conversation record that feeds batch corpus work
+[ -f "$K/BACKLOG.md" ] || { echo "FAIL: knowledge/BACKLOG.md missing"; exit 1; }
+grep -q "| 日期 |" "$K/BACKLOG.md" || { echo "FAIL: BACKLOG.md lacks table header"; exit 1; }
 
 M="$K/milestones.md"
 # attribution + public-domain note

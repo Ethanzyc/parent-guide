@@ -61,8 +61,10 @@
 | 发育里程碑 | knowledge/milestones.md(CDC 中文化) |
 | 睡眠专题 | knowledge/sleep.md |
 | 营养与喂养 | knowledge/nutrition.md |
-| 情绪与管教 | knowledge/emotion.md |
+| 情绪与管教(含崩溃干预证据链) | knowledge/emotion.md |
 | 活动与绘本 | knowledge/activities.md |
+| 戒安抚物(奶嘴) | knowledge/weaning.md |
+| 如厕训练 | knowledge/toilet.md |
 
 完整库缺失时:只用本核回答高频与安全问题;深主题在回答末尾注明
 「完整语料库未安装,本回答基于最小知识核;建议安装完整库获得专题深度」。

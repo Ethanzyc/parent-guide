@@ -15,4 +15,14 @@ printf '%s\n' "$OUT" | grep -q "戒奶嘴"      || { echo "FAIL: no suspended it
 printf '%s\n' "$OUT" | grep -q "桃子"        || { echo "FAIL: no child name"; exit 1; }
 printf '%s\n' "$OUT" | grep -q "里程碑"      || { echo "FAIL: no milestone status line"; exit 1; }
 
+# patterns layer: one line when data/patterns.md exists, nothing when it doesn't
+printf '%s\n' "$OUT" | grep -q "规律层:patterns.md" || { echo "FAIL: no patterns line with file present"; exit 1; }
+BARE="$(mktemp -d)"
+cp "$ROOT/tests/fixtures/test-env/data/child.json" "$BARE/"
+BARE_OUT="$(bash "$ROOT/skills/parent-guide/scripts/hot-context.sh" "$BARE")"
+if printf '%s\n' "$BARE_OUT" | grep -q "规律层"; then
+  echo "FAIL: patterns line printed without file"; exit 1
+fi
+rm -rf "$BARE"
+
 echo "PASS: hot-context ($LINES lines)"

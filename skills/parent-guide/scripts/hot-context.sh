@@ -6,7 +6,7 @@
 set -euo pipefail
 DATA_DIR="${1:-./data}"
 exec python3 - "$DATA_DIR/child.json" <<'PY'
-import json, sys
+import json, os, sys
 from datetime import date
 
 with open(sys.argv[1], encoding="utf-8") as f:
@@ -47,6 +47,14 @@ else:
     print(f"里程碑:{mk}月已盘{ap} 已会{cnt['ok']}/观察{cnt['watch']}/未现{cnt['todo']}"
           f"(L3 对照变化;重盘整组覆盖)")
 print()
+# strategy-patterns layer (distilled at half-year checkups): only surfaces
+# when the file exists -- no file, no line (hot zone stays minimal for L1).
+pat = os.path.join(os.path.dirname(sys.argv[1]), "patterns.md")
+if os.path.exists(pat):
+    with open(pat, encoding="utf-8") as f:
+        n = sum(1 for _ in f)
+    print(f"规律层:patterns.md({n} 行)——选策略前先读,失效清单=禁用项")
+    print()
 print("[活跃问题]")
 for x in c.get("activeConcerns", []):
     if x.get("status") == "已解决":

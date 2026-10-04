@@ -4,12 +4,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 K="$ROOT/knowledge"
 
-for f in milestones.md sleep.md nutrition.md emotion.md activities.md tantrum-cdc.md anticipatory.md; do
+for f in milestones.md sleep.md nutrition.md emotion.md activities.md tantrum-cdc.md anticipatory.md weaning.md toilet.md; do
   [ -f "$K/$f" ] || { echo "FAIL: knowledge/$f missing"; exit 1; }
 done
 
 # provenance trio (source + ingest date + verification method) in every knowledge file header
-for f in milestones.md sleep.md nutrition.md emotion.md activities.md tantrum-cdc.md anticipatory.md; do
+for f in milestones.md sleep.md nutrition.md emotion.md activities.md tantrum-cdc.md anticipatory.md weaning.md toilet.md; do
   head -12 "$K/$f" | grep -q "入库" || { echo "FAIL: $f header lacks ingest-date line (入库)"; exit 1; }
   head -12 "$K/$f" | grep -q "核对=" || { echo "FAIL: $f header lacks verification method (核对=)"; exit 1; }
 done

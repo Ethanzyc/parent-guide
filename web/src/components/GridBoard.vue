@@ -124,6 +124,8 @@ function scheduleSync() {
   transition: opacity .15s; }
 .card:hover .share-fab { opacity: 1; }
 .share-fab:hover { border-color: #e8734a; color: #e8734a; }
-/* 编辑布局时整卡都是拖拽把手,分享按钮退场防误触 */
-:global(body.editing) .share-fab { display: none; }
+/* 编辑布局时整卡都是拖拽把手,分享按钮退场防误触。
+   注意::global() 必须包裹完整选择器——混合形态 `:global(body.editing) .share-fab`
+   会被 Vue scoped 编译成 `body.editing{display:none}`(整页隐藏,编辑模式白屏的根因) */
+:global(body.editing .share-fab) { display: none; }
 </style>

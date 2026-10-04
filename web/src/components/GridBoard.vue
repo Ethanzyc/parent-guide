@@ -11,7 +11,7 @@
 // around"). Full rebuild happens only via :key bump (JSON apply / reset).
 import { onMounted, onBeforeUnmount, ref, shallowRef, watch, nextTick } from 'vue'
 import { GridStack } from 'gridstack'
-import { cardFor } from './cards/index.js'
+import { cardFor, isCustom } from './cards/index.js'
 import { clampInt } from '../lib/util.js'
 
 const props = defineProps({
@@ -20,7 +20,15 @@ const props = defineProps({
   editing: Boolean,
   serverMode: Boolean,
 })
-const emit = defineEmits(['geometry', 'share-card'])
+const emit = defineEmits(['geometry', 'share-card', 'remove', 'edit-props', 'props-update'])
+
+// Custom-card content updates (e.g. list checkboxes): patch the snapshot
+// element in place (keeps geometry write-back in sync with latest props),
+// then bubble up so App persists page.json. No rebuild needed.
+function onPropsUpdate(b, nextProps) {
+  b.props = { ...(b.props || {}), ...nextProps }
+  emit('props-update', { id: b.id, props: b.props })
+}
 
 const gridEl = ref(null)
 const items = shallowRef([])          // snapshot; field mutations stay silent
@@ -85,8 +93,12 @@ function scheduleSync() {
          :gs-x="b.x" :gs-y="b.y" :gs-w="b.w" :gs-h="b.h" :gs-id="b.id">
       <div class="grid-stack-item-content">
         <div class="card">
-          <component :is="cardFor(b.type)" :block="b" :kid="kid" />
-          <button class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
+          <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" />
+          <div v-if="editing" class="card-tools">
+            <button v-if="isCustom(b.type)" class="tool" title="编辑内容" @click.stop="emit('edit-props', b)">✎ 编辑</button>
+            <button class="tool danger" title="删除这张卡" @click.stop="emit('remove', b)">✕</button>
+          </div>
+          <button v-else class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
         </div>
       </div>
     </div>
@@ -96,8 +108,12 @@ function scheduleSync() {
   <main v-else class="grid">
     <section v-for="b in items" :key="b.id" class="card"
              :style="{ '--w': clampInt(b.w, 1, 12, 6) }">
-      <component :is="cardFor(b.type)" :block="b" :kid="kid" />
-      <button class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
+      <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" />
+      <div v-if="editing" class="card-tools">
+        <button v-if="isCustom(b.type)" class="tool" title="编辑内容" @click.stop="emit('edit-props', b)">✎ 编辑</button>
+        <button class="tool danger" title="删除这张卡" @click.stop="emit('remove', b)">✕</button>
+      </div>
+      <button v-else class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
     </section>
   </main>
 </template>
@@ -111,4 +127,10 @@ function scheduleSync() {
 .share-fab:hover { border-color: #e8734a; color: #e8734a; }
 /* 编辑布局时整卡都是拖拽把手,分享按钮退场防误触 */
 :global(body.editing) .share-fab { display: none; }
+/* 编辑模式的卡内工具(删除/编辑内容) */
+.card-tools { position: absolute; top: 8px; right: 8px; z-index: 3; display: flex; gap: 6px; }
+.tool { border: 1px solid #efe9e0; background: rgba(255,255,255,.95); color: #8a8478;
+  border-radius: 99px; padding: 2px 10px; font-size: 12px; cursor: pointer; }
+.tool:hover { border-color: #e8734a; color: #e8734a; }
+.tool.danger:hover { border-color: #d64545; color: #d64545; background: #fdf2f2; }
 </style>

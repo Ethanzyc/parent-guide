@@ -116,6 +116,21 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(code, 200)
         self.assertEqual(got["taozi"]["name"], "桃子")
 
+    def test_09_post_page_duplicate_ids_rejected(self):
+        page = {"version": 2, "blocks": [
+            {"id": "b1", "type": "profile", "x": 0, "y": 0, "w": 4, "h": 5},
+            {"id": "b1", "type": "list", "x": 4, "y": 0, "w": 4, "h": 5,
+             "props": {"title": "出门清单", "items": [{"text": "水杯", "done": False}]}}]}
+        code, resp = call("POST", "/api/page", page)
+        self.assertEqual(code, 400)
+        self.assertIn("重复", resp["error"])
+
+    def test_10_post_page_missing_id_rejected(self):
+        page = {"version": 2, "blocks": [
+            {"type": "profile", "x": 0, "y": 0, "w": 4, "h": 5}]}
+        code, resp = call("POST", "/api/page", page)
+        self.assertEqual(code, 400)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

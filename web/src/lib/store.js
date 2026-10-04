@@ -2,6 +2,7 @@
 //   server mode: GET/POST /api/page + /api/data (local server.py)
 //   file mode:   localStorage memory + embedded defaults from index.html
 import { reactive } from 'vue'
+import { CARD_META } from '../components/cards/index.js'
 
 export const state = reactive({
   page: null, data: null,
@@ -78,7 +79,16 @@ export function applyJsonPage(next) {
 }
 
 export function resetDefault() {
-  state.page = readEmbedded('pg-embedded-page')
+  const defaults = readEmbedded('pg-embedded-page')
+  // Reset restores the builtin default set, but custom cards carry user
+  // content (checklists etc.) -- keep them, stacked after the defaults.
+  const customs = (state.page?.blocks || []).filter(b => CARD_META[b.type]?.group === 'custom')
+  if (defaults && customs.length) {
+    const maxY = Math.max(0, ...defaults.blocks.map(b => (b.y || 0) + (b.h || 4)))
+    let y = maxY
+    defaults.blocks = [...defaults.blocks, ...customs.map(b => ({ ...b, x: 0, y: (y += b.h || 4) - (b.h || 4) }))]
+  }
+  state.page = defaults
   state.data = readEmbedded('pg-embedded-data')
   try { localStorage.removeItem('pg-page') } catch {}
   if (state.serverMode) persistPage()

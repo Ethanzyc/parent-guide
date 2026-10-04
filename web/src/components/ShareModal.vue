@@ -29,7 +29,16 @@ const ST = { active: '试行中', effective: '有效', partial: '部分有效',
   ineffective: '效果不佳', suspended: '已暂停', absorbed: '已成日常' }
 const MS = { ok: '已会', watch: '观察中', todo: '还没会' }
 const TITLES = { 'profile': '孩子档案', 'milestone': '里程碑', 'sleep-week': '一周睡眠',
-  'strategy-effect': '策略口径', 'followup': '待回访', 'note': '成长速记' }
+  'strategy-effect': '策略口径', 'followup': '待回访', 'note': '成长速记',
+  'focus': '当前重点', 'timeline': '事件时间线', 'reminder': '前瞻提醒',
+  'text': '便签', 'list': '清单' }
+
+// custom cards carry their own title in props
+function titleFor(b) {
+  if (!b) return ''
+  if (b.type === 'text' || b.type === 'list') return b.props?.title || TITLES[b.type]
+  return TITLES[b.type] || b.type
+}
 
 // 「第 N 天」:MM-DD 视为当年;算不出/太久远就退回「自 x-x」
 function dayNo(started) {
@@ -96,6 +105,39 @@ function rowsFor(b) {
     return { rows }
   }
   if (t === 'profile') return { rows: [{ kind: 'profile', label: '档案' }] }
+  if (t === 'focus') {
+    const rows = [
+      ...(kid.currentFocus || []).map(f => ({ kind: 'focus', label: f, text: f })),
+      ...(kid.activeConcerns || []).filter(c => (c?.status || '观察中') !== '已解决')
+        .map(c => ({ kind: 'concern', label: c.text, text: c.text, since: c.since })),
+    ]
+    return { rows }
+  }
+  if (t === 'timeline') {
+    const tag = b?.props?.tag
+    const notes = kid.notes || []
+    const picked = tag ? notes.filter(n => (n.tags || []).includes(tag)) : notes
+    const rows = picked.slice(-(b?.props?.limit || 5)).reverse()
+      .map(n => ({ kind: 'note', label: (n.precision && n.precision !== 'day' ? '≈' : '') + n.date,
+        approx: n.precision && n.precision !== 'day', date: n.date, tags: n.tags || [], text: n.text }))
+    return { rows }
+  }
+  if (t === 'reminder') {
+    const rows = (kid.reminders || [])
+      .filter(r => (r?.status || 'pending') === 'pending')
+      .sort((a, c) => String(a.due).localeCompare(String(c.due)))
+      .map(r => ({ kind: 'followup', label: `${r.due} ${r.topic}`.slice(0, 14), due: r.due, topic: r.topic }))
+    return { rows }
+  }
+  if (t === 'text') {
+    const text = (b?.props?.text || '').trim()
+    return { rows: text ? [{ kind: 'textline', label: '内容', text }] : [] }
+  }
+  if (t === 'list') {
+    const rows = (b?.props?.items || [])
+      .map((it, i) => ({ kind: 'listitem', label: it.text, text: it.text, done: !!it.done, i }))
+    return { rows }
+  }
   return { rows: [] }
 }
 
@@ -105,13 +147,13 @@ const sections = computed(() => {
     const bs = (props.page?.blocks || []).filter((b, i) => (blocksOn.value[i] ?? true) !== false)
     return bs.map(b => {
       const r = rowsFor(b)
-      return { id: b.id, type: b.type, title: TITLES[b.type] || b.type, rows: r.rows, extra: r }
+      return { id: b.id, type: b.type, title: titleFor(b), rows: r.rows, extra: r }
     })
   }
   if (!props.block) return []
   const r = rowsFor(props.block)
   const rows = r.rows.filter((_, i) => selected.value[i] !== false)
-  return [{ id: props.block.id, type: props.block.type, title: TITLES[props.block.type] || props.block.type, rows, extra: r }]
+  return [{ id: props.block.id, type: props.block.type, title: titleFor(props.block), rows, extra: r }]
 })
 
 const chips = computed(() => {   // card 级的条目勾选标签
@@ -124,7 +166,7 @@ const age = computed(() => {
   return m > 0 ? `${m} 个月` : ''
 })
 const dispName = computed(() => anonymized.value ? '宝宝' : (props.kid?.name || '宝宝'))
-const headTitle = computed(() => props.level === 'page' ? `${dispName.value}的成长视图` : (TITLES[props.block?.type] || '成长卡片'))
+const headTitle = computed(() => props.level === 'page' ? `${dispName.value}的成长视图` : (titleFor(props.block) || '成长卡片'))
 const headSub = computed(() =>
   [props.level === 'card' ? dispName.value : '', age.value, `截至 ${todayStr()}`].filter(Boolean).join(' · '))
 
@@ -136,7 +178,7 @@ watch(() => [props.open, props.level, props.block?.id], () => {
 function toggleRow(i) { selected.value[i] = selected.value[i] === false ? true : false }
 function toggleBlock(i) { blocksOn.value[i] = blocksOn.value[i] === false ? true : false }
 
-const fileTitle = () => props.level === 'page' ? '成长视图' : (TITLES[props.block?.type] || '卡片')
+const fileTitle = () => props.level === 'page' ? '成长视图' : (titleFor(props.block) || '卡片')
 async function save() {
   if (!nodeEl.value || exporting.value) return
   exporting.value = true
@@ -179,7 +221,7 @@ async function save() {
         </div>
         <div v-else-if="level === 'page'" class="share-chips">
           <span class="chip" :class="{ off: blocksOn[i] === false }" v-for="(b, i) in (page?.blocks || [])" :key="b.id"
-                @click="toggleBlock(i)">{{ blocksOn[i] === false ? '' : '✓ ' }}{{ TITLES[b.type] || b.type }}</span>
+                @click="toggleBlock(i)">{{ blocksOn[i] === false ? '' : '✓ ' }}{{ titleFor(b) }}</span>
         </div>
 
         <div class="share-scroll">
@@ -221,6 +263,21 @@ async function save() {
                   <div class="kv"><b>孩子</b><span>{{ dispName }}{{ age ? `(${age})` : '' }}</span></div>
                   <div class="kv" v-if="(kid.currentFocus || []).length"><b>当前关注</b>
                     <span class="focus">{{ kid.currentFocus.join('、') }}</span></div>
+                </div>
+                <div v-else-if="row.kind === 'focus'" class="sc-row focusrow">
+                  <span class="ftag">{{ row.text }}</span>
+                </div>
+                <div v-else-if="row.kind === 'concern'" class="sc-row concern">
+                  <span class="eye">👀</span>
+                  <span class="main">{{ row.text }}</span>
+                  <span v-if="row.since" class="since" style="margin:0 0 0 auto">自 {{ row.since }}</span>
+                </div>
+                <div v-else-if="row.kind === 'textline'" class="sc-row textline">
+                  <span class="main" style="white-space:pre-wrap">{{ row.text }}</span>
+                </div>
+                <div v-else-if="row.kind === 'listitem'" class="sc-row listrow" :class="{ done: row.done }">
+                  <span class="box">{{ row.done ? '☑' : '☐' }}</span>
+                  <span class="main">{{ row.text }}</span>
                 </div>
               </template>
 
@@ -302,6 +359,13 @@ async function save() {
   border-radius: 6px; padding: 0 6px; font-size: 11.5px; margin-right: 4px; }
 .profile .kv { display: flex; gap: 10px; padding: 3px 0; font-size: 15px; }
 .profile .kv b { flex: none; color: #8a8478; font-weight: 500; min-width: 4.5em; }
+.focusrow .ftag { display: inline-block; background: #fdeee7; color: #e8734a;
+  border-radius: 99px; padding: 3px 14px; font-size: 14.5px; margin: 0 6px 6px 0; }
+.concern { display: flex; gap: 8px; align-items: baseline; }
+.textline .main { font-size: 15px; }
+.listrow { display: flex; gap: 8px; align-items: baseline; }
+.listrow .box { flex: none; color: #e8734a; }
+.listrow.done .main { color: #b5afa4; text-decoration: line-through; }
 .sc-empty { color: #8a8478; font-size: 13.5px; padding: 8px 0; }
 .sc-src { font-size: 11.5px; color: #8a8478; margin-top: 6px; }
 .sc-foot { text-align: center; color: #b5afa4; font-size: 11.5px; margin-top: 14px; }

@@ -17,9 +17,17 @@
       "h": 6
     },
     {
+      "id": "focus",
+      "type": "focus",
+      "x": 4,
+      "y": 0,
+      "w": 4,
+      "h": 5
+    },
+    {
       "id": "milestone",
       "type": "milestone",
-      "x": 4,
+      "x": 8,
       "y": 0,
       "w": 4,
       "h": 6,

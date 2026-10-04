@@ -12,11 +12,12 @@
   "layout": { "cols": 12, "rowHeight": 72, "margin": 12 },
   "blocks": [
     { "id": "profile", "type": "profile", "x": 0, "y": 0, "w": 4, "h": 5 },
-    { "id": "milestone-30m", "type": "milestone", "x": 4, "y": 0, "w": 4, "h": 7, "props": { "months": 30 } },
-    { "id": "sleep-7d", "type": "sleep-week", "x": 8, "y": 0, "w": 4, "h": 6 },
-    { "id": "strategy-effect", "type": "strategy-effect", "x": 0, "y": 7, "w": 7, "h": 6, "props": { "status": "all" } },
-    { "id": "followup", "type": "followup", "x": 7, "y": 7, "w": 5, "h": 5 },
-    { "id": "notes", "type": "note", "x": 0, "y": 13, "w": 12, "h": 4, "props": { "limit": 5 } }
+    { "id": "focus", "type": "focus", "x": 4, "y": 0, "w": 4, "h": 5 },
+    { "id": "milestone-30m", "type": "milestone", "x": 8, "y": 0, "w": 4, "h": 7, "props": { "months": 30 } },
+    { "id": "sleep-7d", "type": "sleep-week", "x": 0, "y": 5, "w": 4, "h": 6 },
+    { "id": "strategy-effect", "type": "strategy-effect", "x": 4, "y": 7, "w": 8, "h": 6, "props": { "status": "all" } },
+    { "id": "followup", "type": "followup", "x": 0, "y": 11, "w": 5, "h": 5 },
+    { "id": "notes", "type": "note", "x": 0, "y": 16, "w": 12, "h": 4, "props": { "limit": 5 } }
   ]
 }
 </script>
@@ -53,10 +54,14 @@
       { "due": "10-03", "topic": "S12 注意力转移:预告撤除后是否稳定(第三次回访)", "status": "pending" },
       { "due": "10-10", "topic": "夜醒:验证「睡前 30 分钟无屏幕」满两周后的夜醒次数", "status": "pending" }
     ],
+    "reminders": [
+      { "due": "10-15", "topic": "流感疫苗(每年 9-11 月窗口)", "source": "knowledge/anticipatory", "status": "pending" },
+      { "due": "11-20", "topic": "托班报名材料准备(提前 3-6 月)", "source": "对话认领", "status": "pending" }
+    ],
     "notes": [
-      { "date": "09-20", "text": "第一次完全自己穿上鞋子(左右还经常反)" },
-      { "date": "09-24", "text": "在游乐场主动把秋千让给排队的小妹妹" },
-      { "date": "09-27", "text": "夜里 23:40 哭醒一次,喝水后 5 分钟内自己睡着(以前要抱睡 20 分钟)" }
+      { "date": "09-20", "tags": ["里程碑", "精细动作"], "text": "第一次完全自己穿上鞋子(左右还经常反)" },
+      { "date": "09-24", "tags": ["社交", "可爱瞬间"], "text": "在游乐场主动把秋千让给排队的小妹妹" },
+      { "date": "09-27", "tags": ["睡眠"], "text": "夜里 23:40 哭醒一次,喝水后 5 分钟内自己睡着(以前要抱睡 20 分钟)" }
     ]
   }
 }

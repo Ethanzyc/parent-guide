@@ -8,6 +8,17 @@
 - `data/child.json` — 孩子档案(单文件,含档案/追踪/回访/速记;键名任意,页面自动取第一个非 `_meta` 键)
 - `data/page.json` — 页面配置(本文件讨论的对象)
 
+## 卡片分两类(核心概念)
+
+| | 功能卡(内置) | 自定义卡 |
+|---|---|---|
+| 数据来源 | 自动读 `child.json` 对应数据区 | 内容全部在 block 的 `props` 里 |
+| 谁来更新 | 对话里的写入动作(update-child.py)自动更新 | 家长/AI 直接改 props 文本 |
+| 空态 | 引导文案(引回对话) | 「内容为空」提示 |
+| 典型用途 | 档案/里程碑/策略/待回访/提醒/事件 | 奶奶须知/出门清单/辅食黑名单 |
+
+**边界:自定义卡不引用 child.json 字段**——child.json 是脚本契约(update-child.py/hot-context.sh),页面配置不往里写数据;反过来功能卡也不需要 props 塞内容。两类卡在 page.json 的 blocks 数组里平权混排。
+
 ## page.json 结构(v2:网格坐标布局)
 
 ```json
@@ -26,7 +37,7 @@
 
 | 字段 | 类型 | 约束 | 说明 |
 |---|---|---|---|
-| `id` | string | 必填,页面内唯一 | 稳定标识,改配置时保留 |
+| `id` | string | 必填,页面内唯一 | 命名 `b{N}` 递增(现有最大 N+1);重复 id 会被拒绝写入 |
 | `type` | string | 必填,白名单(见下) | 未知 type 渲染为错误占位卡,不会崩溃 |
 | `x` | number | 0..cols-w | 左起第几列 |
 | `y` | number | ≥0 | 上起第几行(松手自动压缩,不必精确) |
@@ -38,35 +49,42 @@
 
 ## 卡片类型白名单
 
-### `profile` — 孩子档案摘要
-props:无。显示:姓名、月龄、当前关注点、活跃问题。建议 w 3-4。
+### 功能卡(读 child.json,内容由对话自动更新)
 
-### `milestone` — 月龄里程碑(CDC 检查表)
-props:`months`(number,默认取孩子实际月龄就近档)。建议 w 4-6。
+| type | 名称 | props | 建议宽度 |
+|---|---|---|---|
+| `profile` | 孩子档案 | 无 | w 3-4 |
+| `focus` | 当前重点(currentFocus+活跃问题) | 无 | w 3-4 |
+| `milestone` | 里程碑(CDC 检查表) | `months`(number,默认月龄就近档) | w 4-6 |
+| `sleep-week` | 一周睡眠 | 无 | w 4-6 |
+| `strategy-effect` | 策略效果 | `status`(`all\|effective\|partial`,默认 all) | w 6-12 |
+| `followup` | 待回访清单 | 无 | w 4-6 |
+| `reminder` | 前瞻提醒(pending 按 due 排序) | 无 | w 4-6 |
+| `note` | 成长速记(最近事件) | `limit`(number,默认 5) | w 3-4 或整行 |
+| `timeline` | 事件时间线(按标签过滤) | `tag`(string,如「可爱瞬间」「社交」), `limit`(默认 5) | w 6-12 |
 
-### `sleep-week` — 一周睡眠
-props:无。显示:近 7 天入睡/夜醒/总时长条形图。建议 w 4-6。
+### 自定义卡(内容自含在 props,不碰 child.json)
 
-### `strategy-effect` — 策略效果追踪
-props:`status`(`"all" | "effective" | "partial"`,默认 all)。建议 w 6-12。
-
-### `followup` — 待回访清单
-props:无。建议 w 4-6。
-
-### `note` — 成长速记
-props:`limit`(number,默认 5)。建议 w 3-4 或整行。
+| type | 名称 | props | 建议宽度 |
+|---|---|---|---|
+| `text` | 文本卡 | `title`(string), `text`(string,自由文本) | w 3-6 |
+| `list` | 清单卡(可勾选) | `title`(string), `items`(数组 `[{text, done}]`) | w 3-4 |
 
 ## 修改规则(给 AI)
 
 1. 只增删改 `blocks` 数组与 `props`,不发明新 type、不改 `version` 与 `layout`
-2. 每次修改输出完整 page.json(整文件替换,不做局部 patch)
-3. 新卡片给合理的 x/y/w/h(可参考同页面既有卡片的取值;y 不必精确,渲染器会自动压缩)
-4. 卡片建议总数 4-8 张;同屏不超过 12 张
-5. 修改前向用户确认意图;「重置默认」可回滚(本地服务模式下重置会写回文件)
+2. **id 唯一**:新卡 id 不得与现有重复(既有页面常用语义 id 如 `profile`,沿用即可;新卡建议 `b{N}` 递增,N 取页面最大编号+1);删除卡片后其余 id 不改
+3. 每次修改输出完整 page.json(整文件替换,不做局部 patch)
+4. 新卡片给合理的 x/y/w/h(可参考同页面既有卡片的取值;y 不必精确,渲染器会自动压缩)
+5. 卡片建议总数 4-8 张;同屏不超过 12 张
+6. 修改前向用户确认意图;「重置默认」可回滚(本地服务模式下重置会写回文件;**自定义卡在重置时保留**)
+7. 家长说「加张卡片写 XX」→ 自定义卡(text/list);说「我想在页面看到 XX(档案类数据)」→ 功能卡,没有对应功能卡时如实说明,不用自定义卡伪造数据展示
 
 ## 渲染器契约
 
 - 两种模式:本地服务(`python3 server.py --open`)= GridStack 编辑器(拖拽/拉角/编辑即保存);文件模式(双击 `web/dist/render.html`)= CSS grid 流式只读
+- 页面自带「＋ 添加卡片」面板(两组卡片同白名单)与编辑布局时的删除/编辑按钮——AI 改 JSON 与面板操作完全等价
 - 未知 type / 坏 props → 错误占位卡(fail-soft),整页照常渲染
 - JSON 解析失败 → 保持上一版配置并提示,不白屏
+- id 重复 → 拒绝写入(编辑配置抽屉与本地服务端都会校验)
 - 服务端 POST 校验:缺 blocks 数组拒绝写入;原子写(tmp+rename)防半截文件

@@ -16,8 +16,8 @@ const list = computed(() => (props.kid?.notes || []).slice(0, props.block?.props
     </div>
   </template>
   <template v-else>
-    <h3>📦 卡片</h3>
-    <div class="src">数据缺失:成长速记</div>
+    <h3>✨ 成长速记<span class="tag">{{ block.type }}</span></h3>
+    <div class="src">还没有记录过事件——值得记的瞬间(第一次/可爱时刻/生病)回到对话随手说,会积累在这里。</div>
   </template>
 </template>
 

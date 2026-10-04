@@ -19,7 +19,7 @@ const badge = (s) => s === 'effective' ? '✓ 有效' : s === 'partial' ? '◐ �
     </div>
   </template>
   <template v-else>
-    <h3>📦 卡片</h3>
-    <div class="src">数据缺失:策略追踪数据</div>
+    <h3>📈 策略效果<span class="tag">{{ block.type }}</span></h3>
+    <div class="src">还没有策略记录——回到对话说「我们想开始 XX 计划」,计划落档后显示在这里。</div>
   </template>
 </template>

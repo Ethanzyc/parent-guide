@@ -91,6 +91,16 @@ def make_server(port, data_dir, web_dir):
                 payload = self._read_body()
                 if kind == "page" and not isinstance(payload.get("blocks"), list):
                     raise ValueError("page.json 必须包含 blocks 数组")
+                if kind == "page":
+                    # duplicate/missing block ids corrupt geometry write-backs
+                    # (GridStack keys by id) -- fail fast, 400
+                    ids = [b.get("id") for b in payload["blocks"] if isinstance(b, dict)]
+                    bad = [i for i in ids if i is None or not str(i).strip()]
+                    dup = sorted({i for i in ids if ids.count(i) > 1 and i is not None})
+                    if bad or dup:
+                        raise ValueError(f"blocks 存在重复/缺失 id: {dup or '(有 block 无 id)'}")
+                    if len(ids) != len(payload["blocks"]):
+                        raise ValueError("blocks 里混入了非对象条目")
                 if kind == "data" and not [k for k in payload if not k.startswith("_")]:
                     raise ValueError("child.json 必须包含至少一个孩子数据键")
                 payload.pop("bootstrapped", None)  # internal flag never persists

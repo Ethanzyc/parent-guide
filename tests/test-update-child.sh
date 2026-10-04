@@ -337,5 +337,27 @@ class T(unittest.TestCase):
         self.assertNotEqual(code, 0)
         self.assertIn("activeConcerns", msg)
 
+    def test_33_set_followup_status_retires(self):
+        fu = self.child()["followups"][0]
+        code, msg = run(self.tmp, "set-followup-status",
+                        "--due", fu["due"], "--topic", fu["topic"], "--status", "done")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["followups"][0]["status"], "done")
+        # done 项留档;双精确匹配防误伤:同 due 不同 topic 必须拒绝
+        code, msg = run(self.tmp, "set-followup-status",
+                        "--due", fu["due"], "--topic", "不存在的主题", "--status", "done")
+        self.assertNotEqual(code, 0)
+        self.assertIn("现有", msg)
+
+    def test_34_check_validates_followup_status(self):
+        c = self.child()
+        c["followups"][0]["status"] = "完结"
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+        code, msg = run(self.tmp, "check")
+        self.assertNotEqual(code, 0)
+        self.assertIn("followups", msg)
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

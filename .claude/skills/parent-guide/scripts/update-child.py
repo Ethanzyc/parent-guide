@@ -131,6 +131,14 @@ def execute(argv=None):
     p.add_argument("--topic", required=True)
     p.add_argument("--status", required=True, choices=["pending", "done", "skipped"])
 
+    p = sub.add_parser("set-followup-status", help="retire a followup after the "
+                       "revisit happens (done/skipped stay as history, cards "
+                       "and hot context only show pending -- overdue red badges "
+                       "must not pile up forever)")
+    p.add_argument("--due", required=True)
+    p.add_argument("--topic", required=True)
+    p.add_argument("--status", required=True, choices=["pending", "done", "skipped"])
+
     p = sub.add_parser("set-status")
     p.add_argument("--id", required=True)
     p.add_argument("--status", required=True, choices=sorted(VALID_STATUS))
@@ -307,7 +315,19 @@ def execute(argv=None):
         if r is None:
             return 1, f"ERROR: reminder {args.due}「{args.topic}」not found"
         r["status"] = args.status
-        msg = f"reminder {args.due}「{args.topic}」-> {args.status}"
+        msg = f"reminder {args.due}「{args.topic[:30]}」-> {args.status}"
+
+    elif args.action == "set-followup-status":
+        f = next((f for f in child.get("followups", [])
+                  if f.get("due") == args.due and f.get("topic") == args.topic), None)
+        if f is None:
+            existing = ";".join(f"{x.get('due')}「{x.get('topic', '')[:20]}」"
+                                for x in child.get("followups", [])) or "(无)"
+            return 1, (f"ERROR: followup {args.due} not found"
+                       f"(须 due+topic 双精确匹配) | 现有:{existing}")
+        f["status"] = args.status
+        msg = (f"followup {args.due}「{args.topic[:30]}」-> {args.status}"
+               + ("(留在档案作历史,卡片与热区只显示 pending)" if args.status != "pending" else ""))
 
     elif args.action == "set-milestone":
         try:
@@ -417,6 +437,9 @@ def _check(child):
         short_date(f"experiments[{i}].since", e.get("since"))
     for i, f in enumerate(child.get("followups", [])):
         short_date(f"followups[{i}].due", f.get("due"))
+        if f.get("status", "pending") not in ("pending", "done", "skipped"):
+            problems.append(f"followups[{i}].status: 须为 pending/done/skipped"
+                            f"(现在是 {f.get('status')!r})")
     for i, n in enumerate(child.get("notes", [])):
         nd = str(n.get("date") or "")
         if not (DATE_FULL.match(nd) or DATE_SHORT.match(nd)):

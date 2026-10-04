@@ -84,7 +84,7 @@
 |------|------|
 | L2 计划落成 | `update-child.py add-strategy --name ... --applied ...`(ID 自动续接) |
 | 定回访 | `update-child.py add-followup --due MM-DD --topic ...`(重复写入会被拒绝) |
-| 回访发生 | `update-child.py mark-revisited --id ... --result ... [--status effective/partial/ineffective]`(回访计数自动+1) |
+| 回访发生 | `update-child.py mark-revisited --id ... --result ... [--status effective/partial/ineffective]`(回访计数自动+1);对应的 pending 回访项如果已了结,顺带 `set-followup-status --due ... --topic ... --status done/skipped`(due+topic 双精确匹配;留档作历史,卡片与热区只显示 pending——过期红标不退场会堆积稀释紧迫感) |
 | 策略被新计划取代/挂起 | `update-child.py set-status --id ... --status absorbed/suspended [--note ...]` |
 | 值得记的事件 | `update-child.py add-note --date ... --text ...`(保守:只记对养育决策有影响的) |
 | 当前重点更新(整组覆盖,从对话证据派生) | `update-child.py set-focus --items 发脾气,如厕`(空字符串=清空;划掉旧项在回执可见) |

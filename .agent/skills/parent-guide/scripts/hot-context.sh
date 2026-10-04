@@ -76,6 +76,8 @@ for e in c.get("experiments", []):
 print()
 print("[待回访]")
 for fu in c.get("followups", []):
+    if fu.get("status", "pending") != "pending":
+        continue    # done/skipped 留档作历史,热区只看在管的
     print(f"- {fu['due']} {fu['topic']} [{fu['status']}]")
 print()
 print("[前瞻提醒](已认领,到期临近)")

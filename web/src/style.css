@@ -48,6 +48,32 @@ body.editing .grid-stack .card { outline: 2px dashed #d8b7a4; outline-offset: -2
   border: 1px solid var(--line); border-radius: 99px; padding: 1px 8px; }
 .card .src { font-size: 11px; color: var(--sub); margin-top: 10px; }
 
+/* 卡片内统一小件 */
+/* 事件时间轴:左点右线,Notes/Timeline 共用 */
+.tl { position: relative; padding-left: 16px; }
+.tl::before { content: ''; position: absolute; left: 3px; top: 8px; bottom: 8px;
+  width: 2px; background: var(--line); border-radius: 2px; }
+.tl-item { position: relative; padding: 4px 0 8px; font-size: 13.5px; }
+.tl-item::before { content: ''; position: absolute; left: -16px; top: 9px;
+  width: 8px; height: 8px; border-radius: 99px; background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft); }
+.tl-item .d { color: var(--sub); margin-right: 8px; font-variant-numeric: tabular-nums;
+  font-size: 12px; }
+/* due 徽章紧迫度(Followup/Reminder 共用) */
+.due-b { flex: none; display: inline-flex; align-items: center; border-radius: 8px;
+  padding: 2px 8px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.due-b.overdue { background: var(--todo-bg); color: var(--todo); font-weight: 600; }
+.due-b.today { background: var(--watch-bg); color: var(--watch); font-weight: 600; }
+.due-b.soon { background: var(--accent-soft); color: var(--accent); }
+.due-b.later, .due-b.plain { background: #f4f0e9; color: var(--sub); }
+/* 卡头右侧汇总统计(里程碑/睡眠) */
+.head-stats { margin-left: auto; display: flex; gap: 6px; font-size: 11px;
+  color: var(--sub); font-weight: 400; }
+.head-stats b { font-weight: 600; }
+.head-stats .ok { color: var(--ok); }
+.head-stats .watch { color: var(--watch); }
+.head-stats .todo { color: var(--todo); }
+
 /* 卡片内部元素 */
 .kv { display: flex; gap: 8px; font-size: 14px; padding: 3px 0; }
 .kv b { flex: none; color: var(--sub); font-weight: 500; min-width: 5em; }
@@ -63,7 +89,8 @@ body.editing .grid-stack .card { outline: 2px dashed #d8b7a4; outline-offset: -2
 .bar-row { display: grid; grid-template-columns: 44px 1fr 40px 34px; gap: 8px;
   align-items: center; font-size: 12.5px; padding: 3px 0; }
 .bar-track { background: #f1ece4; border-radius: 99px; height: 14px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg,#f0a078,var(--accent)); }
+.bar-fill { display: block; height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg,#f0a078,var(--accent)); }
 .strate { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
 .strate:last-child { margin-bottom: 0; }
 .strate .name { font-weight: 600; font-size: 14px; }

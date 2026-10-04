@@ -13,17 +13,19 @@ const tagName = computed(() => tag.value ? `· ${tag.value}` : '')
 
 <template>
   <template v-if="list.length">
-    <h3>🌟 事件时间线{{ tagName }}<span class="tag">{{ block.type }}</span></h3>
-    <div v-for="(n, i) in list" :key="i" class="note-item">
-      <span class="d">{{ n.precision && n.precision !== 'day' ? '≈' : '' }}{{ n.date }}</span>
-      <span v-if="!tag && (n.tags || []).length" class="note-tags">
-        <span v-for="t in n.tags" :key="t" class="ntag">{{ t }}</span>
-      </span>
-      {{ n.text }}
+    <h3>🌟 事件时间线{{ tagName }}</h3>
+    <div class="tl">
+      <div v-for="(n, i) in list" :key="i" class="tl-item">
+        <span class="d">{{ n.precision && n.precision !== 'day' ? '≈' : '' }}{{ n.date }}</span>
+        <span v-if="!tag && (n.tags || []).length" class="note-tags">
+          <span v-for="t in n.tags" :key="t" class="ntag">{{ t }}</span>
+        </span>
+        {{ n.text }}
+      </div>
     </div>
   </template>
   <template v-else>
-    <h3>🌟 事件时间线{{ tagName }}<span class="tag">{{ block.type }}</span></h3>
+    <h3>🌟 事件时间线{{ tagName }}</h3>
     <div class="src">
       {{ tag ? `还没有带「${tag}」标签的事件` : '还没有记录过事件' }}——值得记的瞬间回到对话随手说一句,会积累在这里。
     </div>

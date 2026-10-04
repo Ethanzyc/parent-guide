@@ -12,7 +12,7 @@ const text = computed(() => (props.block?.props?.text || '').trim())
   </template>
   <template v-else>
     <h3>📝 {{ title }}<span class="tag">自定义</span></h3>
-    <div class="src">内容为空——编辑布局时点卡片右上角「✎ 编辑」填写,或让 AI 帮你写进去。</div>
+    <div class="src">内容为空——回到对话对 AI 说「把{{ title }}的内容写成…」即可填入。</div>
   </template>
 </template>
 

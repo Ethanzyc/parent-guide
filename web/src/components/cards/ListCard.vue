@@ -27,7 +27,7 @@ const doneCount = computed(() => items.value.filter(i => i.done).length)
   </template>
   <template v-else>
     <h3>✅ {{ title }}<span class="tag">自定义</span></h3>
-    <div class="src">清单为空——编辑布局时点卡片右上角「✎ 编辑」添加条目。</div>
+    <div class="src">清单为空——回到对话对 AI 说「{{ title }}加上…」即可补充条目。</div>
   </template>
 </template>
 

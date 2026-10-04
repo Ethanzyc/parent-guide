@@ -11,7 +11,7 @@
 // around"). Full rebuild happens only via :key bump (JSON apply / reset).
 import { onMounted, onBeforeUnmount, ref, shallowRef, watch, nextTick } from 'vue'
 import { GridStack } from 'gridstack'
-import { cardFor, isCustom } from './cards/index.js'
+import { cardFor } from './cards/index.js'
 import { clampInt } from '../lib/util.js'
 
 const props = defineProps({
@@ -20,7 +20,7 @@ const props = defineProps({
   editing: Boolean,
   serverMode: Boolean,
 })
-const emit = defineEmits(['geometry', 'share-card', 'remove', 'edit-props', 'props-update'])
+const emit = defineEmits(['geometry', 'share-card', 'props-update'])
 
 // Custom-card content updates (e.g. list checkboxes): patch the snapshot
 // element in place (keeps geometry write-back in sync with latest props),
@@ -32,16 +32,21 @@ function onPropsUpdate(b, nextProps) {
 
 const gridEl = ref(null)
 const items = shallowRef([])          // snapshot; field mutations stay silent
-let gs = null
+let hiddenSnapshot = []               // hidden blocks: not rendered, but geometry
+let gs = null                         // write-back must carry them or they get dropped
 let saveTimer = null
 
 function snapshot() {
   const L = props.page?.layout || {}
   const cols = L.cols || 12
-  items.value = (props.page?.blocks || []).map(b => ({
-    ...b,
-    w: clampInt(b.w, 1, cols, 6), h: clampInt(b.h, 1, 20, 4),
-  }))
+  const all = props.page?.blocks || []
+  items.value = all
+    .filter(b => !b.hidden)   // hidden cards keep their block + geometry, just don't render
+    .map(b => ({
+      ...b,
+      w: clampInt(b.w, 1, cols, 6), h: clampInt(b.h, 1, 20, 4),
+    }))
+  hiddenSnapshot = all.filter(b => b.hidden).map(b => ({ ...b }))
 }
 
 onMounted(async () => {
@@ -81,7 +86,9 @@ function scheduleSync() {
       const g = geo.get(b.id)
       if (g) { b.x = g.x; b.y = g.y; b.w = g.w; b.h = g.h }
     }
-    emit('geometry', items.value.map(b => ({ ...b })))
+    // emit geometry for VISIBLE blocks, then append the hidden ones untouched:
+    // App replaces page.blocks wholesale, dropping them here would delete them
+    emit('geometry', [...items.value.map(b => ({ ...b })), ...hiddenSnapshot])
   }, 300)  // debounce: no high-frequency writes mid-drag
 }
 </script>
@@ -94,11 +101,7 @@ function scheduleSync() {
       <div class="grid-stack-item-content">
         <div class="card">
           <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" />
-          <div v-if="editing" class="card-tools">
-            <button v-if="isCustom(b.type)" class="tool" title="编辑内容" @click.stop="emit('edit-props', b)">✎ 编辑</button>
-            <button class="tool danger" title="删除这张卡" @click.stop="emit('remove', b)">✕</button>
-          </div>
-          <button v-else class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
+          <button class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
         </div>
       </div>
     </div>
@@ -109,11 +112,7 @@ function scheduleSync() {
     <section v-for="b in items" :key="b.id" class="card"
              :style="{ '--w': clampInt(b.w, 1, 12, 6) }">
       <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" />
-      <div v-if="editing" class="card-tools">
-        <button v-if="isCustom(b.type)" class="tool" title="编辑内容" @click.stop="emit('edit-props', b)">✎ 编辑</button>
-        <button class="tool danger" title="删除这张卡" @click.stop="emit('remove', b)">✕</button>
-      </div>
-      <button v-else class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
+      <button class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
     </section>
   </main>
 </template>
@@ -127,10 +126,4 @@ function scheduleSync() {
 .share-fab:hover { border-color: #e8734a; color: #e8734a; }
 /* 编辑布局时整卡都是拖拽把手,分享按钮退场防误触 */
 :global(body.editing) .share-fab { display: none; }
-/* 编辑模式的卡内工具(删除/编辑内容) */
-.card-tools { position: absolute; top: 8px; right: 8px; z-index: 3; display: flex; gap: 6px; }
-.tool { border: 1px solid #efe9e0; background: rgba(255,255,255,.95); color: #8a8478;
-  border-radius: 99px; padding: 2px 10px; font-size: 12px; cursor: pointer; }
-.tool:hover { border-color: #e8734a; color: #e8734a; }
-.tool.danger:hover { border-color: #d64545; color: #d64545; background: #fdf2f2; }
 </style>

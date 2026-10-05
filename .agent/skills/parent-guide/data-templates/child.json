@@ -22,6 +22,9 @@
       { "since": "MM-DD", "text": "正在观察的问题", "status": "观察中" }
     ],
     "milestones": {},
+    "growth": {
+      "records": []
+    },
     "sleep": {
       "days": [
         { "date": "MM-DD", "bedtime": "HH:MM", "wakings": 0, "totalHours": 0.0 }

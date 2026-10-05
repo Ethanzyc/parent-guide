@@ -359,5 +359,48 @@ class T(unittest.TestCase):
         self.assertNotEqual(code, 0)
         self.assertIn("followups", msg)
 
+    def test_35_add_growth_records_and_replaces(self):
+        code, msg = run(self.tmp, "add-growth", "--date", "2026-09-15",
+                        "--height", "92.5", "--weight", "13.2")
+        self.assertEqual(code, 0, msg)
+        recs = self.child()["growth"]["records"]
+        self.assertEqual(len(recs), 1)
+        self.assertEqual(recs[0]["height"], 92.5)
+        self.assertEqual(recs[0]["weight"], 13.2)
+        self.assertIsInstance(recs[0]["months"], int)   # 月龄自动换算入记录
+        # 同日重录=替换(儿保抄录场景),不追加
+        code, msg = run(self.tmp, "add-growth", "--date", "2026-09-15", "--height", "93")
+        self.assertEqual(code, 0, msg)
+        self.assertIn("替换", msg)
+        recs = self.child()["growth"]["records"]
+        self.assertEqual(len(recs), 1)
+        self.assertEqual(recs[0]["height"], 93.0)
+        self.assertNotIn("weight", recs[0])             # 部分重录覆盖整条(显式语义)
+        # 乱序日期落档后按日期排序
+        code, _ = run(self.tmp, "add-growth", "--date", "2026-03-10", "--height", "85")
+        self.assertEqual(code, 0)
+        recs = self.child()["growth"]["records"]
+        self.assertEqual([r["date"] for r in recs], ["2026-03-10", "2026-09-15"])
+
+    def test_36_add_growth_validates_input(self):
+        code, msg = run(self.tmp, "add-growth", "--date", "2026-09-15")
+        self.assertNotEqual(code, 0)
+        self.assertIn("at least one", msg)
+        code, msg = run(self.tmp, "add-growth", "--date", "2026-09-15", "--height", "abc")
+        self.assertNotEqual(code, 0)
+        code, msg = run(self.tmp, "add-growth", "--date", "2026-09-15", "--height", "300")
+        self.assertNotEqual(code, 0)
+        self.assertIn("plausible", msg)
+
+    def test_37_check_validates_growth_records(self):
+        c = self.child()
+        c["growth"] = {"records": [{"date": "26-09", "height": "很高"}]}
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+        code, msg = run(self.tmp, "check")
+        self.assertNotEqual(code, 0)
+        self.assertIn("growth.records", msg)
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

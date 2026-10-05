@@ -65,6 +65,7 @@
 | 活动与绘本 | knowledge/activities.md |
 | 戒安抚物(奶嘴) | knowledge/weaning.md |
 | 如厕训练 | knowledge/toilet.md |
+| 生长监测(身高体重参考区间) | knowledge/growth.md(曲线卡数据端 web/src/lib/growth-ref.js 同源) |
 
 完整库缺失时:只用本核回答高频与安全问题;深主题在回答末尾注明
 「完整语料库未安装,本回答基于最小知识核;建议安装完整库获得专题深度」。

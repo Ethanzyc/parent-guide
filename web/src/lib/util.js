@@ -1,7 +1,7 @@
 // Shared pure helpers (ported from demo render.html)
 
-export function monthsAge(birthdate) {
-  const b = new Date(birthdate), n = new Date()
+export function monthsAge(birthdate, on) {
+  const b = new Date(birthdate), n = on ? new Date(on) : new Date()
   if (isNaN(b)) return 0
   return Math.max(0, (n.getFullYear() - b.getFullYear()) * 12 + n.getMonth() - b.getMonth())
 }

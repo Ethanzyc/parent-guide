@@ -57,6 +57,7 @@
 | `profile` | 孩子档案 | 无 | w 3-4 |
 | `focus` | 当前重点(currentFocus+活跃问题) | 无 | w 3-4 |
 | `milestone` | 里程碑(CDC 检查表) | `months`(number,默认月龄就近档) | w 4-6 |
+| `growth` | 生长曲线(身高体重对照 P3-P97) | 无(数据 child.growth.records,`add-growth` 落档) | w 6-12 |
 | `sleep-week` | 一周睡眠 | 无 | w 4-6 |
 | `strategy-effect` | 策略效果 | `status`(`all\|effective\|partial`,默认 all) | w 6-12 |
 | `followup` | 待回访清单 | 无 | w 4-6 |

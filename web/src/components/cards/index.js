@@ -6,6 +6,7 @@
 // Adding a builtin block = adding one component here + blocks-spec.md entry.
 import ProfileCard from './ProfileCard.vue'
 import MilestoneCard from './MilestoneCard.vue'
+import GrowthCard from './GrowthCard.vue'
 import SleepWeekCard from './SleepWeekCard.vue'
 import StrategyCard from './StrategyCard.vue'
 import FollowupCard from './FollowupCard.vue'
@@ -20,6 +21,7 @@ import ErrorCard from '../ErrorCard.vue'
 export const REGISTRY = {
   'profile': ProfileCard,
   'milestone': MilestoneCard,
+  'growth': GrowthCard,
   'sleep-week': SleepWeekCard,
   'strategy-effect': StrategyCard,
   'followup': FollowupCard,
@@ -34,9 +36,10 @@ export const REGISTRY = {
 // Single source of truth for the add-panel, spec docs and validation.
 // w/h = sensible defaults when instantiated from the panel.
 export const CARD_META = {
-  'profile':        { group: 'builtin', name: '孩子档案',   desc: '小名/月龄/当前重点一览', w: 4, h: 5 },
-  'focus':          { group: 'builtin', name: '当前重点',   desc: '正在关注的事+观察中的问题', w: 4, h: 4 },
+  'profile':        { group: 'builtin', name: '孩子档案',   desc: '小名/月龄/画像/当前重点一览', w: 6, h: 8 },
+  'focus':          { group: 'builtin', name: '当前重点',   desc: '正在关注的事+观察中的问题', w: 6, h: 4 },
   'milestone':      { group: 'builtin', name: '里程碑',     desc: '发育盘点结果(按月龄档)', w: 6, h: 6 },
+  'growth':         { group: 'builtin', name: '生长曲线',   desc: '身高体重记录对照参考区间', w: 6, h: 6 },
   'strategy-effect':{ group: 'builtin', name: '策略效果',   desc: '在跑的计划与回访证据', w: 6, h: 6 },
   'followup':       { group: 'builtin', name: '待回访',     desc: '到期要看效果的事', w: 4, h: 4 },
   'reminder':       { group: 'builtin', name: '前瞻提醒',   desc: '疫苗/报名/季节节点', w: 4, h: 3 },

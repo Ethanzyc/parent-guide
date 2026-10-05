@@ -13,24 +13,24 @@
       "type": "profile",
       "x": 0,
       "y": 0,
-      "w": 4,
-      "h": 6
+      "w": 6,
+      "h": 8
     },
     {
       "id": "focus",
       "type": "focus",
-      "x": 4,
+      "x": 6,
       "y": 0,
-      "w": 4,
-      "h": 5
+      "w": 6,
+      "h": 4
     },
     {
       "id": "milestone",
       "type": "milestone",
-      "x": 8,
-      "y": 0,
-      "w": 4,
-      "h": 6,
+      "x": 6,
+      "y": 4,
+      "w": 6,
+      "h": 4,
       "props": {
         "months": 30
       }
@@ -39,7 +39,7 @@
       "id": "strategy-effect",
       "type": "strategy-effect",
       "x": 0,
-      "y": 6,
+      "y": 8,
       "w": 7,
       "h": 6,
       "props": {
@@ -50,7 +50,7 @@
       "id": "followup",
       "type": "followup",
       "x": 7,
-      "y": 6,
+      "y": 8,
       "w": 5,
       "h": 5
     }

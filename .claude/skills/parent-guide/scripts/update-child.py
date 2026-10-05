@@ -65,6 +65,16 @@ def _days_ago(n):
     return (date.today() - timedelta(days=n)).isoformat()
 
 
+def _months_at(birthdate, on_date):
+    """Whole months between birthdate and on_date (both YYYY-MM-DD); 0 if unknown."""
+    try:
+        b = date.fromisoformat(birthdate)
+        d = date.fromisoformat(on_date)
+    except ValueError:
+        return 0
+    return max(0, (d.year - b.year) * 12 + (d.month - b.month) - (d.day < b.day))
+
+
 def _load(path):
     doc = json.loads(path.read_text("utf-8"))
     key = next(k for k in doc if not k.startswith("_"))
@@ -106,6 +116,14 @@ def execute(argv=None):
     p = sub.add_parser("add-followup")
     p.add_argument("--due", required=True)
     p.add_argument("--topic", required=True)
+
+    p = sub.add_parser("add-growth", help="append a height/weight measurement "
+                       "(growth.records; same-date re-entry replaces -- growth "
+                       "curves compare against WS/T 423-2022 bands, see "
+                       "knowledge/growth.md)")
+    p.add_argument("--date", required=True, help="YYYY-MM-DD (measurement day)")
+    p.add_argument("--height", default=None, help="cm, e.g. 92.5")
+    p.add_argument("--weight", default=None, help="kg, e.g. 13.2")
 
     p = sub.add_parser("add-note")
     p.add_argument("--date", default=None,
@@ -244,6 +262,38 @@ def execute(argv=None):
             return 1, f"ERROR: followup {args.due}「{args.topic}」already exists (idempotency guard)"
         items.append({"due": args.due, "topic": args.topic, "status": "pending"})
         msg = f"recorded followup {args.due}「{args.topic}」"
+
+    elif args.action == "add-growth":
+        if args.height is None and args.weight is None:
+            return 1, "ERROR: give --height and/or --weight (at least one)"
+        try:
+            h = round(float(args.height), 1) if args.height is not None else None
+            w = round(float(args.weight), 1) if args.weight is not None else None
+        except ValueError:
+            return 1, "ERROR: --height/--weight must be numbers (cm / kg)"
+        if h is not None and not (30 <= h <= 160):
+            return 1, f"ERROR: height {h}cm out of plausible range (30-160)"
+        if w is not None and not (1 <= w <= 60):
+            return 1, f"ERROR: weight {w}kg out of plausible range (1-60)"
+        # 换算月龄带进记录,曲线卡与对照免得各自重算
+        months = _months_at(child.get("birthdate", ""), args.date)
+        rec = {"date": args.date}
+        if h is not None: rec["height"] = h
+        if w is not None: rec["weight"] = w
+        rec["months"] = months
+        records = child.setdefault("growth", {}).setdefault("records", [])
+        replaced = next((r for r in records if r.get("date") == args.date), None)
+        if replaced:
+            records[records.index(replaced)] = rec
+            msg = (f"replaced growth record {args.date}: "
+                   f"{('身高 %.1fcm ' % h) if h else ''}{('体重 %.1fkg ' % w) if w else ''}"
+                   f"({months} 月龄) | 同日重录=替换")
+        else:
+            records.append(rec)
+            records.sort(key=lambda r: r["date"])
+            msg = (f"recorded growth {args.date}: "
+                   f"{('身高 %.1fcm ' % h) if h else ''}{('体重 %.1fkg ' % w) if w else ''}"
+                   f"({months} 月龄) | 共 {len(records)} 条")
 
     elif args.action == "add-note":
         if (args.date is None) == (args.approx_days is None):
@@ -440,6 +490,17 @@ def _check(child):
         if f.get("status", "pending") not in ("pending", "done", "skipped"):
             problems.append(f"followups[{i}].status: 须为 pending/done/skipped"
                             f"(现在是 {f.get('status')!r})")
+    for i, r in enumerate((child.get("growth") or {}).get("records", [])):
+        d = r.get("date", "")
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", str(d)):
+            problems.append(f"growth.records[{i}].date: 须为 YYYY-MM-DD(现在是 {d!r})")
+        for k, lo, hi in (("height", 30, 160), ("weight", 1, 60)):
+            v = r.get(k)
+            if v is not None and not (isinstance(v, (int, float)) and lo <= v <= hi):
+                problems.append(f"growth.records[{i}].{k}: 须为数值且在 {lo}-{hi} 内"
+                                f"(现在是 {v!r})")
+        if r.get("height") is None and r.get("weight") is None:
+            problems.append(f"growth.records[{i}]: 身高体重至少要有一项")
     for i, n in enumerate(child.get("notes", [])):
         nd = str(n.get("date") or "")
         if not (DATE_FULL.match(nd) or DATE_SHORT.match(nd)):

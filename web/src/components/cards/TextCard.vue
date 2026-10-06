@@ -17,6 +17,6 @@ const text = computed(() => (props.block?.props?.text || '').trim())
 </template>
 
 <style scoped>
-.text-body { white-space: pre-wrap; font-size: 14px; color: #5b564d; margin: 0;
+.text-body { white-space: pre-wrap; font-size: 14px; color: var(--ink); margin: 0;
   line-height: 1.7; max-height: 420px; overflow-y: auto; }
 </style>

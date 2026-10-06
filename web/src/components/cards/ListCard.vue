@@ -40,11 +40,11 @@ const allDone = computed(() => items.value.length > 0 && doneCount.value === ite
 </template>
 
 <style scoped>
-.track { background: #f1ece4; border-radius: 99px; height: 6px; overflow: hidden; margin-bottom: 10px; }
-.fill { height: 100%; border-radius: 99px;
-  background: linear-gradient(90deg, #f0a078, var(--accent));
+.track { background: var(--line); border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 10px; }
+.fill { height: 100%; border-radius: 4px;
+  background: var(--ink-blue); opacity: .82;
   transition: width .25s; }
-.fill.done { background: var(--ok); }
+.fill.done { background: var(--ok); opacity: 1; }
 .li { display: flex; gap: 8px; font-size: 14px; padding: 4px 0; cursor: pointer; align-items: baseline; }
 .li input { accent-color: var(--accent); }
 .li.done span { color: var(--sub); text-decoration: line-through; }

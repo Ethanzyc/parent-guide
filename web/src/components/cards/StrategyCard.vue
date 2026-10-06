@@ -34,12 +34,12 @@ const badge = (s) => s === 'effective' ? '✓ 有效' : s === 'partial' ? '◐ �
 .srow { display: flex; align-items: baseline; gap: 8px; }
 .srow .name { font-weight: 600; font-size: 14px; min-width: 0; }
 .since { color: var(--sub); font-weight: 400; font-size: 12px; margin-left: 6px; }
-.badge { flex: none; margin-left: auto; font-size: 12px; border-radius: 99px; padding: 1px 10px; }
+.badge { flex: none; margin-left: auto; font-size: 12px; border-radius: 5px; padding: 1px 8px; }
 .badge.effective, .badge.absorbed { background: var(--ok-bg); color: var(--ok); }
 .badge.partial, .badge.active { background: var(--watch-bg); color: var(--watch); }
 .badge.ineffective { background: var(--todo-bg); color: var(--todo); }
-.badge.suspended { background: #f2efe9; color: var(--sub); }
-.strate p { font-size: 13px; color: #5b564d; margin-top: 4px; }
+.badge.suspended { background: var(--accent-soft); color: var(--sub); }
+.strate p { font-size: 13px; color: var(--ink); margin-top: 4px; }
 .fu { font-size: 13px; margin-top: 4px; }
 .fu.effective, .fu.absorbed { color: var(--ok); }
 .fu.partial, .fu.active { color: var(--watch); }

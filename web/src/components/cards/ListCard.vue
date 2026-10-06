@@ -22,7 +22,7 @@ const allDone = computed(() => items.value.length > 0 && doneCount.value === ite
 
 <template>
   <template v-if="items.length">
-    <h3>✅ {{ title }}
+    <h3><span class="card-ico ico-green">✅</span>{{ title }}
       <span class="head-stats"><span :class="allDone ? 'ok' : ''"><b>{{ doneCount }}</b>/{{ items.length }}</span></span>
     </h3>
     <div class="track" :title="`${doneCount}/${items.length}`">
@@ -34,8 +34,11 @@ const allDone = computed(() => items.value.length > 0 && doneCount.value === ite
     </label>
   </template>
   <template v-else>
-    <h3>✅ {{ title }}<span class="tag">自定义</span></h3>
-    <div class="src">清单为空——回到对话对 AI 说「{{ title }}加上…」即可补充条目。</div>
+    <h3><span class="card-ico ico-green">✅</span>{{ title }}</h3>
+    <div class="empty" style="margin-top:8px">
+      <span class="e-ico">🗒️</span>
+      <span class="e-txt">清单为空——回到对话对 AI 说「{{ title }}加上…」即可补充条目。</span>
+    </div>
   </template>
 </template>
 

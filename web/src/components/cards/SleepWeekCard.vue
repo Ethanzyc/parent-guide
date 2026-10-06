@@ -18,7 +18,7 @@ const avgWakings = computed(() => {
 
 <template>
   <template v-if="days.length">
-    <h3>😴 一周睡眠
+    <h3><span class="card-ico ico-blue">😴</span>一周睡眠
       <span class="head-stats">
         <span>日均 <b>{{ avgHours }}h</b></span>
         <span class="watch">夜醒均 <b>{{ avgWakings }}</b> 次</span>
@@ -33,7 +33,10 @@ const avgWakings = computed(() => {
     <div v-if="kid.sleep?.note" class="src">{{ kid.sleep.note }}</div>
   </template>
   <template v-else>
-    <h3>😴 一周睡眠</h3>
-    <div class="src">逐日睡眠默认不记(策略回访以对话与事件记录为准);这张卡可在「卡片管理」里关闭。</div>
+    <h3><span class="card-ico ico-blue">😴</span>一周睡眠</h3>
+    <div class="empty" style="margin-top:8px">
+      <span class="e-ico">🌙</span>
+      <span class="e-txt">逐日睡眠默认不记(策略回访以对话与事件记录为准);这张卡可在「卡片管理」里关闭。</span>
+    </div>
   </template>
 </template>

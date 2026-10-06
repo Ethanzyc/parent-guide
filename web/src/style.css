@@ -1,13 +1,24 @@
-/* parent-guide 成长视图 —— 样式(demo render.html 平移,主题不变) */
+/* parent-guide 成长视图 —— 设计系统:成长手账(design-system.json) */
 :root {
   --bg: #faf7f2; --card: #ffffff; --ink: #3d3a34; --sub: #8a8478;
   --accent: #e8734a; --accent-soft: #fdeee7; --line: #efe9e0;
   --ok: #3a9a6e; --ok-bg: #eaf5ef; --watch: #c98a2d; --watch-bg: #fbf3e3;
   --todo: #b0685c; --todo-bg: #f9ece9; --err: #b04a4a; --err-bg: #f9e9e9;
+  /* 贴纸辅色(各卡 icon tile):低饱和 baby-friendly,手账贴纸感 */
+  --amber: #f2b84b; --amber-soft: #fdf3dd;
+  --green: #7fb069; --green-soft: #edf5e8;
+  --blue: #6aa9c9; --blue-soft: #e8f2f8;
+  --pink: #d98ba3; --pink-soft: #faeef2;
+  /* 深色主卡(档案卡,页面唯一深色卡) */
+  --hero-bg: linear-gradient(160deg, #4a352b, #33241d);
+  --hero-fg: #faf5ef; --hero-sub: #c9b8ab; --hero-line: rgba(250,245,239,.14);
 }
 * { box-sizing: border-box; margin: 0; }
 body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   background: var(--bg); color: var(--ink); line-height: 1.6; }
+/* 手账纸感:极淡圆点纹理 */
+body { background-image: radial-gradient(rgba(61,58,52,.045) 1px, transparent 1px);
+  background-size: 22px 22px; }
 
 /* 工具条 */
 .toolbar { position: sticky; top: 0; z-index: 10; background: var(--card);
@@ -31,7 +42,10 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
 .card { grid-column: auto / span var(--w, 6); background: var(--card);
   border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px;
-  box-shadow: 0 1px 3px rgba(61,58,52,.04); position: relative; }
+  box-shadow: 0 1px 3px rgba(61,58,52,.04); position: relative;
+  transition: transform .18s ease-out, box-shadow .18s ease-out; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(61,58,52,.09); }
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
 @media (max-width: 720px) { .card { grid-column: 1 / -1 !important; } }
 
 /* 服务模式:GridStack 网格 */
@@ -41,9 +55,42 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 body.editing .grid-stack .card { outline: 2px dashed #d8b7a4; outline-offset: -2px; }
 
 .card h3 { font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+/* 深色主卡(档案):页面唯一深色卡,视觉锚点(design-system heroCard) */
+.card.hero { background: var(--hero-bg); border-color: transparent;
+  box-shadow: 0 6px 22px rgba(51,36,29,.22); }
+.card.hero .share-fab { background: rgba(250,245,239,.92); border-color: transparent; }
+.card.hero:hover { box-shadow: 0 10px 26px rgba(51,36,29,.3); }
 .card h3 .tag { font-size: 11px; color: var(--sub); font-weight: 400;
   border: 1px solid var(--line); border-radius: 99px; padding: 1px 8px; }
 .card .src { font-size: 11px; color: var(--sub); margin-top: 10px; }
+
+/* 贴纸 icon tile:每卡头部的圆角色块(辅色按卡分配,见各组件) */
+.card-ico { flex: none; width: 26px; height: 26px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; line-height: 1; }
+.ico-amber { background: var(--amber-soft); }
+.ico-green { background: var(--green-soft); }
+.ico-blue { background: var(--blue-soft); }
+.ico-pink { background: var(--pink-soft); }
+.ico-clay { background: var(--accent-soft); }
+/* 里程碑三色堆叠条(手账比例尺) */
+.mstack { margin-left: auto; display: flex; width: 88px; height: 8px;
+  border-radius: 99px; overflow: hidden; background: #f1ece4; flex: none; }
+.mstack > i { display: block; height: 100%; }
+.mstack > .ok { background: var(--ok); }
+.mstack > .watch { background: var(--watch); }
+.mstack > .todo { background: var(--todo); }
+.mstack-nums { margin-left: 8px; font-size: 10.5px; color: var(--sub);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mstack-nums b.ok { color: var(--ok); } .mstack-nums b.watch { color: var(--watch); }
+.mstack-nums b.todo { color: var(--todo); }
+/* 空态:大 emoji + 浅底块(手账贴纸感),替代纯文字 */
+.empty { display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--accent-soft); border-radius: 12px; padding: 18px 14px;
+  text-align: center; }
+.empty .e-ico { font-size: 26px; line-height: 1; }
+.empty .e-txt { font-size: 12px; color: #9c5535; line-height: 1.6; max-width: 30em; }
 
 /* 卡片内统一小件 */
 /* 事件时间轴:左点右线,Notes/Timeline 共用 */

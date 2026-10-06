@@ -7,7 +7,7 @@ const list = computed(() => (props.kid?.notes || []).slice(0, props.block?.props
 
 <template>
   <template v-if="list.length">
-    <h3>✨ 成长速记</h3>
+    <h3><span class="card-ico ico-green">✨</span>成长速记</h3>
     <div class="tl">
       <div v-for="(n, i) in list" :key="i" class="tl-item">
         <span class="d">{{ n.precision && n.precision !== 'day' ? '≈' : '' }}{{ dateShort(n.date) }}</span>
@@ -19,8 +19,11 @@ const list = computed(() => (props.kid?.notes || []).slice(0, props.block?.props
     </div>
   </template>
   <template v-else>
-    <h3>✨ 成长速记</h3>
-    <div class="src">还没有记录过事件——值得记的瞬间(第一次/可爱时刻/生病)回到对话随手说,会积累在这里。</div>
+    <h3><span class="card-ico ico-green">✨</span>成长速记</h3>
+    <div class="empty" style="margin-top:8px">
+      <span class="e-ico">📷</span>
+      <span class="e-txt">还没有记录过事件——值得记的瞬间(第一次/可爱时刻/生病)回到对话随手说,会积累在这里。</span>
+    </div>
   </template>
 </template>
 

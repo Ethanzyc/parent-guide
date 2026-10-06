@@ -88,7 +88,7 @@ const list = computed(() => records.value.slice(-6).reverse())
 
 <template>
   <template v-if="records.length">
-    <h3>📏 生长曲线
+    <h3><span class="card-ico ico-blue">📏</span>生长曲线
       <span class="head-stats">
         <span>共 <b>{{ records.length }}</b> 条</span>
         <span v-if="latest">最近 {{ latest.date }}</span>
@@ -131,8 +131,11 @@ const list = computed(() => records.value.slice(-6).reverse())
     <div class="src">区间:WS/T 423—2022(写入 knowledge/growth.md) · 筛查参照非诊断,出区间或跨百分位线建议儿保</div>
   </template>
   <template v-else>
-    <h3>📏 生长曲线</h3>
-    <div class="src">还没有生长记录——儿保体检本的身高体重抄回来:对话里说「记一下身高体重」,曲线和参考区间就亮了。</div>
+    <h3><span class="card-ico ico-blue">📏</span>生长曲线</h3>
+    <div class="empty" style="margin-top:8px">
+      <span class="e-ico">📐</span>
+      <span class="e-txt">还没有生长记录——儿保体检本的身高体重抄回来:对话里说「记一下身高体重」,曲线和参考区间就亮了。</span>
+    </div>
   </template>
 </template>
 

@@ -27,7 +27,7 @@ const hasAny = computed(() => focus.value.length || concerns.value.length || run
 
 <template>
   <template v-if="hasAny">
-    <h3>🔥 当前重点</h3>
+    <h3><span class="card-ico ico-amber">🔥</span>当前重点</h3>
     <div v-if="focus.length" style="margin-bottom:10px">
       <span v-for="f in focus" :key="f" class="chip" style="font-size:13px;margin:0 6px 6px 0">{{ f }}</span>
     </div>
@@ -46,8 +46,11 @@ const hasAny = computed(() => focus.value.length || concerns.value.length || run
     </div>
   </template>
   <template v-else>
-    <h3>🔥 当前重点</h3>
-    <div class="src">还没有记录当前关注——回到对话聊聊最近头疼什么,认领后显示在这里。</div>
+    <h3><span class="card-ico ico-amber">🔥</span>当前重点</h3>
+    <div class="empty" style="margin-top:8px">
+      <span class="e-ico">💬</span>
+      <span class="e-txt">还没有记录当前关注——回到对话聊聊最近头疼什么,认领后显示在这里。</span>
+    </div>
   </template>
 </template>
 

@@ -65,38 +65,45 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
     <div v-if="familyNotes" class="prow"><span class="pl">家庭口径</span><span class="pt muted">{{ familyNotes }}</span></div>
   </div>
 
-  <div v-if="!hasPref && !temperament && !language" class="src">
-    画像(气质/语言/偏好)还没填——聊到这些话题时 AI 会顺带记录,这里会慢慢丰满。
+  <div v-if="!hasPref && !temperament && !language" class="empty" style="margin-top:12px">
+    <span class="e-ico">🖍️</span>
+    <span class="e-txt">画像(气质/语言/偏好)还没填——聊到这些话题时 AI 会顺带记录,这里会慢慢丰满。</span>
   </div>
 </template>
 
 <style scoped>
 .phead { display: flex; align-items: center; gap: 12px; padding: 4px 0 12px;
-  border-bottom: 1px dashed var(--line); }
+  border-bottom: 1px solid var(--hero-line); }
 .avatar { flex: none; width: 48px; height: 48px; border-radius: 99px;
   background: linear-gradient(135deg, #f0a078, var(--accent)); color: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 700; }
+  font-size: 22px; font-weight: 700;
+  box-shadow: 0 0 0 2.5px rgba(250,245,239,.35), 0 2px 8px rgba(0,0,0,.25); }
 .pmain { min-width: 0; }
-.pname { font-size: 18px; font-weight: 700; line-height: 1.3; }
-.page-line { font-size: 12px; color: var(--sub); margin-top: 2px; }
-.age-badge { flex: none; margin-left: auto; background: var(--accent-soft);
-  color: var(--accent); border-radius: 99px; padding: 4px 12px;
+.pname { font-size: 18px; font-weight: 700; line-height: 1.3; color: var(--hero-fg); }
+.page-line { font-size: 12px; color: var(--hero-sub); margin-top: 2px; }
+.age-badge { flex: none; margin-left: auto; background: rgba(232,115,74,.28);
+  color: #ffd9c4; border-radius: 99px; padding: 4px 12px;
   font-size: 13px; font-weight: 600; }
 .psec { margin-top: 12px; }
-.plabel { font-size: 11.5px; color: var(--sub); margin-bottom: 5px; }
+.plabel { font-size: 11.5px; color: var(--hero-sub); margin-bottom: 5px; }
+.chip { display: inline-block; background: rgba(250,245,239,.14); color: var(--hero-fg);
+  border-radius: 99px; padding: 2px 10px; font-size: 12px; margin: 2px 6px 2px 0; }
 .concern-row { display: flex; gap: 8px; align-items: baseline; font-size: 13px;
-  padding: 6px 10px; border: 1px solid var(--line); border-left: 3px solid var(--watch);
-  border-radius: 8px; margin-bottom: 5px; }
+  padding: 6px 10px; border: 1px solid var(--hero-line);
+  border-left: 3px solid var(--watch); border-radius: 8px; margin-bottom: 5px;
+  color: var(--hero-fg); }
 .concern-row:last-child { margin-bottom: 0; }
 .ctext { flex: 1; min-width: 0; }
-.csince { flex: none; font-size: 11.5px; color: var(--sub);
+.csince { flex: none; font-size: 11.5px; color: var(--hero-sub);
   font-variant-numeric: tabular-nums; }
 .prow { display: flex; gap: 10px; padding: 5px 0; font-size: 13px;
-  border-bottom: 1px dashed var(--line); align-items: baseline; }
+  border-bottom: 1px solid var(--hero-line); align-items: baseline; }
 .prow:last-child { border-bottom: none; }
-.pl { flex: none; color: var(--sub); min-width: 4em; font-size: 12px; }
-.pt { flex: 1; min-width: 0; line-height: 1.55; }
-.pt.muted { color: #5b564d; }
+.pl { flex: none; color: var(--hero-sub); min-width: 4em; font-size: 12px; }
+.pt { flex: 1; min-width: 0; line-height: 1.55; color: var(--hero-fg); }
+.pt.muted { color: var(--hero-sub); }
 .pt .chip { margin: 2px 6px 2px 0; }
+.empty { background: rgba(250,245,239,.1); }
+.empty .e-txt { color: var(--hero-sub); }
 </style>

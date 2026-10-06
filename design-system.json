@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "id": "growth-journal",
+    "name": "成长手账 · parent-guide 成长视图",
+    "createdAt": "2026-10-06",
+    "axis": {
+      "colorMood": "warm",
+      "typeMood": "modern",
+      "density": "standard",
+      "motionTone": "subtle",
+      "material": "paper"
+    },
+    "tags": ["育儿", "手账", "数据视图", "本地优先"],
+    "useCase": "孩子成长数据看板(卡片网格):档案/里程碑/生长/计划追踪,家长日常查看+分享"
+  },
+  "color": {
+    "light": {
+      "bg": "#faf7f2",
+      "fg": "#3d3a34",
+      "primary": "#e8734a",
+      "accent": "#e8734a",
+      "border": "#efe9e0",
+      "muted": "#8a8478"
+    },
+    "semantic": {
+      "ok": "#3a9a6e",
+      "watch": "#c98a2d",
+      "todo": "#b0685c"
+    },
+    "cardTiles": {
+      "note": "每卡一个低饱和贴纸色 icon tile,打破全文字单调;色相循环分配",
+      "amber": { "solid": "#f2b84b", "soft": "#fdf3dd" },
+      "green": { "solid": "#7fb069", "soft": "#edf5e8" },
+      "blue": { "solid": "#6aa9c9", "soft": "#e8f2f8" },
+      "pink": { "solid": "#d98ba3", "soft": "#faeef2" },
+      "clay": { "solid": "#e8734a", "soft": "#fdeee7" }
+    },
+    "heroCard": {
+      "note": "档案卡=页面唯一深色卡(一深多浅节奏,视觉锚点)",
+      "bg": "linear-gradient(160deg,#4a352b,#33241d)",
+      "fg": "#faf5ef"
+    }
+  },
+  "typography": {
+    "display": "system",
+    "body": "system (-apple-system, PingFang SC)",
+    "utility": "ui-monospace (tabular numbers)",
+    "scale": [
+      { "role": "h3/card-title", "size": "15px", "weight": 600 },
+      { "role": "body", "size": "13.5px", "weight": 400, "lineHeight": 1.6 },
+      { "role": "caption", "size": "11.5px", "weight": 400 }
+    ]
+  },
+  "layout": {
+    "maxWidth": "1200px",
+    "grid": "12 列 GridStack,行高 72px",
+    "background": "暖纸底+极淡圆点纹理(radial-gradient 点阵,手账纸感)"
+  },
+  "motion": {
+    "duration": "180ms",
+    "easing": "ease-out",
+    "note": "卡片 hover 轻浮起 translateY(-2px)+阴影加深;reduced-motion 关闭"
+  },
+  "signature": {
+    "description": "成长手账:暖纸纹底上的贴卡册——深色档案主卡做锚点,每卡彩色贴纸 tile 当页签,里程碑三色堆叠条像手账里画的比例尺",
+    "implementation": "body 圆点纹理;ProfileCard 深棕渐变底白字;各卡 h3 前加 .card-ico 色块(辅色分配见 cardTiles);MilestoneCard 头部三色分段条;空态=大 emoji+浅色底块"
+  }
+}

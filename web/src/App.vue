@@ -96,21 +96,14 @@ function exportReport() {
         : '未检测到本地服务;想体验布局编辑,运行 python3 server.py --open'">
         {{ state.serverMode ? '🔌 本地服务 · 编辑即保存' : '📄 文件模式 · 只读' }}
       </span>
-      <button class="btn" @click="managerOpen = true">☰ 卡片管理</button>
+      <button class="btn" @click="managerOpen = true" title="显示/隐藏卡片;想加自定义卡(便签/清单)回对话跟 AI 说">☰ 卡片管理</button>
       <button class="btn" :class="{ active: state.editing }" :disabled="!state.serverMode"
               @click="toggleEdit">{{ state.editing ? '完成编辑' : '编辑布局' }}</button>
       <button class="btn" @click="drawerOpen = true">编辑配置</button>
       <button class="btn" title="恢复默认功能卡;自定义卡会保留在页面末尾" @click="resetDefault()">重置默认</button>
-      <button class="btn" @click="shareState = { level: 'page', block: null }">分享长图</button>
-      <button class="btn" @click="exportReport">导出单文件报告</button>
+      <button class="btn" title="生成发家人微信的长图;卡片右上角 ⤴ 可单卡分享" @click="shareState = { level: 'page', block: null }">分享长图</button>
+      <button class="btn" title="数据内嵌的单 HTML 文件,可转发/迁移/存档" @click="exportReport">导出单文件报告</button>
       <button class="btn primary" @click="print">导出 PDF</button>
-    </div>
-
-    <div class="banner">
-      <b>本地服务模式</b>(python3 server.py --open):「编辑布局」后整卡拖拽自由定位、右下角拉角拉伸宽高,松手自动紧凑,改动 300ms 防抖写回 data/page.json;
-      <b>文件模式</b>(双击打开):流式只读。<b>☰ 卡片管理</b>=开关控制卡片显示/隐藏;
-      <b>加自定义卡/改内容=回到对话跟 AI 说</b>(「帮我加一张出门清单卡」);
-      <b>分享长图</b>=发家人微信(卡片右上角 ⤴ 可单卡);<b>导出单文件报告</b>=迁移/存档。
     </div>
 
     <GridBoard :key="state.version" :page="state.page" :kid="currentChild()"

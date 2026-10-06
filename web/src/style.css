@@ -25,9 +25,6 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   border-radius: 99px; padding: 2px 10px; margin-right: 10px; white-space: nowrap; }
 .mode-badge.on { color: var(--ok); border-color: #bcdcc9; background: var(--ok-bg); }
 
-.banner { background: var(--accent-soft); color: #9c5535; font-size: 13px;
-  padding: 8px 20px; border-bottom: 1px solid var(--line); }
-
 /* 文件模式:CSS grid 流式只读(x/y/h 忽略,按顺序+宽度) */
 .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px;
   padding: 20px; max-width: 1200px; margin: 0 auto; grid-auto-rows: minmax(64px, auto); }
@@ -130,4 +127,4 @@ body.editing .grid-stack .card { outline: 2px dashed #d8b7a4; outline-offset: -2
 
 footer.page { text-align: center; color: var(--sub); font-size: 12px; padding: 30px 0 40px; }
 body.report .toolbar { display: none; }   /* 单文件报告=纯视图,无编辑工具 */
-@media print { .toolbar, .banner, footer.page { display: none; } body { background: #fff; } }
+@media print { .toolbar, footer.page { display: none; } body { background: #fff; } }

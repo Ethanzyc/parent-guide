@@ -37,7 +37,7 @@ export const REGISTRY = {
 // w/h = sensible defaults when instantiated from the panel.
 export const CARD_META = {
   'profile':        { group: 'builtin', name: '孩子档案',   desc: '小名/月龄/画像/当前重点一览', w: 6, h: 8 },
-  'focus':          { group: 'builtin', name: '当前重点',   desc: '正在关注的事+观察中的问题', w: 6, h: 4 },
+  'focus':          { group: 'builtin', name: '当前重点',   desc: '正在关注的事+在跑计划+最近回访(动态)', w: 6, h: 4 },
   'milestone':      { group: 'builtin', name: '里程碑',     desc: '发育盘点结果(按月龄档)', w: 6, h: 6 },
   'growth':         { group: 'builtin', name: '生长曲线',   desc: '身高体重记录对照参考区间', w: 6, h: 6 },
   'strategy-effect':{ group: 'builtin', name: '策略效果',   desc: '在跑的计划与回访证据', w: 6, h: 6 },

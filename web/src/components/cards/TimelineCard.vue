@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { dateShort } from '../../lib/util.js'
 const props = defineProps({ block: Object, kid: Object })
 const tag = computed(() => props.block?.props?.tag || '')
 const limit = computed(() => props.block?.props?.limit || 5)
@@ -16,7 +17,7 @@ const tagName = computed(() => tag.value ? `· ${tag.value}` : '')
     <h3>🌟 事件时间线{{ tagName }}</h3>
     <div class="tl">
       <div v-for="(n, i) in list" :key="i" class="tl-item">
-        <span class="d">{{ n.precision && n.precision !== 'day' ? '≈' : '' }}{{ n.date }}</span>
+        <span class="d">{{ n.precision && n.precision !== 'day' ? '≈' : '' }}{{ dateShort(n.date) }}</span>
         <span v-if="!tag && (n.tags || []).length" class="note-tags">
           <span v-for="t in n.tags" :key="t" class="ntag">{{ t }}</span>
         </span>

@@ -16,6 +16,32 @@ export function clampInt(v, lo, hi, dflt) {
   return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : dflt
 }
 
+// Short display date: this year drops the year (09-27), other years keep it.
+// Handles YYYY-MM-DD and MM-DD; anything else returns as-is.
+export function dateShort(d) {
+  const s = String(d || '')
+  const now = new Date()
+  const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (m) return +m[1] === now.getFullYear() ? `${+m[2]}-${+m[3]}` : s
+  return s
+}
+
+// Whole days since a MM-DD (treated as this year) or YYYY-MM-DD date.
+// Negative (cross-year artifacts) clamps to null -> caller hides the badge.
+export function daysSince(d) {
+  if (!d) return null
+  const now = new Date()
+  let b = null
+  const full = String(d).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  const short = String(d).match(/^(\d{1,2})-(\d{1,2})$/)
+  if (full) b = new Date(+full[1], +full[2] - 1, +full[3])
+  else if (short) b = new Date(now.getFullYear(), +short[1] - 1, +short[2])
+  if (!b || isNaN(b)) return null
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diff = Math.round((today - b) / 86400000)
+  return diff >= 0 ? diff : null
+}
+
 // MM-DD 或 YYYY-MM-DD -> { label, urgency } for due dates (cards, today-local).
 // urgency: 'overdue' | 'today' | 'soon' (<=7d) | 'later'; null date -> neutral.
 export function dueLabel(due) {

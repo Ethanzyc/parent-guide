@@ -15,11 +15,19 @@ function toggle(i) {
   emit('update', { items: items.value.map(it => ({ text: it.text, done: !!it.done })) })
 }
 const doneCount = computed(() => items.value.filter(i => i.done).length)
+const pct = computed(() => items.value.length
+  ? Math.round(doneCount.value / items.value.length * 100) : 0)
+const allDone = computed(() => items.value.length > 0 && doneCount.value === items.value.length)
 </script>
 
 <template>
   <template v-if="items.length">
-    <h3>✅ {{ title }}<span class="tag">自定义 · {{ doneCount }}/{{ items.length }}</span></h3>
+    <h3>✅ {{ title }}
+      <span class="head-stats"><span :class="allDone ? 'ok' : ''"><b>{{ doneCount }}</b>/{{ items.length }}</span></span>
+    </h3>
+    <div class="track" :title="`${doneCount}/${items.length}`">
+      <div class="fill" :class="{ done: allDone }" :style="{ width: pct + '%' }"></div>
+    </div>
     <label v-for="(it, i) in items" :key="i" class="li" :class="{ done: it.done }">
       <input type="checkbox" :checked="it.done" @change="toggle(i)">
       <span>{{ it.text }}</span>
@@ -32,6 +40,11 @@ const doneCount = computed(() => items.value.filter(i => i.done).length)
 </template>
 
 <style scoped>
+.track { background: #f1ece4; border-radius: 99px; height: 6px; overflow: hidden; margin-bottom: 10px; }
+.fill { height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, #f0a078, var(--accent));
+  transition: width .25s; }
+.fill.done { background: var(--ok); }
 .li { display: flex; gap: 8px; font-size: 14px; padding: 4px 0; cursor: pointer; align-items: baseline; }
 .li input { accent-color: var(--accent); }
 .li.done span { color: var(--sub); text-decoration: line-through; }

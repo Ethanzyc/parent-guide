@@ -88,7 +88,7 @@ const list = computed(() => records.value.slice(-6).reverse())
 
 <template>
   <template v-if="records.length">
-    <h3><span class="card-ico ico-blue">📏</span>生长曲线
+    <h3>生长曲线
       <span class="head-stats">
         <span>共 <b>{{ records.length }}</b> 条</span>
         <span v-if="latest">最近 {{ latest.date }}</span>
@@ -131,11 +131,8 @@ const list = computed(() => records.value.slice(-6).reverse())
     <div class="src">区间:WS/T 423—2022(写入 knowledge/growth.md) · 筛查参照非诊断,出区间或跨百分位线建议儿保</div>
   </template>
   <template v-else>
-    <h3><span class="card-ico ico-blue">📏</span>生长曲线</h3>
-    <div class="empty" style="margin-top:8px">
-      <span class="e-ico">📐</span>
-      <span class="e-txt">还没有生长记录——儿保体检本的身高体重抄回来:对话里说「记一下身高体重」,曲线和参考区间就亮了。</span>
-    </div>
+    <h3>生长曲线</h3>
+    <div class="src">还没有生长记录——儿保体检本的身高体重抄回来:对话里说「记一下身高体重」,曲线和参考区间就亮了。</div>
   </template>
 </template>
 
@@ -153,9 +150,9 @@ const list = computed(() => records.value.slice(-6).reverse())
 .ct { font-size: 12px; color: var(--sub); margin-bottom: 2px; }
 .ct .cb { float: right; font-size: 11px; }
 svg { width: 100%; height: auto; display: block; }
-.band { fill: var(--accent-soft); stroke: none; }
-.cline { fill: none; stroke: var(--accent); stroke-width: 2; }
-.cdot { fill: #fff; stroke: var(--accent); stroke-width: 2; }
+.band { fill: rgba(90,130,180,.10); stroke: none; }
+.cline { fill: none; stroke: var(--ink-blue); stroke-width: 2; }
+.cdot { fill: #fff; stroke: var(--ink-blue); stroke-width: 2; }
 .cdot.out { fill: var(--todo); stroke: var(--todo); }
 .rlist { margin-top: 4px; }
 .rrow { display: flex; gap: 10px; font-size: 12.5px; padding: 3px 0;

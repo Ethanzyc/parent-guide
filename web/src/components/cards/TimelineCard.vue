@@ -14,7 +14,7 @@ const tagName = computed(() => tag.value ? `· ${tag.value}` : '')
 
 <template>
   <template v-if="list.length">
-    <h3><span class="card-ico ico-amber">🌟</span>事件时间线{{ tagName }}</h3>
+    <h3>事件时间线{{ tagName }}</h3>
     <div class="tl">
       <div v-for="(n, i) in list" :key="i" class="tl-item">
         <span class="d">{{ n.precision && n.precision !== 'day' ? '≈' : '' }}{{ dateShort(n.date) }}</span>
@@ -26,10 +26,9 @@ const tagName = computed(() => tag.value ? `· ${tag.value}` : '')
     </div>
   </template>
   <template v-else>
-    <h3><span class="card-ico ico-amber">🌟</span>事件时间线{{ tagName }}</h3>
-    <div class="empty" style="margin-top:8px">
-      <span class="e-ico">📷</span>
-      <span class="e-txt">{{ tag ? `还没有带「${tag}」标签的事件` : '还没有记录过事件' }}——值得记的瞬间回到对话随手说一句,会积累在这里。</span>
+    <h3>事件时间线{{ tagName }}</h3>
+    <div class="src">
+      {{ tag ? `还没有带「${tag}」标签的事件` : '还没有记录过事件' }}——值得记的瞬间回到对话随手说一句,会积累在这里。
     </div>
   </template>
 </template>

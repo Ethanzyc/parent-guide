@@ -12,7 +12,7 @@ const badge = (s) => s === 'effective' ? '✓ 有效' : s === 'partial' ? '◐ �
 
 <template>
   <template v-if="list.length">
-    <h3><span class="card-ico ico-pink">📈</span>策略效果</h3>
+    <h3>策略效果</h3>
     <div v-for="s in list" :key="s.id" class="strate">
       <div class="srow">
         <div class="name">{{ s.id }} {{ s.name }}<span class="since">自 {{ s.started }}</span></div>
@@ -25,11 +25,8 @@ const badge = (s) => s === 'effective' ? '✓ 有效' : s === 'partial' ? '◐ �
     </div>
   </template>
   <template v-else>
-    <h3><span class="card-ico ico-pink">📈</span>策略效果</h3>
-    <div class="empty" style="margin-top:8px">
-      <span class="e-ico">🗺️</span>
-      <span class="e-txt">还没有策略记录——回到对话说「我们想开始 XX 计划」,计划落档后显示在这里。</span>
-    </div>
+    <h3>策略效果</h3>
+    <div class="src">还没有策略记录——回到对话说「我们想开始 XX 计划」,计划落档后显示在这里。</div>
   </template>
 </template>
 

@@ -99,7 +99,7 @@ function scheduleSync() {
     <div v-for="b in items" :key="b.id" class="grid-stack-item"
          :gs-x="b.x" :gs-y="b.y" :gs-w="b.w" :gs-h="b.h" :gs-id="b.id">
       <div class="grid-stack-item-content">
-        <div class="card" :class="{ hero: b.type === 'profile' }">
+        <div class="card">
           <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" />
           <button class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
         </div>
@@ -109,7 +109,7 @@ function scheduleSync() {
 
   <!-- 文件模式:CSS grid 流式只读 -->
   <main v-else class="grid">
-    <section v-for="b in items" :key="b.id" class="card" :class="{ hero: b.type === 'profile' }"
+    <section v-for="b in items" :key="b.id" class="card"
              :style="{ '--w': clampInt(b.w, 1, 12, 6) }">
       <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" />
       <button class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>

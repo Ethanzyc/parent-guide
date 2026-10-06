@@ -16,7 +16,7 @@ function splitTopic(t) {
 </script>
 
 <template>
-  <h3><span class="card-ico ico-clay">🔔</span>待回访</h3>
+  <h3>待回访</h3>
   <template v-if="list.length">
     <div v-for="(f, i) in list" :key="i" class="frow">
       <span class="due-b" :class="dl(f.due).urgency || 'plain'">{{ dl(f.due).label || f.due }}</span>
@@ -24,10 +24,7 @@ function splitTopic(t) {
       <span class="topic"><b>{{ splitTopic(f.topic).lead }}</b><template v-if="splitTopic(f.topic).rest">:{{ splitTopic(f.topic).rest }}</template></span>
     </div>
   </template>
-  <div v-else class="empty" style="margin-top:8px">
-    <span class="e-ico">🎉</span>
-    <span class="e-txt">暂无待回访项,在跑的计划都稳定着。</span>
-  </div>
+  <div v-else class="src">暂无待回访项 🎉</div>
 </template>
 
 <style scoped>

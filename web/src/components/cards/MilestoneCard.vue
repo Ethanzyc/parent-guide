@@ -15,20 +15,17 @@ const counts = computed(() => {
   for (const i of items) if (c[i.status] !== undefined) c[i.status]++
   return c
 })
-const total = computed(() => counts.value.ok + counts.value.watch + counts.value.todo || 1)
 const assessed = computed(() => pack.value.data?.assessed || '')
 </script>
 
 <template>
   <template v-if="pack.data">
-    <h3><span class="card-ico ico-green">🎯</span>{{ pack.m }} 个月里程碑
-      <span class="mstack" :title="`已会 ${counts.ok} / 观察 ${counts.watch} / 尚未 ${counts.todo}`">
-        <i class="ok" :style="{ width: (counts.ok / total * 100) + '%' }"></i>
-        <i class="watch" :style="{ width: (counts.watch / total * 100) + '%' }"></i>
-        <i class="todo" :style="{ width: (counts.todo / total * 100) + '%' }"></i>
-      </span>
-      <span class="mstack-nums"><b class="ok">{{ counts.ok }}</b>/<b class="watch">{{ counts.watch }}</b>/<b class="todo">{{ counts.todo }}</b></span>
-    </h3>
+    <h3>里程碑 · {{ pack.m }} 月</h3>
+    <div class="mnums num-serif">
+      <span class="mn"><i style="color:var(--ok)">{{ counts.ok }}</i><small>已会</small></span>
+      <span class="mn"><i style="color:var(--watch)">{{ counts.watch }}</i><small>观察</small></span>
+      <span class="mn"><i style="color:var(--todo)">{{ counts.todo }}</i><small>尚未</small></span>
+    </div>
     <div v-for="(i, idx) in (pack.data.items || [])" :key="idx" class="mrow">
       <span class="st" :class="i.status">{{ stLabel[i.status] || i.status }}</span>
       <span style="color:var(--sub);flex:none;width:5.5em">{{ i.domain }}</span>
@@ -37,10 +34,14 @@ const assessed = computed(() => pack.value.data?.assessed || '')
     <div class="src">来源:{{ pack.data.source }}<template v-if="assessed"> · 盘于 {{ assessed }}</template></div>
   </template>
   <template v-else>
-    <h3><span class="card-ico ico-green">🎯</span>{{ pack.m }} 个月里程碑</h3>
-    <div class="empty" style="margin-top:8px">
-      <span class="e-ico">🌱</span>
-      <span class="e-txt">还没盘过这个月龄。回到对话说「做个发育盘点」,几分钟判定完会显示在这里。</span>
-    </div>
+    <h3>里程碑 · {{ pack.m }} 月</h3>
+    <div class="src">还没盘过这个月龄。回到对话说「做个发育盘点」,几分钟判定完会显示在这里。</div>
   </template>
 </template>
+
+<style scoped>
+.mnums { display: flex; gap: 16px; margin-bottom: 10px; }
+.mn { text-align: center; }
+.mn i { display: block; font-style: normal; font-size: 27px; font-weight: 700; line-height: 1.15; }
+.mn small { font-size: 10.5px; color: var(--sub); letter-spacing: .06em; }
+</style>

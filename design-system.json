@@ -1,68 +1,35 @@
 {
   "meta": {
-    "id": "growth-journal",
-    "name": "成长手账 · parent-guide 成长视图",
+    "id": "graph-paper",
+    "name": "生长图纸 · parent-guide 成长视图",
     "createdAt": "2026-10-06",
-    "axis": {
-      "colorMood": "warm",
-      "typeMood": "modern",
-      "density": "standard",
-      "motionTone": "subtle",
-      "material": "paper"
-    },
-    "tags": ["育儿", "手账", "数据视图", "本地优先"],
-    "useCase": "孩子成长数据看板(卡片网格):档案/里程碑/生长/计划追踪,家长日常查看+分享"
+    "axis": { "colorMood": "calm/medical", "typeMood": "modern+serif-numbers", "density": "standard", "motionTone": "subtle", "material": "paper(graph)" },
+    "tags": ["育儿", "健康数据", "坐标纸", "墨蓝"],
+    "useCase": "孩子成长数据看板:档案/里程碑/生长曲线/计划追踪。视觉母题=儿保手册生长曲线页的坐标纸。参考 demo/ui-2026-10/a-graph.html(定稿依据,用户三选一)"
   },
   "color": {
     "light": {
-      "bg": "#faf7f2",
-      "fg": "#3d3a34",
-      "primary": "#e8734a",
-      "accent": "#e8734a",
-      "border": "#efe9e0",
-      "muted": "#8a8478"
+      "bg": "#fdfdfb", "fg": "#1e3a52", "primary": "#2f5470", "accent": "#2f5470",
+      "border": "#dde6ec", "muted": "#7d92a3",
+      "grid": "rgba(90,130,180,.07)", "gridLine": "rgba(90,130,180,.18)"
     },
-    "semantic": {
-      "ok": "#3a9a6e",
-      "watch": "#c98a2d",
-      "todo": "#b0685c"
-    },
-    "cardTiles": {
-      "note": "每卡一个低饱和贴纸色 icon tile,打破全文字单调;色相循环分配",
-      "amber": { "solid": "#f2b84b", "soft": "#fdf3dd" },
-      "green": { "solid": "#7fb069", "soft": "#edf5e8" },
-      "blue": { "solid": "#6aa9c9", "soft": "#e8f2f8" },
-      "pink": { "solid": "#d98ba3", "soft": "#faeef2" },
-      "clay": { "solid": "#e8734a", "soft": "#fdeee7" }
-    },
-    "heroCard": {
-      "note": "档案卡=页面唯一深色卡(一深多浅节奏,视觉锚点)",
-      "bg": "linear-gradient(160deg,#4a352b,#33241d)",
-      "fg": "#faf5ef"
-    }
+    "semantic": { "ok": "#4a8a6e", "watch": "#c98a2d", "todo": "#c25a4e" }
   },
   "typography": {
-    "display": "system",
-    "body": "system (-apple-system, PingFang SC)",
-    "utility": "ui-monospace (tabular numbers)",
-    "scale": [
-      { "role": "h3/card-title", "size": "15px", "weight": 600 },
-      { "role": "body", "size": "13.5px", "weight": 400, "lineHeight": 1.6 },
-      { "role": "caption", "size": "11.5px", "weight": 400 }
-    ]
+    "display": "Georgia serif (数字:大月龄 54px / 计数 27px / 日期徽章)",
+    "body": "-apple-system PingFang SC",
+    "note": "数字是本产品的第一语言,serif 数字=填表笔迹感;卡头=小字距 eyebrow(sub 色 .22em),无 emoji"
   },
   "layout": {
-    "maxWidth": "1200px",
-    "grid": "12 列 GridStack,行高 72px",
-    "background": "暖纸底+极淡圆点纹理(radial-gradient 点阵,手账纸感)"
+    "maxWidth": "1200px", "grid": "12 列",
+    "cardStyle": "白底+14px 浅蓝网格纸背景+细蓝边框 10px 圆角;虚线分隔"
   },
-  "motion": {
-    "duration": "180ms",
-    "easing": "ease-out",
-    "note": "卡片 hover 轻浮起 translateY(-2px)+阴影加深;reduced-motion 关闭"
-  },
+  "motion": { "duration": "0", "note": "静态为主(图纸气质),不加 hover 动效" },
   "signature": {
-    "description": "成长手账:暖纸纹底上的贴卡册——深色档案主卡做锚点,每卡彩色贴纸 tile 当页签,里程碑三色堆叠条像手账里画的比例尺",
-    "implementation": "body 圆点纹理;ProfileCard 深棕渐变底白字;各卡 h3 前加 .card-ico 色块(辅色分配见 cardTiles);MilestoneCard 头部三色分段条;空态=大 emoji+浅色底块"
+    "description": "儿保手册生长曲线页的坐标纸:每张卡是一页填好的图表,数字像钢笔填进表格,状态是描边小章",
+    "implementation": "卡片 CSS 网格背景;ProfileCard eyebrow+大 serif 月龄+名字章框;里程碑三色大计数;due serif 徽章"
+  },
+  "history": {
+    "2026-10-06-rejected": "growth-journal(手账贴纸风:深色主卡+彩色tile+纸纹+大emoji)被用户否「更丑了」——装饰过度;教训:单调的解法是数字排版不是加色"
   }
 }

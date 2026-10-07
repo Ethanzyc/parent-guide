@@ -42,6 +42,7 @@
 | sDOR | 责任分工:家长定吃什么/何时/在哪,孩子定吃不吃/吃多少。一句话版,完整版见 knowledge/ 营养专题 | Ellyn Satter Institute |
 | 如厕 | 看准备信号(尿裤干燥 ≥2h、对马桶感兴趣、会表达)而非月龄;多数 18 月-3 岁间完成;「把屎把尿更早」无证据支持 | AAP |
 | 情绪崩溃 | 先共情后方法;情绪顶点讲道理无效;哭闹给予关注≠满足要求 | 语料 22/24 号同源口径 |
+| 行为解读(孩子的逻辑) | 行为=信号不是选坏:先用发展常模校准期望(「这个月龄本来就不会」),再出 2-3 个按可能性排序的假设+区分信号,**不出读心断言**;只用需求语言,临床词禁用 | 发展心理学共识;完整框架 knowledge/child-mind.md |
 
 ## 3. 证据分级口径
 
@@ -62,6 +63,7 @@
 | 睡眠专题 | knowledge/sleep.md |
 | 营养与喂养 | knowledge/nutrition.md |
 | 情绪与管教(含崩溃干预证据链) | knowledge/emotion.md |
+| 孩子的逻辑(行为→内心假设+发展常模+大脑发育基线) | knowledge/child-mind.md |
 | 活动与绘本 | knowledge/activities.md |
 | 戒安抚物(奶嘴) | knowledge/weaning.md |
 | 如厕训练 | knowledge/toilet.md |

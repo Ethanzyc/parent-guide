@@ -402,5 +402,28 @@ class T(unittest.TestCase):
         self.assertNotEqual(code, 0)
         self.assertIn("growth.records", msg)
 
+    def test_38_short_date_fields_normalize_full_dates(self):
+        # 2026-10-07 实测发现的缺陷:对话侧给 MM-DD 字段传 YYYY-MM-DD,
+        # 写入器原样放行,要等 check 才拦住。写入即合规:完整日期自动去年份。
+        code, msg = run(self.tmp, "add-strategy", "--name", "超市玩具规则",
+                        "--applied", "预告+共情+零兑换", "--started", "2026-10-08")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["strategies"][-1]["started"], "10-08")
+        code, msg = run(self.tmp, "add-followup", "--due", "2026-10-22",
+                        "--topic", "规则回访")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["followups"][-1]["due"], "10-22")
+        code, msg = run(self.tmp, "check")
+        self.assertEqual(code, 0, msg)
+        # 匹配型动作同样归一:set-followup-status 传完整日期也能命中
+        code, msg = run(self.tmp, "set-followup-status", "--due", "2026-10-22",
+                        "--topic", "规则回访", "--status", "done")
+        self.assertEqual(code, 0, msg)
+        # add-reminder 的 --due 同样归一
+        code, msg = run(self.tmp, "add-reminder", "--due", "2026-11-02",
+                        "--topic", "流感疫苗", "--source", "疫苗")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["reminders"][-1]["due"], "11-02")
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

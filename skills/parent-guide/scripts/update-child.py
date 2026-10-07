@@ -19,6 +19,9 @@ Actions:
   mark-revisited --id --result [--status effective|partial|ineffective]
   set-status    --id --status active|suspended|absorbed|ineffective [--note]
 
+MM-DD arguments also accept YYYY-MM-DD (auto year-stripped on write), so a
+caller passing full dates still produces a check-clean archive.
+
 Every action prints an evidence summary -- the agent quotes it as proof the
 record was written (evidence before claims).
 
@@ -58,6 +61,14 @@ PLACEHOLDERS = {"MM-DD", "YYYY-MM-DD", "HH:MM", "女|男",
 
 def _today():
     return date.today().strftime("%m-%d")
+
+
+def _norm_short(v):
+    """MM-DD fields also accept YYYY-MM-DD and store it year-stripped:
+    conversation-side callers habitually pass full dates (field-test finding
+    2026-10-07); anything else still lands in check's problem list."""
+    v = str(v or "")
+    return v[5:] if DATE_FULL.match(v) else v
 
 
 def _days_ago(n):
@@ -111,7 +122,7 @@ def execute(argv=None):
     p = sub.add_parser("add-strategy")
     p.add_argument("--name", required=True)
     p.add_argument("--applied", required=True)
-    p.add_argument("--started", default=None)
+    p.add_argument("--started", default=None, help="MM-DD (YYYY-MM-DD auto-normalized)")
 
     p = sub.add_parser("add-followup")
     p.add_argument("--due", required=True)
@@ -140,7 +151,7 @@ def execute(argv=None):
     p.add_argument("--status", default=None, choices=["effective", "partial", "ineffective"])
 
     p = sub.add_parser("add-reminder")
-    p.add_argument("--due", required=True, help="MM-DD")
+    p.add_argument("--due", required=True, help="MM-DD (YYYY-MM-DD auto-normalized)")
     p.add_argument("--topic", required=True)
     p.add_argument("--source", required=True, help="e.g. 疫苗/入园准备/自定义")
 
@@ -249,19 +260,21 @@ def execute(argv=None):
 
     if args.action == "add-strategy":
         sid = _next_strategy_id(child)
+        started = _norm_short(args.started) or _today()
         child.setdefault("strategies", []).append({
             "id": sid, "name": args.name, "applied": args.applied,
-            "started": args.started or _today(), "followup": "",
+            "started": started, "followup": "",
             "evidence": "回访 ×0", "status": "active",
         })
-        msg = f"recorded strategy {sid}「{args.name}」(started {args.started or _today()}, status active)"
+        msg = f"recorded strategy {sid}「{args.name}」(started {started}, status active)"
 
     elif args.action == "add-followup":
+        due = _norm_short(args.due)
         items = child.setdefault("followups", [])
-        if any(f.get("due") == args.due and f.get("topic") == args.topic for f in items):
-            return 1, f"ERROR: followup {args.due}「{args.topic}」already exists (idempotency guard)"
-        items.append({"due": args.due, "topic": args.topic, "status": "pending"})
-        msg = f"recorded followup {args.due}「{args.topic}」"
+        if any(f.get("due") == due and f.get("topic") == args.topic for f in items):
+            return 1, f"ERROR: followup {due}「{args.topic}」already exists (idempotency guard)"
+        items.append({"due": due, "topic": args.topic, "status": "pending"})
+        msg = f"recorded followup {due}「{args.topic}」"
 
     elif args.action == "add-growth":
         if args.height is None and args.weight is None:
@@ -352,31 +365,34 @@ def execute(argv=None):
         msg = f"recorded {args.field} = {args.value[:40]}"
 
     elif args.action == "add-reminder":
+        due = _norm_short(args.due)
         items = child.setdefault("reminders", [])
-        if any(r.get("due") == args.due and r.get("topic") == args.topic for r in items):
-            return 1, f"ERROR: reminder {args.due}「{args.topic}」already exists"
-        items.append({"due": args.due, "topic": args.topic,
+        if any(r.get("due") == due and r.get("topic") == args.topic for r in items):
+            return 1, f"ERROR: reminder {due}「{args.topic}」already exists"
+        items.append({"due": due, "topic": args.topic,
                       "source": args.source, "status": "pending"})
-        msg = f"recorded reminder {args.due}「{args.topic}」({args.source})"
+        msg = f"recorded reminder {due}「{args.topic}」({args.source})"
 
     elif args.action == "set-reminder-status":
+        due = _norm_short(args.due)
         r = next((r for r in child.get("reminders", [])
-                  if r.get("due") == args.due and r.get("topic") == args.topic), None)
+                  if r.get("due") == due and r.get("topic") == args.topic), None)
         if r is None:
-            return 1, f"ERROR: reminder {args.due}「{args.topic}」not found"
+            return 1, f"ERROR: reminder {due}「{args.topic}」not found"
         r["status"] = args.status
-        msg = f"reminder {args.due}「{args.topic[:30]}」-> {args.status}"
+        msg = f"reminder {due}「{args.topic[:30]}」-> {args.status}"
 
     elif args.action == "set-followup-status":
+        due = _norm_short(args.due)
         f = next((f for f in child.get("followups", [])
-                  if f.get("due") == args.due and f.get("topic") == args.topic), None)
+                  if f.get("due") == due and f.get("topic") == args.topic), None)
         if f is None:
             existing = ";".join(f"{x.get('due')}「{x.get('topic', '')[:20]}」"
                                 for x in child.get("followups", [])) or "(无)"
-            return 1, (f"ERROR: followup {args.due} not found"
+            return 1, (f"ERROR: followup {due} not found"
                        f"(须 due+topic 双精确匹配) | 现有:{existing}")
         f["status"] = args.status
-        msg = (f"followup {args.due}「{args.topic[:30]}」-> {args.status}"
+        msg = (f"followup {due}「{args.topic[:30]}」-> {args.status}"
                + ("(留在档案作历史,卡片与热区只显示 pending)" if args.status != "pending" else ""))
 
     elif args.action == "set-milestone":

@@ -52,6 +52,16 @@ def make_server(port, data_dir, web_dir):
         def log_message(self, *args):  # keep console quiet
             pass
 
+        def translate_path(self, path):
+            # /site/* serves the repo's knowledge pages (site/) instead of
+            # web/dist -- the local entry into the public knowledge base.
+            if path.startswith("/site/") or path == "/site":
+                rel = path[len("/site"):].lstrip("/")
+                full = os.path.normpath(os.path.join(str(ROOT / "site"), rel))
+                if full == str(ROOT / "site") or full.startswith(str(ROOT / "site") + os.sep):
+                    return full
+            return super().translate_path(path)
+
         def _send_json(self, code, obj):
             body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
             self.send_response(code)

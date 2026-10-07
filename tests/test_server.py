@@ -131,6 +131,23 @@ class ServerTest(unittest.TestCase):
         code, resp = call("POST", "/api/page", page)
         self.assertEqual(code, 400)
 
+    def test_11_site_knowledge_pages_served(self):
+        def raw(path):
+            conn = http.client.HTTPConnection(HOST, PORT, timeout=5)
+            try:
+                conn.request("GET", path)
+                resp = conn.getresponse()
+                return resp.status, resp.read().decode("utf-8", "ignore")
+            finally:
+                conn.close()
+        code, body = raw("/site/index.html")
+        self.assertEqual(code, 200)
+        self.assertIn("知识", body[:800])            # knowledge index renders
+        code, _ = raw("/site/quick-ref.html")
+        self.assertEqual(code, 200)
+        code, _ = raw("/site/../../data/child.json")  # traversal must not escape
+        self.assertNotEqual(code, 200)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

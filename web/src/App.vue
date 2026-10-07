@@ -13,6 +13,7 @@ const drawerOpen = ref(false)
 const managerOpen = ref(false)
 const shareState = ref(null)     // null | { level: 'page' | 'card', block }
 const print = () => window.print()
+const openSite = () => window.open('/site/index.html', '_blank')
 
 function onApplyPage(next) {
   applyJsonPage(next)
@@ -97,6 +98,7 @@ function exportReport() {
         {{ state.serverMode ? '🔌 本地服务 · 编辑即保存' : '📄 文件模式 · 只读' }}
       </span>
       <button class="btn" @click="managerOpen = true" title="显示/隐藏卡片;想加自定义卡(便签/清单)回对话跟 AI 说">☰ 卡片管理</button>
+      <button v-if="state.serverMode" class="btn" title="睡眠/营养/情绪/如厕等专题与速查表(本地只读)" @click="openSite">📖 知识库</button>
       <button class="btn" :class="{ active: state.editing }" :disabled="!state.serverMode"
               @click="toggleEdit">{{ state.editing ? '完成编辑' : '编辑布局' }}</button>
       <button class="btn" @click="drawerOpen = true">编辑配置</button>

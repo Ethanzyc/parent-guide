@@ -18,6 +18,17 @@ done
 [ -f "$K/BACKLOG.md" ] || { echo "FAIL: knowledge/BACKLOG.md missing"; exit 1; }
 grep -q "| 日期 |" "$K/BACKLOG.md" || { echo "FAIL: BACKLOG.md lacks table header"; exit 1; }
 
+# closed set: knowledge root holds only official files; self-built goes to knowledge/user/
+# (must stay in sync with the publish.sh whitelist)
+for f in "$K"/*.md; do
+  case "$(basename "$f")" in
+    milestones.md|sleep.md|nutrition.md|emotion.md|activities.md|tantrum-cdc.md|anticipatory.md|weaning.md|toilet.md|growth.md|child-mind.md|README.md|LICENSE.md|BACKLOG.md) ;;
+    *) echo "FAIL: unknown root knowledge file '$f' — official set is closed; register it in publish.sh+here, or move it to knowledge/user/ (self-built layer)"; exit 1 ;;
+  esac
+done
+# self-built layer: convention doc exists (ships; content under user/ never does)
+[ -f "$K/user/README.md" ] || { echo "FAIL: knowledge/user/README.md (self-built layer convention) missing"; exit 1; }
+
 M="$K/milestones.md"
 # attribution + public-domain note
 grep -q "CDC" "$M" && grep -q "公有领域" "$M" || { echo "FAIL: CDC attribution/public-domain note missing"; exit 1; }

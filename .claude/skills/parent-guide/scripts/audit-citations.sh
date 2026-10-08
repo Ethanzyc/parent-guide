@@ -3,9 +3,12 @@
 # is backed by the corpus (skill knowledge core + knowledge/ reviews).
 #
 # Usage: audit-citations.sh [--corpus DIR]... FILE...
+#        audit-citations.sh [--corpus DIR]... --anchor "file.md §N"
 #   --corpus DIR   add a corpus directory (default: this skill's references/
 #                  plus the repo's knowledge/ when reachable from this script)
-# Exit codes: 0 = all citations reconcile; 1 = dangling/unsourced findings.
+#   --anchor SPEC  verify a §-anchor cited in output exists in the corpus
+#                  (anchor self-check for the 依据随行 rule; no FILE needed)
+# Exit codes: 0 = all citations reconcile / anchor found; 1 = dangling/unsourced/anchor missing.
 #
 # v1 scope (to be continuously refined): known-org table + generic org
 # suffixes, file references, conservative medical-claim heuristics.
@@ -22,18 +25,58 @@ REPO_KNOWLEDGE="$(cd "$SKILL_DIR/../.." && pwd)/knowledge"
 [ -d "$REPO_KNOWLEDGE" ] && CORPUS_DIRS+=("$REPO_KNOWLEDGE")
 
 FILES=()
+ANCHOR=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --corpus) shift; CORPUS_DIRS+=("$1") ;;
+    --anchor) shift; ANCHOR="$1" ;;
     *) FILES+=("$1") ;;
   esac
   shift
 done
-[ "${#FILES[@]}" -gt 0 ] || { echo "usage: audit-citations.sh [--corpus DIR]... FILE..." >&2; exit 1; }
 
 REPO_ROOT="$(cd "$SKILL_DIR/../.." && pwd)"
 export AUDIT_CORPUS_DIRS="${CORPUS_DIRS[*]}"
 export AUDIT_REPO_ROOT="$REPO_ROOT"
+
+# --anchor mode: verify a cited "file §N" anchor exists (依据随行 self-check)
+if [ -n "$ANCHOR" ]; then
+  export AUDIT_ANCHOR="$ANCHOR"
+  rc=0
+  python3 - <<'PY' || rc=$?
+import os, re, sys, glob
+
+corpus_dirs = os.environ["AUDIT_CORPUS_DIRS"].split()
+spec = os.environ["AUDIT_ANCHOR"]
+m = re.match(r'\s*([A-Za-z0-9_\-\.]+)\s*(?:§\s*(\d+))?\s*$', spec)
+if not m:
+    print(f'FAIL: 无法解析锚点「{spec}」(期望形如「文件名 §数字」)')
+    sys.exit(1)
+fname, sec = m.group(1), m.group(2)
+paths = [p for d in corpus_dirs
+         for p in glob.glob(os.path.join(d, "**", fname), recursive=True)]
+if not paths:
+    print(f"FAIL: 语料中找不到文件 {fname}")
+    sys.exit(1)
+if sec is None:
+    print(f"PASS: {fname} 存在(未指定节号)")
+    sys.exit(0)
+text = open(paths[0], encoding="utf-8").read()
+pat = re.compile(rf'^#{{2,3}}\s*(?:§\s*)?{sec}(?=[\.\s、):：])', re.M)
+if pat.search(text):
+    print(f"PASS: {fname} §{sec} 存在({paths[0]})")
+    sys.exit(0)
+heads = [h for h in text.splitlines()
+         if re.match(r'^#{2,3}\s*(?:§\s*)?\d', h)]
+print(f"FAIL: {fname} 未找到 §{sec};该文件的数字节:")
+for h in heads[:12]:
+    print(f"  {h}")
+sys.exit(1)
+PY
+  exit "$rc"
+fi
+
+[ "${#FILES[@]}" -gt 0 ] || { echo "usage: audit-citations.sh [--corpus DIR]... FILE... | --anchor SPEC" >&2; exit 1; }
 
 python3 - "${FILES[@]}" <<'PY'
 import os, re, sys, glob

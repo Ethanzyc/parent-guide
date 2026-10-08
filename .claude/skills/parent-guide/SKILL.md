@@ -68,6 +68,7 @@ Run=执行脚本(确定性操作交给代码);See=按需阅读,不提前加载�
 | **孩子的逻辑**(行为→内心假设/发展常模/大脑发育基线) | **knowledge/child-mind.md**(枚举库+常模+验证纪律);输出结构=templates.md 孩子的逻辑节 |
 | 发育里程碑/专题深度 | knowledge/ 官方库(根目录闭集;自建=knowledge/user/,引用标「家庭自建 T3」;缺失走 §4 降级) |
 | 输出结构 | templates.md |
+| 调研怎么做(缺口/质疑/产品深调) | references/research.md(七步内核+快/深两档) |
 | 档案写入/状态感知/断言边界 | conversation.md |
 | 前瞻节点(疫苗/入园/流感季) | knowledge/anticipatory.md + conversation.md §2.6 |
 | 家人分享卡(「发给家里/队友/群里」) | templates.md 分享卡节(纯文本家人版;页面用户引导长图) |

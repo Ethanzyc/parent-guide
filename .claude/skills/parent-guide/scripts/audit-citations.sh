@@ -48,9 +48,9 @@ import os, re, sys, glob
 
 corpus_dirs = os.environ["AUDIT_CORPUS_DIRS"].split()
 spec = os.environ["AUDIT_ANCHOR"]
-m = re.match(r'\s*([A-Za-z0-9_\-\.]+)\s*(?:§\s*(\d+))?\s*$', spec)
+m = re.match(r'\s*([A-Za-z0-9_\-\.]+)\s*(?:§\s*(\d+(?:\.\d+)?))?\s*$', spec)
 if not m:
-    print(f'FAIL: 无法解析锚点「{spec}」(期望形如「文件名 §数字」)')
+    print(f'FAIL: 无法解析锚点「{spec}」(期望形如「文件名 §数字」,数字可含小数节如 §2.5)')
     sys.exit(1)
 fname, sec = m.group(1), m.group(2)
 paths = [p for d in corpus_dirs
@@ -62,8 +62,11 @@ if sec is None:
     print(f"PASS: {fname} 存在(未指定节号)")
     sys.exit(0)
 text = open(paths[0], encoding="utf-8").read()
-pat = re.compile(rf'^#{{2,3}}\s*(?:§\s*)?{sec}(?=[\.\s、):：])', re.M)
-if pat.search(text):
+sec_norm = sec.rstrip('0').rstrip('.') if '.' in sec else sec
+head_num = re.compile(r'^#{2,3}\s*(?:§\s*)?(\d+(?:\.\d+)?)(?![\d])', re.M)
+found = [n for n in head_num.findall(text)
+         if (n.rstrip('0').rstrip('.') if '.' in n else n) == sec_norm]
+if found:
     print(f"PASS: {fname} §{sec} 存在({paths[0]})")
     sys.exit(0)
 heads = [h for h in text.splitlines()

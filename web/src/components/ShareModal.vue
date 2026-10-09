@@ -290,13 +290,7 @@ async function save() {
                   <span class="main">{{ row.text }}</span>
                 </div>
                 <div v-else-if="row.kind === 'issue-how'" class="sc-row issue-how">
-                  <div class="who-do">
-                    <template v-if="/^[^:]{1,4}:/.test(row.text)">
-                      <span class="w">{{ row.text.split(':', 1)[0] }}</span>
-                      <span>{{ row.text.slice(row.text.indexOf(':') + 1) }}</span>
-                    </template>
-                    <span v-else>{{ row.text }}</span>
-                  </div>
+                  <span class="main">{{ row.text }}</span>
                 </div>
                 <div v-else-if="row.kind === 'issue-red'" class="sc-red">
                   <b>出现这些当天就医:</b>{{ row.text }}
@@ -438,8 +432,6 @@ async function save() {
 .focusrow .ftag { display: inline-block; background: #fff; color: var(--ink-blue);
   border: 1px solid var(--grid-line); border-radius: 6px; padding: 3px 12px; font-size: 14.5px; margin: 0 6px 6px 0; }
 .concern { display: flex; gap: 8px; align-items: baseline; }
-.who-do { display: flex; gap: 8px; align-items: baseline; }
-.who-do .w { flex: none; color: var(--ink-blue); font-weight: 600; font-size: 13.5px; }
 .sc-red { background: var(--todo-bg); border: 1px solid var(--todo); border-radius: 8px;
   padding: 10px 12px; margin: 10px 0; font-size: 14px; }
 .sc-red b { color: var(--todo); }

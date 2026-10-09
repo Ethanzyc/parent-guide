@@ -6,7 +6,7 @@
 // 整页分享 = 页面级导出,按卡勾选(用户拍板 2026-10-01)。
 import { ref, computed, watch } from 'vue'
 import { domToPng } from 'modern-screenshot'
-import { monthsAge, nearestMilestone, daysSince } from '../lib/util.js'
+import { monthsAge, nearestMilestone, daysSince, zhPunct } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
@@ -284,16 +284,16 @@ async function save() {
               <template v-for="(row, i) in sec.rows" :key="i">
                 <div v-if="row.group" class="sc-sec-title">{{ row.group }}</div>
                 <div v-if="row.kind === 'issue-what'" class="sc-row issue-what">
-                  <span class="main">{{ row.text }}</span>
+                  <span class="main">{{ zhPunct(row.text) }}</span>
                 </div>
                 <div v-else-if="row.kind === 'issue-why'" class="sc-row issue-why">
-                  <span class="main">{{ row.text }}</span>
+                  <span class="main">{{ zhPunct(row.text) }}</span>
                 </div>
                 <div v-else-if="row.kind === 'issue-how'" class="sc-row issue-how">
-                  <span class="main">{{ row.text }}</span>
+                  <span class="main">{{ zhPunct(row.text) }}</span>
                 </div>
                 <div v-else-if="row.kind === 'issue-red'" class="sc-red">
-                  <b>出现这些当天就医:</b>{{ row.text }}
+                  <b>出现这些当天就医：</b>{{ zhPunct(row.text) }}
                 </div>
                 <div v-else-if="row.kind === 'strategy'" class="sc-row strategy">
                   <div class="r1"><b>{{ row.name }}</b><span class="pill" :class="row.stRaw">{{ row.st }}</span></div>

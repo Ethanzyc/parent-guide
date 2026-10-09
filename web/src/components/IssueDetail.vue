@@ -3,7 +3,7 @@
 // 最新在最上;窄屏折叠单列)。大节点只认机械事件(opened/judged/strategy.started)
 // ——语义归一留读侧(spec issue-tracking-v1 §6.3)。只读:内容变更一律回对话。
 import { computed, ref } from 'vue'
-import { daysSince, dueLabel } from '../lib/util.js'
+import { daysSince, dueLabel, zhPunct, bodyParas, segLabel } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
@@ -116,7 +116,7 @@ const briefSections = computed(() => {
               <div class="nc-tag">当前状态</div>
               <div v-if="issue.pendingCare" class="act care">
                 <span class="alab">就医待办</span>
-                <span class="atxt">{{ issue.pendingCare }}</span>
+                <span class="atxt">{{ zhPunct(issue.pendingCare) }}</span>
               </div>
               <div v-if="next" class="act next">
                 <span class="alab">下一步</span>
@@ -126,17 +126,17 @@ const briefSections = computed(() => {
                   <span class="ntopic">{{ next.topic }}</span>
                 </span>
               </div>
-              <div class="nc-main">{{ issue.summary }}</div>
+              <div class="nc-main">{{ zhPunct(issue.summary) }}</div>
             </div>
 
             <div v-for="sec in briefSections" :key="sec.key" class="brief">
               <h4>{{ sec.title }}</h4>
-              <ul><li v-for="(b, i) in sec.body" :key="i">{{ b }}</li></ul>
+              <ul><li v-for="(b, i) in sec.body" :key="i">{{ zhPunct(b) }}</li></ul>
             </div>
 
             <div v-if="issue.brief?.redline" class="redline">
               <h4>出现这些直接就医,不等观察</h4>
-              <p>{{ issue.brief.redline }}</p>
+              <p>{{ zhPunct(issue.brief.redline) }}</p>
             </div>
           </div>
 
@@ -150,24 +150,29 @@ const briefSections = computed(() => {
                   <template v-if="e.big">
                     <span class="tt">
                       <span class="node-b">{{ e.big }}</span>
-                      <span class="b">{{ e.text }}</span>
+                      <span class="b">{{ zhPunct(e.text) }}</span>
                     </span>
                   </template>
                   <template v-else-if="e.fu">
                     <span class="tt">
-                      <span>{{ e.text }}</span>
+                      <span>{{ zhPunct(e.text) }}</span>
                       <span v-if="e.status === 'pending'" class="due-b"
                             :class="dueLabel(e.date).urgency || 'later'">{{ dueLabel(e.date).label }}</span>
                       <span v-else class="fu-done">{{ e.status === 'done' ? '已回访' : '已跳过' }}</span>
                     </span>
                   </template>
                   <div v-else class="ev">
-                    <div v-if="e.title" class="ev-title" @click="toggle(i)">{{ e.title }}</div>
+                    <div v-if="e.title" class="ev-title" @click="toggle(i)">{{ zhPunct(e.title) }}</div>
                     <div v-if="e.tags.length" class="ev-chips">
                       <span v-for="t in e.tags" :key="t" class="chip">{{ t }}</span>
                     </div>
                     <div v-if="!e.title || isOpen(i)" class="ev-body"
-                         :class="{ clamp: !e.title && !isOpen(i) }">{{ e.text }}</div>
+                         :class="{ clamp: !e.title && !isOpen(i) }">
+                      <p v-for="(seg, j) in bodyParas(e.text).slice(0, !e.title && !isOpen(i) ? 1 : 99)"
+                         :key="j">
+                        <b v-if="segLabel(seg)" class="seg-lab">{{ segLabel(seg) }}</b>{{ segLabel(seg) ? seg.slice(segLabel(seg).length) : seg }}
+                      </p>
+                    </div>
                     <button v-if="e.title || e.text.length > 42" class="ev-toggle"
                             @click="toggle(i)">{{ isOpen(i) ? '收起' : '详情' }}</button>
                   </div>
@@ -253,6 +258,9 @@ h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
   overflow: hidden; }
 .ev-toggle { border: 0; background: none; color: var(--ink-blue); font-size: 11.5px;
   cursor: pointer; padding: 2px 0; margin-top: 1px; }
+.ev-body p { margin: 0 0 4px; }
+.ev-body p:last-child { margin-bottom: 0; }
+.seg-lab { color: var(--ink); font-weight: 600; }
 .tl-item.big { padding: 6px 0 10px; }
 .tl-item.big::before { left: -21px; top: 6px; width: 12px; height: 12px;
   background: #fff; border: 3px solid var(--ink-blue); box-shadow: 0 0 0 2px var(--accent-soft); }

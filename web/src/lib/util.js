@@ -62,3 +62,27 @@ export function dueLabel(due) {
   if (diff <= 7) return { label: `${diff} 天后`, urgency: 'soon' }
   return { label: `${diff} 天后`, urgency: 'later' }
 }
+
+// 中文语境标点归一(读侧机械转换,档案原文不动——中文文案排版指北口径):
+// 中文句子用全角 ；，（）;嵌入的数字语境保持半角(14:30 / 1,000 / https://)。
+export function zhPunct(s) {
+  return String(s || '')
+    .replace(/;/g, '；')
+    .replace(/,/g, (m, off, str) =>
+      /\d/.test(str[off - 1] || '') && /\d/.test(str[off + 1] || '') ? ',' : '，')
+    .replace(/:/g, (m, off, str) => {
+      if (str.substr(off + 1, 2) === '//') return ':'          // URL 协议符
+      return /\d/.test(str[off - 1] || '') && /\d/.test(str[off + 1] || '') ? ':' : '：'
+    })
+    .replace(/\(/g, '（').replace(/\)/g, '）')
+}
+
+// 详情正文分段:标点归一后按中文分号切段(NN Group 分段/列点证据);
+// 段首「标签：」(<=8 字)由渲染层加粗——纯机械,不做语义判断。
+export function bodyParas(text) {
+  return zhPunct(text).split('；').map(t => t.trim()).filter(Boolean)
+}
+export function segLabel(seg) {
+  const m = zhPunct(seg).match(/^([^：]{1,8})：/)
+  return m ? m[1] + '：' : ''
+}

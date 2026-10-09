@@ -258,8 +258,10 @@ h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
   overflow: hidden; }
 .ev-toggle { border: 0; background: none; color: var(--ink-blue); font-size: 11.5px;
   cursor: pointer; padding: 2px 0; margin-top: 1px; }
-.ev-body p { margin: 0 0 4px; }
+.ev-body p { margin: 0 0 4px; padding-left: 13px; position: relative; }
 .ev-body p:last-child { margin-bottom: 0; }
+.ev-body p::before { content: '•'; position: absolute; left: 1px;
+  color: var(--ink-blue); font-size: 11px; line-height: 1.9; }
 .seg-lab { color: var(--ink); font-weight: 600; }
 .tl-item.big { padding: 6px 0 10px; }
 .tl-item.big::before { left: -21px; top: 6px; width: 12px; height: 12px;

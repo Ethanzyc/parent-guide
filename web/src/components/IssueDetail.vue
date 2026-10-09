@@ -217,12 +217,11 @@ h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
   background: rgba(255,255,255,.85); padding: 14px 16px; margin-bottom: 6px; }
 .now-card .nc-tag { font-size: 11px; letter-spacing: .2em; color: var(--ink-blue);
   font-weight: 600; margin-bottom: 8px; }
-.act { display: flex; gap: 10px; align-items: baseline; padding: 9px 12px;
-  border-radius: 8px; margin-bottom: 8px; font-size: 13.5px; line-height: 1.55; }
-.act.care { background: var(--todo-bg); border-left: 3px solid var(--todo); }
-.act.next { background: var(--accent-soft); border-left: 3px solid var(--ink-blue); }
-.act .alab { flex: none; font-size: 11px; letter-spacing: .1em; color: var(--sub);
-  font-weight: 600; }
+.act { display: flex; gap: 12px; align-items: baseline; padding: 7px 2px;
+  font-size: 13.5px; line-height: 1.55; border-bottom: 1px dashed var(--line); }
+.act .alab { flex: none; min-width: 4.5em; font-size: 12px; font-weight: 600; }
+.act.care .alab { color: var(--todo); }
+.act.next .alab { color: var(--ink-blue); }
 .act .atxt { min-width: 0; }
 .act .ntopic { display: inline; }
 .now-card .nc-main { font-size: 14.5px; line-height: 1.6; color: var(--ink); }

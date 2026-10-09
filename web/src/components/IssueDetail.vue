@@ -1,9 +1,9 @@
 <script setup>
-// 问题病历层:左列=当前状态卡+口径卡+红线,右列=时间轴(窄屏折叠单列)。
-// 大节点只认机械事件(opened/judged/strategy.started)——语义归一留读侧
-// (spec issue-tracking-v1 §6.3)。只读:内容变更一律回对话。
+// 问题病历层:左列=当前状态卡(行动格优先)+口径卡+红线,右列=时间轴(倒序,
+// 最新在最上;窄屏折叠单列)。大节点只认机械事件(opened/judged/strategy.started)
+// ——语义归一留读侧(spec issue-tracking-v1 §6.3)。只读:内容变更一律回对话。
 import { computed } from 'vue'
-import { daysSince, dueLabel, dateShort } from '../lib/util.js'
+import { daysSince, dueLabel } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
@@ -43,27 +43,33 @@ function normKey(d) {
   if (/^\d{1,2}-\d{1,2}$/.test(s)) return `${y}-${s.padStart(5, '0')}`
   return s
 }
-// 展示日期统一走 dateShort(当年省年份;跨年保留)——notes 存 ISO 全日期,
-// opened/started/due 存 MM-DD,不归一会一格 2026-10-09 一格 10-09(实测翻车)。
+// 展示日期统一补全年份(2026-10-09 完整格式,用户拍板 2026-10-09)——
+// notes 存 ISO 全日期,opened/started/due 存 MM-DD,读侧归一为同一形态。
+const fullDate = (d) => {
+  const s = String(d || '')
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) return s
+  if (/^\d{1,2}-\d{1,2}$/.test(s)) return `${new Date().getFullYear()}-${s.padStart(5, '0')}`
+  return s
+}
 const dispDate = (d, precision) =>
-  (precision && precision !== 'day' ? '≈' : '') + dateShort(d)
+  (precision && precision !== 'day' ? '≈' : '') + fullDate(d)
 const events = computed(() => {
   const i = issue.value
   if (!i) return []
-  const ev = [{ date: i.opened, dstr: dateShort(i.opened), big: '立案',
+  const ev = [{ date: i.opened, dstr: fullDate(i.opened), big: '立案',
                 text: `${i.name} 开题${i.status === 'watching' ? '(观察)' : ''}` }]
-  if (i.judged && i.brief?.what) ev.push({ date: i.judged, dstr: dateShort(i.judged), big: '判定', text: i.brief.what })
+  if (i.judged && i.brief?.what) ev.push({ date: i.judged, dstr: fullDate(i.judged), big: '判定', text: i.brief.what })
   for (const s of props.kid?.strategies || [])
     if ((s.issues || []).includes(i.id))
-      ev.push({ date: s.started, dstr: dateShort(s.started), big: '方案', text: `${s.id} ${s.name}` })
+      ev.push({ date: s.started, dstr: fullDate(s.started), big: '方案', text: `${s.id} ${s.name}` })
   for (const n of props.kid?.notes || [])
     if ((n.issues || []).includes(i.id))
       ev.push({ date: n.date, dstr: dispDate(n.date, n.precision), text: n.text,
                 tags: (n.tags || []).filter(t => t !== i.name) })
   for (const f of props.kid?.followups || [])
     if ((f.issues || []).includes(i.id))
-      ev.push({ date: f.due, dstr: dateShort(f.due), text: f.topic, fu: true, status: f.status || 'pending' })
-  return ev.sort((a, b) => normKey(a.date).localeCompare(normKey(b.date)))
+      ev.push({ date: f.due, dstr: fullDate(f.due), text: f.topic, fu: true, status: f.status || 'pending' })
+  return ev.sort((a, b) => normKey(b.date).localeCompare(normKey(a.date)))   // 倒序:最新在最上
 })
 const briefSections = computed(() => {
   const b = issue.value?.brief || {}
@@ -86,25 +92,27 @@ const briefSections = computed(() => {
           <span class="st" :class="ST_CLASS[issue.status]">{{ ST_LABEL[issue.status] }}</span>
           <span class="meta">{{ dayNo }} · 立案 {{ issue.opened }}
             · 策略{{ linked.s }} 记录{{ linked.n }} 回访{{ linked.f }}</span>
-          <button class="x" @click="emit('close')">✕</button>
+          <button class="share-btn" @click="emit('share-issue', issue)">分享问题卡给家人</button>
+          <button class="x" title="关闭" @click="emit('close')">✕</button>
         </div>
 
         <div class="is-cols">
           <div class="is-left">
             <div class="now-card">
               <div class="nc-tag">当前状态</div>
-              <div class="nc-main">{{ issue.summary }}</div>
-              <div class="nc-acts">
-                <template v-if="issue.pendingCare">
-                  <span class="lab">就医待办</span><span class="care-b">{{ issue.pendingCare }}</span>
-                </template>
-                <template v-if="next">
-                  <span class="lab">下一步</span>
-                  <span class="due-b" :class="dueLabel(next.due).urgency || 'later'">
-                    {{ next.due }} · {{ dueLabel(next.due).label }}</span>
-                  <span class="lab" style="margin-left:4px">{{ next.topic.slice(0, 18) }}</span>
-                </template>
+              <div v-if="issue.pendingCare" class="act care">
+                <span class="alab">就医待办</span>
+                <span class="atxt">{{ issue.pendingCare }}</span>
               </div>
+              <div v-if="next" class="act next">
+                <span class="alab">下一步</span>
+                <span class="atxt">
+                  <span class="due-b" :class="dueLabel(next.due).urgency || 'later'">
+                    {{ fullDate(next.due) }} · {{ dueLabel(next.due).label }}</span>
+                  <span class="ntopic">{{ next.topic }}</span>
+                </span>
+              </div>
+              <div class="nc-main">{{ issue.summary }}</div>
             </div>
 
             <div v-for="sec in briefSections" :key="sec.key" class="brief">
@@ -139,9 +147,8 @@ const briefSections = computed(() => {
           </div>
         </div>
 
-        <div class="is-foot">
-          <button class="btn" @click="emit('share-issue', issue)">分享问题卡给家人</button>
-          <button class="btn" @click="emit('close')">关闭</button>
+        <div v-if="briefSections.length || issue.brief?.redline" class="is-foot">
+          <span class="foot-hint">内容变更回到对话中说一声即可</span>
         </div>
       </div>
     </div>
@@ -161,23 +168,29 @@ const briefSections = computed(() => {
   gap: 18px; align-items: start; margin-top: 2px; }
 @media (max-width: 860px) { .is-cols { grid-template-columns: 1fr; } }
 .is-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px;
-  border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+  border-bottom: 1px solid var(--line); margin-bottom: 14px; flex-wrap: wrap; }
 .is-head .t { font-size: 19px; font-weight: 700; color: var(--ink-blue); }
 .is-head .meta { margin-left: auto; font-size: 12px; color: var(--sub); }
-.is-head .x { border: 0; background: none; color: var(--sub); font-size: 16px; cursor: pointer; }
+.is-head .share-btn { flex: none; border: 1px solid var(--ink-blue); background: var(--ink-blue);
+  color: #fff; border-radius: 8px; padding: 5px 14px; font-size: 12.5px; cursor: pointer; }
+.is-head .x { flex: none; border: 0; background: none; color: var(--sub); font-size: 16px;
+  cursor: pointer; padding: 2px 4px; }
 h3 { font-size: 13px; color: var(--sub); font-weight: 600; letter-spacing: .22em; margin: 16px 0 10px; }
 h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
   border: 1px solid var(--line); border-radius: 5px; padding: 1px 8px; }
 .now-card { border: 1.5px solid var(--ink-blue); border-radius: 10px;
   background: rgba(255,255,255,.85); padding: 14px 16px; margin-bottom: 6px; }
 .now-card .nc-tag { font-size: 11px; letter-spacing: .2em; color: var(--ink-blue);
-  font-weight: 600; margin-bottom: 6px; }
-.now-card .nc-main { font-size: 16.5px; font-weight: 600; line-height: 1.5; }
-.now-card .nc-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
-  padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13px; align-items: center; }
-.now-card .lab { color: var(--sub); }
-.care-b { color: var(--todo); border: 1px solid var(--todo); border-radius: 5px;
-  padding: 1px 8px; font-size: 12.5px; }
+  font-weight: 600; margin-bottom: 8px; }
+.act { display: flex; gap: 10px; align-items: baseline; padding: 9px 12px;
+  border-radius: 8px; margin-bottom: 8px; font-size: 13.5px; line-height: 1.55; }
+.act.care { background: var(--todo-bg); border-left: 3px solid var(--todo); }
+.act.next { background: var(--accent-soft); border-left: 3px solid var(--ink-blue); }
+.act .alab { flex: none; font-size: 11px; letter-spacing: .1em; color: var(--sub);
+  font-weight: 600; }
+.act .atxt { min-width: 0; }
+.act .ntopic { display: inline; }
+.now-card .nc-main { font-size: 14.5px; line-height: 1.6; color: var(--ink); }
 .brief { border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px;
   margin-top: 10px; background: rgba(255,255,255,.7); }
 .brief h4 { font-size: 13px; color: var(--ink-blue); font-weight: 600;
@@ -217,11 +230,9 @@ h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
 .st.watch { color: var(--watch); border-color: var(--watch); }
 .st.plain { color: var(--sub); border-color: var(--sub); }
 .st.ok { color: var(--ok); border-color: var(--ok); }
-.is-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;
-  padding-top: 12px; border-top: 1px solid var(--line); }
-.is-foot .btn { border: 1px solid var(--line); background: #fff; color: var(--ink);
-  border-radius: 8px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
-.is-foot .btn:first-child { background: var(--ink-blue); border-color: var(--ink-blue); color: #fff; }
+.is-foot { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--line);
+  text-align: center; }
+.is-foot .foot-hint { font-size: 11.5px; color: var(--sub); }
 .due-b { flex: none; display: inline-flex; align-items: center; border-radius: 5px;
   padding: 1px 8px; font-size: 12px; font-variant-numeric: tabular-nums;
   font-family: Georgia, serif; font-weight: 700; }

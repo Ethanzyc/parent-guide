@@ -1,9 +1,9 @@
 <script setup>
-// 问题病历层:当前状态卡(最重要信息第一屏)→口径卡(为什么)→红线→时间轴。
+// 问题病历层:左列=当前状态卡+口径卡+红线,右列=时间轴(窄屏折叠单列)。
 // 大节点只认机械事件(opened/judged/strategy.started)——语义归一留读侧
 // (spec issue-tracking-v1 §6.3)。只读:内容变更一律回对话。
 import { computed } from 'vue'
-import { daysSince, dueLabel } from '../lib/util.js'
+import { daysSince, dueLabel, dateShort } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
@@ -43,21 +43,26 @@ function normKey(d) {
   if (/^\d{1,2}-\d{1,2}$/.test(s)) return `${y}-${s.padStart(5, '0')}`
   return s
 }
+// 展示日期统一走 dateShort(当年省年份;跨年保留)——notes 存 ISO 全日期,
+// opened/started/due 存 MM-DD,不归一会一格 2026-10-09 一格 10-09(实测翻车)。
+const dispDate = (d, precision) =>
+  (precision && precision !== 'day' ? '≈' : '') + dateShort(d)
 const events = computed(() => {
   const i = issue.value
   if (!i) return []
-  const ev = [{ date: i.opened, big: '立案', text: `${i.name} 开题${i.status === 'watching' ? '(观察)' : ''}` }]
-  if (i.judged && i.brief?.what) ev.push({ date: i.judged, big: '判定', text: i.brief.what })
+  const ev = [{ date: i.opened, dstr: dateShort(i.opened), big: '立案',
+                text: `${i.name} 开题${i.status === 'watching' ? '(观察)' : ''}` }]
+  if (i.judged && i.brief?.what) ev.push({ date: i.judged, dstr: dateShort(i.judged), big: '判定', text: i.brief.what })
   for (const s of props.kid?.strategies || [])
     if ((s.issues || []).includes(i.id))
-      ev.push({ date: s.started, big: '方案', text: `${s.id} ${s.name}` })
+      ev.push({ date: s.started, dstr: dateShort(s.started), big: '方案', text: `${s.id} ${s.name}` })
   for (const n of props.kid?.notes || [])
     if ((n.issues || []).includes(i.id))
-      ev.push({ date: n.date, text: n.text,
+      ev.push({ date: n.date, dstr: dispDate(n.date, n.precision), text: n.text,
                 tags: (n.tags || []).filter(t => t !== i.name) })
   for (const f of props.kid?.followups || [])
     if ((f.issues || []).includes(i.id))
-      ev.push({ date: f.due, text: f.topic, fu: true, status: f.status || 'pending' })
+      ev.push({ date: f.due, dstr: dateShort(f.due), text: f.topic, fu: true, status: f.status || 'pending' })
   return ev.sort((a, b) => normKey(a.date).localeCompare(normKey(b.date)))
 })
 const briefSections = computed(() => {
@@ -84,45 +89,53 @@ const briefSections = computed(() => {
           <button class="x" @click="emit('close')">✕</button>
         </div>
 
-        <div class="now-card">
-          <div class="nc-tag">当前状态</div>
-          <div class="nc-main">{{ issue.summary }}</div>
-          <div class="nc-acts">
-            <template v-if="issue.pendingCare">
-              <span class="lab">就医待办</span><span class="care-b">{{ issue.pendingCare }}</span>
-            </template>
-            <template v-if="next">
-              <span class="lab">下一步</span>
-              <span class="due-b" :class="dueLabel(next.due).urgency || 'later'">
-                {{ next.due }} · {{ dueLabel(next.due).label }}</span>
-              <span class="lab" style="margin-left:4px">{{ next.topic.slice(0, 18) }}</span>
-            </template>
+        <div class="is-cols">
+          <div class="is-left">
+            <div class="now-card">
+              <div class="nc-tag">当前状态</div>
+              <div class="nc-main">{{ issue.summary }}</div>
+              <div class="nc-acts">
+                <template v-if="issue.pendingCare">
+                  <span class="lab">就医待办</span><span class="care-b">{{ issue.pendingCare }}</span>
+                </template>
+                <template v-if="next">
+                  <span class="lab">下一步</span>
+                  <span class="due-b" :class="dueLabel(next.due).urgency || 'later'">
+                    {{ next.due }} · {{ dueLabel(next.due).label }}</span>
+                  <span class="lab" style="margin-left:4px">{{ next.topic.slice(0, 18) }}</span>
+                </template>
+              </div>
+            </div>
+
+            <div v-for="sec in briefSections" :key="sec.key" class="brief">
+              <h4>{{ sec.title }}</h4>
+              <ul><li v-for="(b, i) in sec.body" :key="i">{{ b }}</li></ul>
+            </div>
+
+            <div v-if="issue.brief?.redline" class="redline">
+              <h4>出现这些直接就医,不等观察</h4>
+              <p>{{ issue.brief.redline }}</p>
+            </div>
           </div>
-        </div>
 
-        <div v-for="sec in briefSections" :key="sec.key" class="brief">
-          <h4>{{ sec.title }}</h4>
-          <ul><li v-for="(b, i) in sec.body" :key="i">{{ b }}</li></ul>
-        </div>
-
-        <div v-if="issue.brief?.redline" class="redline">
-          <h4>出现这些直接就医,不等观察</h4>
-          <p>{{ issue.brief.redline }}</p>
-        </div>
-
-        <h3>时间线<span class="tag">对话自动归集</span></h3>
-        <div class="tl">
-          <div v-for="(e, i) in events" :key="i" class="tl-item"
-               :class="{ big: e.big, future: e.fu && e.status === 'pending' }">
-            <span class="d">{{ e.date }}</span>
-            <span class="tt">
-              <span v-if="e.big" class="node-b">{{ e.big }}</span>
-              <span :class="{ b: e.big }">{{ e.text }}</span>
-              <span v-for="t in e.tags" :key="t" class="chip">{{ t }}</span>
-              <span v-if="e.fu && e.status === 'pending'" class="due-b"
-                    :class="dueLabel(e.date).urgency || 'later'">{{ dueLabel(e.date).label }}</span>
-              <span v-else-if="e.fu" class="fu-done">{{ e.status === 'done' ? '已回访' : '已跳过' }}</span>
-            </span>
+          <div class="is-right">
+            <div class="tl-panel">
+              <h3>时间线<span class="tag">对话自动归集</span></h3>
+              <div class="tl">
+                <div v-for="(e, i) in events" :key="i" class="tl-item"
+                     :class="{ big: e.big, future: e.fu && e.status === 'pending' }">
+                  <span class="d">{{ e.dstr }}</span>
+                  <span class="tt">
+                    <span v-if="e.big" class="node-b">{{ e.big }}</span>
+                    <span :class="{ b: e.big }">{{ e.text }}</span>
+                    <span v-for="t in e.tags" :key="t" class="chip">{{ t }}</span>
+                    <span v-if="e.fu && e.status === 'pending'" class="due-b"
+                          :class="dueLabel(e.date).urgency || 'later'">{{ dueLabel(e.date).label }}</span>
+                    <span v-else-if="e.fu" class="fu-done">{{ e.status === 'done' ? '已回访' : '已跳过' }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -143,7 +156,10 @@ const briefSections = computed(() => {
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: 14px 14px;
   border: 1px solid var(--grid-line); border-radius: 12px;
-  width: min(680px, 100%); max-height: 92vh; overflow: auto; padding: 22px 26px; }
+  width: min(1000px, 100%); max-height: 92vh; overflow: auto; padding: 22px 26px; }
+.is-cols { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 18px; align-items: start; margin-top: 2px; }
+@media (max-width: 860px) { .is-cols { grid-template-columns: 1fr; } }
 .is-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px;
   border-bottom: 1px solid var(--line); margin-bottom: 14px; }
 .is-head .t { font-size: 19px; font-weight: 700; color: var(--ink-blue); }
@@ -172,6 +188,9 @@ h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
   border-radius: 10px; padding: 12px 16px; margin-top: 10px; }
 .redline h4 { font-size: 13px; color: var(--todo); font-weight: 600; margin-bottom: 4px; }
 .redline p { font-size: 13.5px; }
+.tl-panel { border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px 14px;
+  background: rgba(255,255,255,.7); }
+.tl-panel h3 { margin-top: 0; }
 .tl { position: relative; padding-left: 18px; }
 .tl::before { content: ''; position: absolute; left: 3px; top: 8px; bottom: 8px;
   width: 2px; background: var(--line); border-radius: 2px; }

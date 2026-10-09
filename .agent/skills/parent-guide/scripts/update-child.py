@@ -47,7 +47,7 @@ from pathlib import Path
 # shared by write actions and `check`, so they can never drift apart.
 VALID_STATUS = {"active", "effective", "partial", "ineffective", "suspended", "absorbed"}
 MILESTONE_STATUS = {"ok", "watch", "todo"}
-CONCERN_STATUS = {"观察中", "已解决"}
+ISSUE_STATUS = {"active", "watching", "resolved"}   # docs/specs/issue-tracking-v1.md
 NOTE_PRECISION = {"day", "week", "month"}
 DATE_FULL = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # birthdate
 DATE_SHORT = re.compile(r"^\d{2}-\d{2}$")        # MM-DD everywhere else
@@ -114,6 +114,30 @@ def _bump_evidence(evidence):
     return f"回访 ×{n}"
 
 
+def _next_issue_id(child):
+    nums = [int(m.group(1)) for x in child.get("issues", [])
+            for m in [re.match(r"P(\d+)$", str(x.get("id", "")))] if m]
+    return f"P{max(nums, default=0) + 1}"
+
+
+def _find_issue(child, iid):
+    it = next((x for x in child.get("issues", []) if x.get("id") == iid), None)
+    if it is None:
+        known = ";".join(str(x.get("id", "?")) for x in child.get("issues", [])) or "(无)"
+        return None, f"ERROR: issue {iid} not found | 现有:{known}"
+    return it, None
+
+
+def _validated_issues(child, ids):
+    """--issue 参数校验:返回去重列表;None=挂了不存在的问题。"""
+    if not ids:
+        return []
+    known = {x.get("id") for x in child.get("issues", [])}
+    if any(i not in known for i in ids):
+        return None
+    return list(dict.fromkeys(ids))
+
+
 def execute(argv=None):
     ap = argparse.ArgumentParser(prog="update-child.py")
     ap.add_argument("--data", default="./data", help="data directory (default ./data)")
@@ -123,10 +147,14 @@ def execute(argv=None):
     p.add_argument("--name", required=True)
     p.add_argument("--applied", required=True)
     p.add_argument("--started", default=None, help="MM-DD (YYYY-MM-DD auto-normalized)")
+    p.add_argument("--issue", action="append", default=None,
+                   help="挂到问题 P 号(可重复;先 add-issue)")
 
     p = sub.add_parser("add-followup")
     p.add_argument("--due", required=True)
     p.add_argument("--topic", required=True)
+    p.add_argument("--issue", action="append", default=None,
+                   help="挂到问题 P 号(可重复;先 add-issue)")
 
     p = sub.add_parser("add-growth", help="append a height/weight measurement "
                        "(growth.records; same-date re-entry replaces -- growth "
@@ -141,9 +169,11 @@ def execute(argv=None):
                    help="YYYY-MM-DD (preferred) or MM-DD (current year assumed)")
     p.add_argument("--approx-days", default=None,
                    help="fuzzy recollection: N days ago; precision auto-graded "
-                        "(<=7 day, <=21 week, else month) -- never invent exactness")
+                   "(<=7 day, <=21 week, else month) -- never invent exactness")
     p.add_argument("--tags", default=None, help="comma-separated event tags")
     p.add_argument("--text", required=True)
+    p.add_argument("--issue", action="append", default=None,
+                   help="挂到问题 P 号(可重复;先 add-issue)")
 
     p = sub.add_parser("mark-revisited")
     p.add_argument("--id", required=True)
@@ -184,12 +214,43 @@ def execute(argv=None):
                       "(derived from conversation evidence; empty = all resolved)")
     p.add_argument("--items", required=True, help="comma-separated; empty string clears")
 
-    p = sub.add_parser("set-concern-status", help="transition an activeConcern "
-                      "(resolved stays as history, hidden from hot context)")
-    p.add_argument("--text", required=True, help="exact concern text as in the archive")
-    p.add_argument("--status", required=True, choices=sorted(CONCERN_STATUS))
+    p = sub.add_parser("add-issue")
+    p.add_argument("--name", required=True)
+    p.add_argument("--status", required=True, choices=["active", "watching"],
+                   help="开题只允许 active/watching;resolved 走 set-issue-status 且须用户拍板")
+    p.add_argument("--summary", required=True, help="当前状态一句话(详情页当前状态卡主体)")
+    p.add_argument("--opened", default=None, help="MM-DD 默认今天;补开历史问题时用")
+    p.add_argument("--judged", default=None, help="MM-DD 判定确立日(时间轴大节点)")
+    p.add_argument("--pending-care", default=None, help="待办就医动作;存在=红")
+    p.add_argument("--what", default=None, help="brief.what:这是什么问题(判定与现状)")
+    p.add_argument("--why", action="append", default=None, help="为什么这么做:一条一传")
+    p.add_argument("--how", action="append", default=None, help="全家怎么做:一条一传")
+    p.add_argument("--redline", default=None, help="出现即就医/评估的红线")
 
-    sub.add_parser("check", help="validate the archive: required fields, date "
+    p = sub.add_parser("set-issue-status")
+    p.add_argument("--id", required=True)
+    p.add_argument("--status", required=True, choices=sorted(ISSUE_STATUS))
+
+    p = sub.add_parser("set-issue-brief")
+    p.add_argument("--id", required=True)
+    p.add_argument("--summary", default=None)
+    p.add_argument("--what", default=None)
+    p.add_argument("--why", action="append", default=None,
+                   help="整组覆盖;传空串清空该节")
+    p.add_argument("--how", action="append", default=None)
+    p.add_argument("--redline", default=None)
+    p.add_argument("--pending-care", default=None, help="传 none 清除")
+    p.add_argument("--judged", default=None)
+
+    p = sub.add_parser("link-issue", help="回顾补挂/误挂纠正")
+    p.add_argument("--id", required=True)
+    p.add_argument("--note", action="append", default=None,
+                   help="YYYY-MM-DD:前缀(前缀>=8字;撞车报错列候选)")
+    p.add_argument("--strategy", action="append", default=None, help="如 S4")
+    p.add_argument("--followup", action="append", default=None, help="MM-DD:topic")
+    p.add_argument("--remove", action="store_true")
+
+    p = sub.add_parser("check", help="validate the archive: required fields, date "
                   "formats (YYYY-MM-DD / MM-DD), status enums, numeric fields, "
                   "id uniqueness; human-readable problem list")
 
@@ -240,9 +301,9 @@ def execute(argv=None):
         child["currentFocus"] = [f.strip() for f in (args.focus or "").split(",") if f.strip()]
         # drop teaching samples from the template: a fresh archive starts empty
         for section in ("strategies", "suspended", "experiments", "followups", "notes",
-                         "reminders"):
+                         "reminders", "issues"):
             child[section] = []
-        child["activeConcerns"] = []
+        child.pop("activeConcerns", None)   # 已废弃(issues 取代)
         child["milestones"] = {}
         child["sleep"] = {"days": [], "note": ""}
         problems, _ph = _check(child)
@@ -259,21 +320,31 @@ def execute(argv=None):
         return 1, f"ERROR: cannot load {path}: {e}"
 
     if args.action == "add-strategy":
+        linked = _validated_issues(child, args.issue)
+        if linked is None:
+            return 1, f"ERROR: --issue 挂了不存在的问题:{'/'.join(args.issue)}(先 add-issue)"
         sid = _next_strategy_id(child)
         started = _norm_short(args.started) or _today()
-        child.setdefault("strategies", []).append({
-            "id": sid, "name": args.name, "applied": args.applied,
-            "started": started, "followup": "",
-            "evidence": "回访 ×0", "status": "active",
-        })
+        rec = {"id": sid, "name": args.name, "applied": args.applied,
+               "started": started, "followup": "",
+               "evidence": "回访 ×0", "status": "active"}
+        if linked:
+            rec["issues"] = linked
+        child.setdefault("strategies", []).append(rec)
         msg = f"recorded strategy {sid}「{args.name}」(started {started}, status active)"
 
     elif args.action == "add-followup":
+        linked = _validated_issues(child, args.issue)
+        if linked is None:
+            return 1, f"ERROR: --issue 挂了不存在的问题:{'/'.join(args.issue)}(先 add-issue)"
         due = _norm_short(args.due)
         items = child.setdefault("followups", [])
         if any(f.get("due") == due and f.get("topic") == args.topic for f in items):
             return 1, f"ERROR: followup {due}「{args.topic}」already exists (idempotency guard)"
-        items.append({"due": due, "topic": args.topic, "status": "pending"})
+        rec = {"due": due, "topic": args.topic, "status": "pending"}
+        if linked:
+            rec["issues"] = linked
+        items.append(rec)
         msg = f"recorded followup {due}「{args.topic}」"
 
     elif args.action == "add-growth":
@@ -329,11 +400,17 @@ def execute(argv=None):
             iso = _days_ago(back)
             precision = "day" if back <= 7 else ("week" if back <= 21 else "month")
         tags = [t.strip() for t in (args.tags or "").split(",") if t.strip()]
-        child.setdefault("notes", []).append(
-            {"date": iso, "precision": precision, "tags": tags, "text": args.text})
+        linked = _validated_issues(child, args.issue)
+        if linked is None:
+            return 1, f"ERROR: --issue 挂了不存在的问题:{'/'.join(args.issue)}(先 add-issue)"
+        rec = {"date": iso, "precision": precision, "tags": tags, "text": args.text}
+        if linked:
+            rec["issues"] = linked
+        child.setdefault("notes", []).append(rec)
         prefix = iso if precision == "day" else f"≈{iso}"
         tagpart = f" [{'/'.join(tags)}]" if tags else ""
-        msg = f"recorded note {prefix}({precision}){tagpart}: {args.text[:40]}"
+        issuepart = f" [→{'/'.join(linked)}]" if linked else ""
+        msg = f"recorded note {prefix}({precision}){tagpart}{issuepart}: {args.text[:40]}"
 
     elif args.action == "mark-revisited":
         s = next((s for s in child.get("strategies", []) if s.get("id") == args.id), None)
@@ -431,15 +508,129 @@ def execute(argv=None):
                + (f" | 划掉:{'/'.join(dropped)}" if dropped else "")
                + " | 整组覆盖,以对话证据为准")
 
-    elif args.action == "set-concern-status":
-        items = child.setdefault("activeConcerns", [])
-        c = next((x for x in items if x.get("text") == args.text), None)
-        if c is None:
-            existing = ";".join(x.get("text", "")[:20] for x in items) or "(无)"
-            return 1, (f"ERROR: concern not found:{args.text[:30]} | 现有:{existing}")
-        c["status"] = args.status
-        msg = f"concern「{args.text[:30]}」-> {args.status}" + \
-              ("(留在档案作历史,热区不再显示)" if args.status == "已解决" else "")
+    elif args.action == "add-issue":
+        iid = _next_issue_id(child)
+        opened = _norm_short(args.opened) or _today()
+        issue = {"id": iid, "name": args.name, "status": args.status,
+                 "opened": opened, "summary": args.summary}
+        brief = {}
+        if args.what:
+            brief["what"] = args.what
+        if args.why:
+            brief["why"] = list(args.why)
+        if args.how:
+            brief["how"] = list(args.how)
+        if args.redline:
+            brief["redline"] = args.redline
+        if brief:
+            issue["brief"] = brief
+        if args.judged:
+            issue["judged"] = _norm_short(args.judged)
+        if args.pending_care:
+            issue["pendingCare"] = args.pending_care
+        child.setdefault("issues", []).append(issue)
+        extra = (f", judged {issue['judged']}" if "judged" in issue else "") \
+            + (", 就医待办√" if "pendingCare" in issue else "")
+        msg = f"recorded issue {iid}「{args.name}」({args.status}, opened {opened}{extra})"
+
+    elif args.action == "set-issue-status":
+        it, err = _find_issue(child, args.id)
+        if err:
+            return 1, err
+        it["status"] = args.status
+        if args.status == "resolved":
+            it["closed"] = _today()
+            msg = (f"issue {args.id} -> resolved(closed {it['closed']};"
+                   "留档可查,热区/入口卡默认不显示)")
+        else:
+            it.pop("closed", None)
+            msg = f"issue {args.id} -> {args.status}(closed 已清)"
+
+    elif args.action == "set-issue-brief":
+        it, err = _find_issue(child, args.id)
+        if err:
+            return 1, err
+        touched = []
+        if args.summary is not None:
+            it["summary"] = args.summary
+            touched.append("summary")
+        brief = it.setdefault("brief", {})
+        for key, val in (("what", args.what), ("redline", args.redline)):
+            if val is not None:
+                brief[key] = val
+                touched.append(key)
+        for key, val in (("why", args.why), ("how", args.how)):
+            if val is None:
+                continue
+            if val == [""]:
+                brief.pop(key, None)
+            else:
+                brief[key] = list(val)
+            touched.append(key)
+        if not brief:
+            it.pop("brief", None)
+        if args.pending_care is not None:
+            if args.pending_care == "none":
+                it.pop("pendingCare", None)
+            else:
+                it["pendingCare"] = args.pending_care
+            touched.append("pendingCare")
+        if args.judged is not None:
+            it["judged"] = _norm_short(args.judged)
+            touched.append("judged")
+        if not touched:
+            return 1, ("ERROR: 至少传一个 "
+                       "--summary/--what/--why/--how/--redline/--pending-care/--judged")
+        msg = (f"updated issue {args.id}: {'/'.join(touched)}"
+               "(why/how 整组覆盖,先读全量再写;brief=分享卡唯一素材源)")
+
+    elif args.action == "link-issue":
+        it, err = _find_issue(child, args.id)
+        if err:
+            return 1, err
+        if not (args.note or args.strategy or args.followup):
+            return 1, "ERROR: 至少给一个 --note/--strategy/--followup"
+        targets = []
+        for spec in args.note or []:
+            d, _, prefix = spec.partition(":")
+            prefix = prefix.strip()
+            if not prefix:
+                return 1, f"ERROR: --note 须为 YYYY-MM-DD:前缀(现在是 {spec!r})"
+            hits = [n for n in child.get("notes", [])
+                    if n.get("date") == d and str(n.get("text", "")).startswith(prefix)]
+            if not hits:
+                same = [f"  {n.get('date')}:{str(n.get('text', ''))[:20]}"
+                        for n in child.get("notes", []) if n.get("date") == d]
+                return 1, (f"ERROR: 没有匹配的 note {spec!r}"
+                           + ("\n当天候选:\n" + "\n".join(same) if same else "(该日期无 note)"))
+            if len(hits) > 1:
+                return 1, (f"ERROR: 前缀撞车({len(hits)} 条),加长前缀重试:\n"
+                           + "\n".join(f"  {h.get('text', '')[:30]}" for h in hits))
+            targets.append((hits[0], f"note {d}:{prefix[:10]}"))
+        for sid in args.strategy or []:
+            s = next((s for s in child.get("strategies", []) if s.get("id") == sid), None)
+            if s is None:
+                return 1, f"ERROR: strategy {sid} not found"
+            targets.append((s, f"strategy {sid}"))
+        for spec in args.followup or []:
+            due, _, topic = spec.partition(":")
+            f = next((f for f in child.get("followups", [])
+                      if f.get("due") == _norm_short(due) and f.get("topic") == topic), None)
+            if f is None:
+                return 1, f"ERROR: followup {spec!r} not found(须 due+topic 双精确匹配)"
+            targets.append((f, f"followup {due}:{topic[:12]}"))
+        detail = []
+        for rec, label in targets:
+            lst = rec.setdefault("issues", [])
+            if args.remove:
+                if args.id in lst:
+                    lst.remove(args.id)
+                detail.append(f"-{label}")
+            else:
+                if args.id not in lst:
+                    lst.append(args.id)
+                detail.append(f"+{label}")
+        msg = f"{'un' if args.remove else ''}linked issue {args.id}: " + " ".join(detail)
 
     elif args.action == "check":
         problems, ph = _check(child)
@@ -481,11 +672,8 @@ def _check(child):
             if not is_ph(where, value):
                 problems.append(f"{where}: 日期须为 MM-DD(现在是 {value!r})")
 
-    for i, x in enumerate(child.get("activeConcerns", [])):
-        short_date(f"activeConcerns[{i}].since", x.get("since"))
-        if x.get("status") not in CONCERN_STATUS:
-            problems.append(f"activeConcerns[{i}].status: 不在枚举 观察中/已解决"
-                            f"(现在是 {x.get('status')!r})")
+    if child.get("activeConcerns"):
+        problems.append("activeConcerns 已废弃(issues 取代):把在管条目迁到 issues 后清空该键")
     for i, s in enumerate(child.get("strategies", [])):
         short_date(f"strategies[{i}].started", s.get("started"))
         if s.get("status") not in VALID_STATUS and not is_ph(f"strategies[{i}].status", s.get("status")):
@@ -557,6 +745,34 @@ def _check(child):
         if assessed and not (DATE_FULL.match(str(assessed)) or DATE_SHORT.match(str(assessed))):
             problems.append(f"milestones.{months}.assessed: 须为 YYYY-MM-DD 或 MM-DD"
                             f"(现在是 {assessed!r})")
+
+    # issues(一等实体, docs/specs/issue-tracking-v1.md)
+    issue_ids = set()
+    for it in child.get("issues", []):
+        iid = str(it.get("id", ""))
+        if not re.match(r"^P\d+$", iid):
+            problems.append(f"issue id 须为 P<N> 格式(现在是 {iid!r})")
+        elif iid in issue_ids:
+            problems.append(f"issue id 重复:{iid}")
+        issue_ids.add(iid)
+        if it.get("status") not in ISSUE_STATUS:
+            problems.append(f"issue {iid}: status 须为 active/watching/resolved"
+                            f"(现在是 {it.get('status')!r})")
+        for f in ("opened", "closed", "judged"):
+            if it.get(f) and not DATE_SHORT.match(str(it.get(f))):
+                problems.append(f"issue {iid}: {f} 须为 MM-DD(现在是 {it.get(f)!r})")
+        if it.get("status") == "resolved" and not it.get("closed"):
+            problems.append(f"issue {iid}: resolved 须带 closed(用 set-issue-status 关闭)")
+        if not str(it.get("summary") or "").strip():
+            problems.append(f"issue {iid}: summary 必填(当前状态一句话)")
+
+    for sec, loc in (("notes", lambda r: f"{r.get('date', '')} {str(r.get('text', ''))[:12]}"),
+                     ("strategies", lambda r: str(r.get("id", ""))),
+                     ("followups", lambda r: f"{r.get('due', '')} {str(r.get('topic', ''))[:12]}")):
+        for r in child.get(sec, []):
+            for ref in r.get("issues", []):
+                if ref not in issue_ids:
+                    problems.append(f"{sec} 记录({loc(r)}…)挂了不存在的问题 {ref}")
 
     return problems, placeholders[0]
 

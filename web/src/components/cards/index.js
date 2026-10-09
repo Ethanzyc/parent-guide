@@ -12,6 +12,7 @@ import StrategyCard from './StrategyCard.vue'
 import FollowupCard from './FollowupCard.vue'
 import NotesCard from './NotesCard.vue'
 import FocusCard from './FocusCard.vue'
+import IssueCard from './IssueCard.vue'
 import TimelineCard from './TimelineCard.vue'
 import ReminderCard from './ReminderCard.vue'
 import TextCard from './TextCard.vue'
@@ -27,6 +28,7 @@ export const REGISTRY = {
   'followup': FollowupCard,
   'note': NotesCard,
   'focus': FocusCard,
+  'issue': IssueCard,
   'timeline': TimelineCard,
   'reminder': ReminderCard,
   'text': TextCard,
@@ -38,6 +40,7 @@ export const REGISTRY = {
 export const CARD_META = {
   'profile':        { group: 'builtin', name: '孩子档案',   desc: '小名/月龄/画像/当前重点一览', w: 6, h: 8 },
   'focus':          { group: 'builtin', name: '当前重点',   desc: '正在关注的事+在跑计划+最近回访(动态)', w: 6, h: 4 },
+  'issue':          { group: 'builtin', name: '问题追踪',   desc: '在管问题三色计数+病历详情(持续议题)', w: 6, h: 6 },
   'milestone':      { group: 'builtin', name: '里程碑',     desc: '发育盘点结果(按月龄档)', w: 6, h: 6 },
   'growth':         { group: 'builtin', name: '生长曲线',   desc: '身高体重记录对照参考区间', w: 6, h: 6 },
   'strategy-effect':{ group: 'builtin', name: '策略效果',   desc: '在跑的计划与回访证据', w: 6, h: 6 },

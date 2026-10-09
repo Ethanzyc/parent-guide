@@ -315,28 +315,6 @@ class T(unittest.TestCase):
         self.assertEqual(code, 0, msg)
         self.assertEqual(self.child()["currentFocus"], [])
 
-    def test_31_set_concern_status_flow(self):
-        code, msg = run(self.tmp, "set-concern-status",
-                        "--text", "就餐时要求看动画片,不给则哭闹", "--status", "已解决")
-        self.assertEqual(code, 0, msg)
-        c = self.child()["activeConcerns"][0]
-        self.assertEqual(c["status"], "已解决")
-        c["status"] = "观察中"
-        code, msg = run(self.tmp, "set-concern-status",
-                        "--text", "不存在的问题", "--status", "已解决")
-        self.assertNotEqual(code, 0)
-        self.assertIn("现有", msg)
-
-    def test_32_check_validates_concern_status(self):
-        c = self.child()
-        c["activeConcerns"] = [{"since": "09-05", "text": "x", "status": "好了"}]
-        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
-        raw[next(k for k in raw if not k.startswith("_"))] = c
-        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
-        code, msg = run(self.tmp, "check")
-        self.assertNotEqual(code, 0)
-        self.assertIn("activeConcerns", msg)
-
     def test_33_set_followup_status_retires(self):
         fu = self.child()["followups"][0]
         code, msg = run(self.tmp, "set-followup-status",
@@ -424,6 +402,132 @@ class T(unittest.TestCase):
                         "--topic", "流感疫苗", "--source", "疫苗")
         self.assertEqual(code, 0, msg)
         self.assertEqual(self.child()["reminders"][-1]["due"], "11-02")
+
+    def test_40_add_issue_sequence(self):
+        code, msg = run(self.tmp, "add-issue", "--name", "功能性便秘", "--status", "active",
+                        "--summary", "Rome IV 达标,居家四件事执行中",
+                        "--what", "每周1-2次/疼/前段粗大,Rome IV 四条全中",
+                        "--why", "纤维是一线手段(ESPGHAN)", "--why", "奶量480-600上限(AAP)",
+                        "--how", "外婆:记每日奶量",
+                        "--redline", "血便/五天未排→当天就诊", "--judged", "10-09")
+        self.assertEqual(code, 0, msg)
+        it = self.child()["issues"][-1]           # fixture 自带 P1/P2,新题取末位
+        self.assertEqual(it["name"], "功能性便秘")
+        self.assertEqual(it["status"], "active")
+        self.assertEqual(it["opened"], __import__("datetime").date.today().strftime("%m-%d"))
+        self.assertEqual(it["brief"]["why"], ["纤维是一线手段(ESPGHAN)", "奶量480-600上限(AAP)"])
+        self.assertEqual(it["judged"], "10-09")
+        code, msg = run(self.tmp, "add-issue", "--name", "发脾气", "--status", "watching",
+                        "--summary", "两周观察期")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["issues"][-1]["name"], "发脾气")
+
+    def test_41_issue_status_lifecycle(self):
+        run(self.tmp, "add-issue", "--name", "夜醒", "--status", "active", "--summary", "x")
+        iid = self.child()["issues"][-1]["id"]
+        code, msg = run(self.tmp, "set-issue-status", "--id", iid, "--status", "resolved")
+        self.assertEqual(code, 0, msg)
+        it = next(i for i in self.child()["issues"] if i["id"] == iid)
+        self.assertTrue(it.get("closed"))
+        run(self.tmp, "set-issue-status", "--id", iid, "--status", "active")
+        it = next(i for i in self.child()["issues"] if i["id"] == iid)
+        self.assertNotIn("closed", it)
+        code, _ = run(self.tmp, "set-issue-status", "--id", "P9", "--status", "active")
+        self.assertNotEqual(code, 0)
+        code, _ = run(self.tmp, "add-issue", "--name", "X", "--status", "resolved", "--summary", "x")
+        self.assertNotEqual(code, 0)   # 开题不能直接 resolved
+
+    def test_42_check_rejects_bad_issue(self):
+        run(self.tmp, "add-issue", "--name", "夜醒", "--status", "active", "--summary", "x")
+        d = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        key = next(k for k in d if not k.startswith("_"))
+        d[key]["issues"][-1]["status"] = "urgent"
+        (self.tmp / "child.json").write_text(json.dumps(d, ensure_ascii=False), "utf-8")
+        code, msg = run(self.tmp, "check")
+        self.assertNotEqual(code, 0)
+        self.assertIn("status 须为", msg)
+
+    def test_43_set_issue_brief(self):
+        run(self.tmp, "add-issue", "--name", "便秘", "--status", "active",
+                        "--summary", "v1", "--what", "w1", "--why", "a", "--why", "b")
+        iid = self.child()["issues"][-1]["id"]
+        code, msg = run(self.tmp, "set-issue-brief", "--id", iid, "--summary", "v2",
+                        "--why", "c")
+        self.assertEqual(code, 0, msg)
+        it = next(i for i in self.child()["issues"] if i["id"] == iid)
+        self.assertEqual(it["summary"], "v2")
+        self.assertEqual(it["brief"]["what"], "w1")   # 未传的节不动
+        self.assertEqual(it["brief"]["why"], ["c"])   # 整组覆盖
+        code, msg = run(self.tmp, "set-issue-brief", "--id", iid,
+                        "--pending-care", "1-2 周内儿保评估")
+        self.assertEqual(code, 0, msg)
+        it = next(i for i in self.child()["issues"] if i["id"] == iid)
+        self.assertEqual(it.get("pendingCare"), "1-2 周内儿保评估")
+        run(self.tmp, "set-issue-brief", "--id", iid, "--pending-care", "none")
+        it = next(i for i in self.child()["issues"] if i["id"] == iid)
+        self.assertNotIn("pendingCare", it)
+        run(self.tmp, "set-issue-brief", "--id", iid, "--why", "")
+        it = next(i for i in self.child()["issues"] if i["id"] == iid)
+        self.assertNotIn("why", it["brief"])          # 空串=清空该节
+        code, _ = run(self.tmp, "set-issue-brief", "--id", iid)
+        self.assertNotEqual(code, 0)                  # 什么都不传=报错
+
+    def test_44_link_and_unlink(self):
+        run(self.tmp, "add-issue", "--name", "便秘", "--status", "active", "--summary", "x")
+        iid = self.child()["issues"][-1]["id"]
+        run(self.tmp, "add-note", "--date", "2026-10-09", "--text", "晨起想大便没拉出")
+        code, msg = run(self.tmp, "link-issue", "--id", iid, "--note", "2026-10-09:晨起想")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["notes"][-1].get("issues"), [iid])
+        code, _ = run(self.tmp, "link-issue", "--id", iid, "--note", "2026-10-09:不存在")
+        self.assertNotEqual(code, 0)
+        code, _ = run(self.tmp, "link-issue", "--id", iid, "--note", "2026-10-09:")
+        self.assertNotEqual(code, 0)               # 空前缀=当天全部=撞车,报错
+        code, msg = run(self.tmp, "link-issue", "--id", iid,
+                        "--note", "2026-10-09:晨起想大便没拉出", "--remove")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["notes"][-1].get("issues"), [])
+
+    def test_45_link_strategy_followup(self):
+        run(self.tmp, "add-issue", "--name", "便秘", "--status", "active", "--summary", "x")
+        iid = self.child()["issues"][-1]["id"]
+        code, msg = run(self.tmp, "link-issue", "--id", iid,
+                        "--strategy", "S12", "--followup",
+                        "10-03:S12 注意力转移:预告撤除后是否稳定(第三次回访)")
+        self.assertEqual(code, 0, msg)
+        s = next(s for s in self.child()["strategies"] if s["id"] == "S12")
+        self.assertIn(iid, s.get("issues", []))
+        f = next(f for f in self.child()["followups"] if f["due"] == "10-03")
+        self.assertIn(iid, f.get("issues", []))
+        code, _ = run(self.tmp, "link-issue", "--id", iid, "--strategy", "S99")
+        self.assertNotEqual(code, 0)
+        code, _ = run(self.tmp, "link-issue", "--id", iid, "--followup", "10-03:错topic")
+        self.assertNotEqual(code, 0)
+
+    def test_46_issue_flag_on_add(self):
+        run(self.tmp, "add-issue", "--name", "便秘", "--status", "active", "--summary", "x")
+        iid = self.child()["issues"][-1]["id"]
+        code, msg = run(self.tmp, "add-strategy", "--name", "坐便", "--applied",
+                        "餐后5-10分钟踩脚凳", "--issue", iid)
+        self.assertEqual(code, 0, msg)
+        s = self.child()["strategies"][-1]
+        self.assertEqual(s.get("issues"), [iid])
+        code, _ = run(self.tmp, "add-note", "--date", "2026-10-09", "--text", "y", "--issue", "P9")
+        self.assertNotEqual(code, 0)               # 挂不存在的问题=写入前拒绝
+        code, _ = run(self.tmp, "add-followup", "--due", "10-25", "--topic", "t", "--issue", "P9")
+        self.assertNotEqual(code, 0)
+
+    def test_47_check_reference_integrity(self):
+        run(self.tmp, "add-issue", "--name", "便秘", "--status", "active", "--summary", "x")
+        iid = self.child()["issues"][-1]["id"]
+        run(self.tmp, "add-note", "--date", "2026-10-09", "--text", "z", "--issue", iid)
+        d = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        key = next(k for k in d if not k.startswith("_"))
+        d[key]["notes"][-1]["issues"] = ["P9"]
+        (self.tmp / "child.json").write_text(json.dumps(d, ensure_ascii=False), "utf-8")
+        code, msg = run(self.tmp, "check")
+        self.assertNotEqual(code, 0)
+        self.assertIn("P9", msg)
 
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

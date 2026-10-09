@@ -15,6 +15,12 @@ printf '%s\n' "$OUT" | grep -q "戒奶嘴"      || { echo "FAIL: no suspended it
 printf '%s\n' "$OUT" | grep -q "桃子"        || { echo "FAIL: no child name"; exit 1; }
 printf '%s\n' "$OUT" | grep -q "里程碑"      || { echo "FAIL: no milestone status line"; exit 1; }
 
+# issues section (issue-tracking-v1 §4): id + pending-care + derived next followup
+printf '%s\n' "$OUT" | grep -q "\[问题\]"   || { echo "FAIL: no issue section"; exit 1; }
+printf '%s\n' "$OUT" | grep -q "P1"         || { echo "FAIL: no issue id"; exit 1; }
+printf '%s\n' "$OUT" | grep -q "就医待办"   || { echo "FAIL: no pending-care line"; exit 1; }
+printf '%s\n' "$OUT" | grep -q "下一回访"   || { echo "FAIL: no next-followup line"; exit 1; }
+
 # patterns layer: one line when data/patterns.md exists, nothing when it doesn't
 printf '%s\n' "$OUT" | grep -q "规律层:patterns.md" || { echo "FAIL: no patterns line with file present"; exit 1; }
 BARE="$(mktemp -d)"

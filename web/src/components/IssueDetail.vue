@@ -1,0 +1,213 @@
+<script setup>
+// 问题病历层:当前状态卡(最重要信息第一屏)→口径卡(为什么)→红线→时间轴。
+// 大节点只认机械事件(opened/judged/strategy.started)——语义归一留读侧
+// (spec issue-tracking-v1 §6.3)。只读:内容变更一律回对话。
+import { computed } from 'vue'
+import { daysSince, dueLabel } from '../lib/util.js'
+
+const props = defineProps({
+  open: Boolean,
+  kid: { type: Object, default: () => ({}) },
+  issueId: { type: String, default: null },
+})
+const emit = defineEmits(['close', 'share-issue'])
+
+const ST_LABEL = { active: '进行中', watching: '观察中', resolved: '已解决' }
+const ST_CLASS = { active: 'watch', watching: 'plain', resolved: 'ok' }
+
+const issue = computed(() =>
+  (props.kid?.issues || []).find(i => i.id === props.issueId) || null)
+
+const dayNo = computed(() => {
+  if (!issue.value) return ''
+  const d = daysSince(issue.value.opened)
+  return d !== null ? `第 ${d + 1} 天` : `自 ${issue.value.opened}`
+})
+const linked = computed(() => {
+  const id = props.issueId, k = props.kid || {}
+  return {
+    s: (k.strategies || []).filter(x => (x.issues || []).includes(id)).length,
+    n: (k.notes || []).filter(x => (x.issues || []).includes(id)).length,
+    f: (k.followups || []).filter(x => (x.issues || []).includes(id)).length,
+  }
+})
+const next = computed(() =>
+  (props.kid?.followups || [])
+    .filter(f => (f.status || 'pending') === 'pending'
+                 && (f.issues || []).includes(props.issueId))
+    .sort((a, b) => String(a.due).localeCompare(String(b.due)))[0] || null)
+
+function normKey(d) {
+  const s = String(d || ''), y = new Date().getFullYear()
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) return s
+  if (/^\d{1,2}-\d{1,2}$/.test(s)) return `${y}-${s.padStart(5, '0')}`
+  return s
+}
+const events = computed(() => {
+  const i = issue.value
+  if (!i) return []
+  const ev = [{ date: i.opened, big: '立案', text: `${i.name} 开题${i.status === 'watching' ? '(观察)' : ''}` }]
+  if (i.judged && i.brief?.what) ev.push({ date: i.judged, big: '判定', text: i.brief.what })
+  for (const s of props.kid?.strategies || [])
+    if ((s.issues || []).includes(i.id))
+      ev.push({ date: s.started, big: '方案', text: `${s.id} ${s.name}` })
+  for (const n of props.kid?.notes || [])
+    if ((n.issues || []).includes(i.id))
+      ev.push({ date: n.date, text: n.text,
+                tags: (n.tags || []).filter(t => t !== i.name) })
+  for (const f of props.kid?.followups || [])
+    if ((f.issues || []).includes(i.id))
+      ev.push({ date: f.due, text: f.topic, fu: true, status: f.status || 'pending' })
+  return ev.sort((a, b) => normKey(a.date).localeCompare(normKey(b.date)))
+})
+const briefSections = computed(() => {
+  const b = issue.value?.brief || {}
+  const out = []
+  if (b.what) out.push({ key: 'what',
+    title: '这是什么问题' + (issue.value?.judged ? ` · 判于 ${issue.value.judged}` : ''),
+    body: [b.what] })
+  if (b.why?.length) out.push({ key: 'why', title: '为什么这么做', body: b.why })
+  if (b.how?.length) out.push({ key: 'how', title: '全家怎么做', body: b.how })
+  return out
+})
+</script>
+
+<template>
+  <Teleport to="body">
+    <div v-if="open && issue" class="issue-mask" @click.self="emit('close')">
+      <div class="issue-sheet">
+        <div class="is-head">
+          <span class="t">{{ issue.name }}</span>
+          <span class="st" :class="ST_CLASS[issue.status]">{{ ST_LABEL[issue.status] }}</span>
+          <span class="meta">{{ dayNo }} · 立案 {{ issue.opened }}
+            · 策略{{ linked.s }} 记录{{ linked.n }} 回访{{ linked.f }}</span>
+          <button class="x" @click="emit('close')">✕</button>
+        </div>
+
+        <div class="now-card">
+          <div class="nc-tag">当前状态</div>
+          <div class="nc-main">{{ issue.summary }}</div>
+          <div class="nc-acts">
+            <template v-if="issue.pendingCare">
+              <span class="lab">就医待办</span><span class="care-b">{{ issue.pendingCare }}</span>
+            </template>
+            <template v-if="next">
+              <span class="lab">下一步</span>
+              <span class="due-b" :class="dueLabel(next.due).urgency || 'later'">
+                {{ next.due }} · {{ dueLabel(next.due).label }}</span>
+              <span class="lab" style="margin-left:4px">{{ next.topic.slice(0, 18) }}</span>
+            </template>
+          </div>
+        </div>
+
+        <div v-for="sec in briefSections" :key="sec.key" class="brief">
+          <h4>{{ sec.title }}</h4>
+          <ul><li v-for="(b, i) in sec.body" :key="i">{{ b }}</li></ul>
+        </div>
+
+        <div v-if="issue.brief?.redline" class="redline">
+          <h4>出现这些直接就医,不等观察</h4>
+          <p>{{ issue.brief.redline }}</p>
+        </div>
+
+        <h3>时间线<span class="tag">对话自动归集</span></h3>
+        <div class="tl">
+          <div v-for="(e, i) in events" :key="i" class="tl-item"
+               :class="{ big: e.big, future: e.fu && e.status === 'pending' }">
+            <span class="d">{{ e.date }}</span>
+            <span class="tt">
+              <span v-if="e.big" class="node-b">{{ e.big }}</span>
+              <span :class="{ b: e.big }">{{ e.text }}</span>
+              <span v-for="t in e.tags" :key="t" class="chip">{{ t }}</span>
+              <span v-if="e.fu && e.status === 'pending'" class="due-b"
+                    :class="dueLabel(e.date).urgency || 'later'">{{ dueLabel(e.date).label }}</span>
+              <span v-else-if="e.fu" class="fu-done">{{ e.status === 'done' ? '已回访' : '已跳过' }}</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="is-foot">
+          <button class="btn" @click="emit('share-issue', issue)">分享问题卡给家人</button>
+          <button class="btn" @click="emit('close')">关闭</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+</template>
+
+<style scoped>
+.issue-mask { position: fixed; inset: 0; background: rgba(30,58,82,.35); z-index: 40;
+  display: flex; align-items: center; justify-content: center; padding: 24px; }
+.issue-sheet { background-color: var(--card);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 14px 14px;
+  border: 1px solid var(--grid-line); border-radius: 12px;
+  width: min(680px, 100%); max-height: 92vh; overflow: auto; padding: 22px 26px; }
+.is-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.is-head .t { font-size: 19px; font-weight: 700; color: var(--ink-blue); }
+.is-head .meta { margin-left: auto; font-size: 12px; color: var(--sub); }
+.is-head .x { border: 0; background: none; color: var(--sub); font-size: 16px; cursor: pointer; }
+h3 { font-size: 13px; color: var(--sub); font-weight: 600; letter-spacing: .22em; margin: 16px 0 10px; }
+h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
+  border: 1px solid var(--line); border-radius: 5px; padding: 1px 8px; }
+.now-card { border: 1.5px solid var(--ink-blue); border-radius: 10px;
+  background: rgba(255,255,255,.85); padding: 14px 16px; margin-bottom: 6px; }
+.now-card .nc-tag { font-size: 11px; letter-spacing: .2em; color: var(--ink-blue);
+  font-weight: 600; margin-bottom: 6px; }
+.now-card .nc-main { font-size: 16.5px; font-weight: 600; line-height: 1.5; }
+.now-card .nc-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+  padding-top: 10px; border-top: 1px dashed var(--line); font-size: 13px; align-items: center; }
+.now-card .lab { color: var(--sub); }
+.care-b { color: var(--todo); border: 1px solid var(--todo); border-radius: 5px;
+  padding: 1px 8px; font-size: 12.5px; }
+.brief { border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px;
+  margin-top: 10px; background: rgba(255,255,255,.7); }
+.brief h4 { font-size: 13px; color: var(--ink-blue); font-weight: 600;
+  letter-spacing: .08em; margin-bottom: 4px; }
+.brief ul { padding-left: 18px; }
+.brief li { font-size: 13.5px; margin: 3px 0; }
+.redline { border: 1px solid var(--todo); background: var(--todo-bg);
+  border-radius: 10px; padding: 12px 16px; margin-top: 10px; }
+.redline h4 { font-size: 13px; color: var(--todo); font-weight: 600; margin-bottom: 4px; }
+.redline p { font-size: 13.5px; }
+.tl { position: relative; padding-left: 18px; }
+.tl::before { content: ''; position: absolute; left: 3px; top: 8px; bottom: 8px;
+  width: 2px; background: var(--line); border-radius: 2px; }
+.tl-item { position: relative; padding: 4px 0 8px; font-size: 13.5px; }
+.tl-item::before { content: ''; position: absolute; left: -18px; top: 9px;
+  width: 8px; height: 8px; border-radius: 99px; background: var(--ink-blue);
+  box-shadow: 0 0 0 2px var(--accent-soft); }
+.tl-item .d { color: var(--sub); margin-right: 8px; font-size: 12px;
+  font-variant-numeric: tabular-nums; }
+.tl-item .tt { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.tl-item.big { padding: 6px 0 10px; }
+.tl-item.big::before { left: -21px; top: 6px; width: 12px; height: 12px;
+  background: #fff; border: 3px solid var(--ink-blue); box-shadow: 0 0 0 2px var(--accent-soft); }
+.tl-item.big .tt .b { font-size: 14.5px; font-weight: 600; }
+.tl-item.future::before { background: #fff; border: 2px dashed var(--sub);
+  box-shadow: none; width: 8px; height: 8px; }
+.node-b { flex: none; font-size: 10.5px; border: 1px solid var(--ink-blue); color: var(--ink-blue);
+  border-radius: 4px; padding: 0 6px; font-weight: 600; letter-spacing: .04em; }
+.chip { display: inline-block; background: rgba(255,255,255,.75); color: var(--ink-blue);
+  border: 1px dashed var(--grid-line); border-radius: 6px; padding: 0 8px; font-size: 11.5px; }
+.fu-done { color: var(--sub); font-size: 11.5px; }
+.st { flex: none; font-size: 10.5px; border: 1px solid; border-radius: 4px; padding: 0 6px;
+  min-width: 3.2em; text-align: center; font-weight: 600; letter-spacing: .04em; }
+.st.watch { color: var(--watch); border-color: var(--watch); }
+.st.plain { color: var(--sub); border-color: var(--sub); }
+.st.ok { color: var(--ok); border-color: var(--ok); }
+.is-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;
+  padding-top: 12px; border-top: 1px solid var(--line); }
+.is-foot .btn { border: 1px solid var(--line); background: #fff; color: var(--ink);
+  border-radius: 8px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
+.is-foot .btn:first-child { background: var(--ink-blue); border-color: var(--ink-blue); color: #fff; }
+.due-b { flex: none; display: inline-flex; align-items: center; border-radius: 5px;
+  padding: 1px 8px; font-size: 12px; font-variant-numeric: tabular-nums;
+  font-family: Georgia, serif; font-weight: 700; }
+.due-b.overdue { background: var(--todo-bg); color: var(--todo); }
+.due-b.today { background: var(--watch-bg); color: var(--watch); }
+.due-b.soon { background: var(--accent-soft); color: var(--ink-blue); }
+.due-b.later { background: rgba(255,255,255,.7); color: var(--ink-blue); }
+</style>

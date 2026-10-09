@@ -20,7 +20,7 @@ const props = defineProps({
   editing: Boolean,
   serverMode: Boolean,
 })
-const emit = defineEmits(['geometry', 'share-card', 'props-update'])
+const emit = defineEmits(['geometry', 'share-card', 'props-update', 'open-issue'])
 
 // Custom-card content updates (e.g. list checkboxes): patch the snapshot
 // element in place (keeps geometry write-back in sync with latest props),
@@ -100,7 +100,7 @@ function scheduleSync() {
          :gs-x="b.x" :gs-y="b.y" :gs-w="b.w" :gs-h="b.h" :gs-id="b.id">
       <div class="grid-stack-item-content">
         <div class="card">
-          <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" />
+          <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" @open-issue="id => emit('open-issue', id)" />
           <button class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
         </div>
       </div>
@@ -111,7 +111,7 @@ function scheduleSync() {
   <main v-else class="grid">
     <section v-for="b in items" :key="b.id" class="card"
              :style="{ '--w': clampInt(b.w, 1, 12, 6) }">
-      <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" />
+      <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" @open-issue="id => emit('open-issue', id)" />
       <button class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
     </section>
   </main>

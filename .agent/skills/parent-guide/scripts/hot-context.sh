@@ -55,11 +55,41 @@ if os.path.exists(pat):
         n = sum(1 for _ in f)
     print(f"规律层:patterns.md({n} 行)——选策略前先读,失效清单=禁用项")
     print()
-print("[活跃问题]")
-for x in c.get("activeConcerns", []):
-    if x.get("status") == "已解决":
-        continue    # 留档作历史,不再是战场
-    print(f"- ({x['since']}) {x['text']} —— {x['status']}")
+print("[问题]")
+live = [x for x in c.get("issues", []) if x.get("status") != "resolved"]
+if not live:
+    print("(无在管问题;聊到持续议题时 add-issue 开题,相关记录挂 --issue)")
+for x in live:
+    iid, nm, st = x.get("id", "?"), x.get("name", ""), x.get("status", "?")
+    opened = str(x.get("opened", ""))
+    day_str = f"自{opened}" if opened else ""
+    try:
+        d = date(today.year, *(int(p) for p in opened.split("-")))
+        n = (today - d).days + 1
+        if 0 < n <= 999:
+            day_str = f"第{n}天"
+    except ValueError:
+        pass
+    print(f"- {iid} {nm} [{st}] {day_str} —— {str(x.get('summary', ''))[:40]}")
+    bits = []
+    if x.get("pendingCare"):
+        bits.append(f"就医待办:{x['pendingCare']}")
+    fus = [f for f in c.get("followups", [])
+           if f.get("status", "pending") == "pending" and iid in (f.get("issues") or [])]
+    if fus:
+        fu = min(fus, key=lambda f: str(f.get("due", "")))
+        due_str = ""
+        try:
+            fd = date(today.year, *(int(p) for p in str(fu["due"]).split("-")))
+            left = (fd - today).days
+            due_str = f"(剩{left}天)" if left >= 0 else "(已到期)"
+        except ValueError:
+            pass
+        bits.append(f"下一回访 {fu['due']}{due_str}:{str(fu.get('topic', ''))[:20]}")
+    if bits:
+        print("  " + " | ".join(bits))
+if c.get("activeConcerns"):
+    print("(检测到旧 activeConcerns:已废弃,迁到 issues 后清空)")
 print()
 print("[活跃策略]")
 for s in c.get("strategies", []):

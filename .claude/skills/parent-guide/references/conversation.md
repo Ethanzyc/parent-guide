@@ -88,7 +88,9 @@
 | 策略被新计划取代/挂起 | `update-child.py set-status --id ... --status absorbed/suspended [--note ...]` |
 | 值得记的事件 | `update-child.py add-note --date ... --text ...`(保守:只记对养育决策有影响的) |
 | 当前重点更新(整组覆盖,从对话证据派生) | `update-child.py set-focus --items 发脾气,如厕`(空字符串=清空;划掉旧项在回执可见) |
-| 活跃问题流转 | `update-child.py set-concern-status --text ... --status 观察中/已解决`(已解决留档作历史,热区不再显示) |
+| 问题开题 | `update-child.py add-issue --name ... --status active/watching --summary ... [--what/--why/--how/--redline/--judged/--pending-care]`(家长认领后;见 §2.8 问题归属) |
+| 问题挂靠/补挂 | `link-issue --id P1 [--note 日期:前缀] [--strategy S4] [--followup due:topic]`;记录侧写入时直接 `--issue P1` |
+| 问题状态/口径卡 | `set-issue-status --id ... --status ...`(resolved 须用户拍板)/ `set-issue-brief --id ...`(传哪个改哪个) |
 
 脚本保证:字段规范化、JSON 校验、原子写+写前备份(child.json.bak)、防重复。
 `--data` 参数指定数据目录(默认 ./data)。
@@ -148,13 +150,35 @@
 绑在发育盘点上)。日常靠**对话中碰到时核实**:
 
 - **focus/concern 出现「已解决」证据**(事件、回访结果、家长原话)→ 主动提议
-  划掉:`set-focus`(整组覆盖)或 `set-concern-status --status 已解决`;
-  **决定权留家长**,提议不带催促。
+  划掉:`set-focus`(整组覆盖)或问题侧 `set-issue-status --status resolved`
+  (**须用户拍板**);**决定权留家长**,提议不带催促。
 - 聊到绘本/活动 → 顺带核 preferences;聊到作息 → 顺带刷 sleep.note;
   画像字段(气质/安抚物/照料者)出现在话题里时,先对档案现值,变了就 set-profile。
 - active 策略长期没有回访动作 → 收尾可给「清点一下在跑的策略」选项
   (effective 且回访≥2 → 建议吸收为日常 set-status absorbed;suspended → 问还挂吗)。
 - **原则**:档案在对话中自然保鲜;没有任何证据时不动字段——静默 ≠ 过期。
+
+## 2.8 问题归属协议(issues,2026-10 起)
+
+「问题」= 持续议题(便秘/发脾气/戒断类),档案一等实体;记录(notes/
+strategies/followups)通过 `issues:["P1"]` 反向挂靠,一条记录可多挂。
+结构:骨架字段(id/status/opened/summary/judged/pendingCare)机械结构化,
+语义留口径卡 `brief`(what=是什么/why[]=为什么这么做/how[]=全家怎么做/
+redline=就医线;观察类问题 how/redline 可缺,不硬凑空节)。
+
+1. **开题**:L2/E 判定类议题首次明确为持续问题时,建议开题(家长认领后
+   `add-issue`;判定已明确时带 --what/--judged;有就医动作挂 --pending-care);
+2. **默认挂**:此后相关问题记录(add-note/add-strategy/add-followup)默认带
+   `--issue`;涉及多个问题就多挂(如便秘 note 同时挂喂养);
+3. **透明话术**:回复中一句「已记到 P1 功能性便秘下」——用户可当场纠正,
+   不单独提问确认;
+4. **回顾补挂**:写记录时对照热区 [问题] 段,发现与既有问题相关而未挂的,
+   `link-issue` 补上(note 定位=日期+前缀,撞车会列候选加长重试);
+5. **状态迁移**:active↔watching AI 判断+回复透明;**resolved 须用户拍板**
+   (「这个问题算解决了吗」),AI 不自行关闭;pendingCare 设置/清除须用户知情
+   (约了医生/完成就医);
+6. **口径卡维护**:方案变更/判定修订/依据升级时 `set-issue-brief` 同步——
+   brief 是问题分享卡的唯一素材源,过期=给家人的话过期。
 
 ## 3. 语料外断言协议
 

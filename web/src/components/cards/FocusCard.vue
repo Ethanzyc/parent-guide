@@ -1,6 +1,6 @@
 <script setup>
 // Focus card = the DYNAMIC half of the archive card's static profile:
-// current focus + live concerns (with days observed) + a mechanical roll-up
+// current focus + live issues (with days open) + a mechanical roll-up
 // of what's running (active strategies / nearest followup). Archive card owns
 // the portrait (temperament/language/preferences); this card owns "now".
 import { computed } from 'vue'
@@ -8,10 +8,10 @@ import { daysSince, dueLabel } from '../../lib/util.js'
 
 const props = defineProps({ block: Object, kid: Object })
 const focus = computed(() => (props.kid?.currentFocus || []).filter(Boolean))
-const concerns = computed(() => {
-  const live = (props.kid?.activeConcerns || []).filter(c => (c?.status || '观察中') !== '已解决')
-  return live.map(c => ({ ...c, days: daysSince(c.since) }))
-})
+const liveIssues = computed(() =>
+  (props.kid?.issues || [])
+    .filter(i => i.status !== 'resolved')
+    .map(i => ({ ...i, days: daysSince(i.opened) })))
 
 // mechanical roll-up: running strategies + nearest pending followup
 const running = computed(() =>
@@ -22,7 +22,7 @@ const nearestFu = computed(() => {
     .sort((a, b) => String(a.due).localeCompare(String(b.due)))
   return list[0] || null
 })
-const hasAny = computed(() => focus.value.length || concerns.value.length || running.value.length)
+const hasAny = computed(() => focus.value.length || liveIssues.value.length || running.value.length)
 </script>
 
 <template>
@@ -31,10 +31,10 @@ const hasAny = computed(() => focus.value.length || concerns.value.length || run
     <div v-if="focus.length" style="margin-bottom:10px">
       <span v-for="f in focus" :key="f" class="chip" style="font-size:13px;margin:0 6px 6px 0">{{ f }}</span>
     </div>
-    <div v-if="concerns.length">
-      <div v-for="(c, i) in concerns" :key="i" class="crow">
-        <span style="flex:1;min-width:0">{{ c.text }}</span>
-        <span class="csince">{{ c.days !== null ? `已观察 ${c.days} 天` : `自 ${c.since || '?'}` }}</span>
+    <div v-if="liveIssues.length">
+      <div v-for="c in liveIssues" :key="c.id" class="crow">
+        <span style="flex:1;min-width:0">{{ c.name }}</span>
+        <span class="csince">{{ c.days !== null ? `第 ${c.days + 1} 天` : `自 ${c.opened || '?'}` }}</span>
       </div>
     </div>
     <div v-if="running.length || nearestFu" class="rollup">

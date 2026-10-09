@@ -6,21 +6,22 @@
 // 整页分享 = 页面级导出,按卡勾选(用户拍板 2026-10-01)。
 import { ref, computed, watch } from 'vue'
 import { domToPng } from 'modern-screenshot'
-import { monthsAge, nearestMilestone } from '../lib/util.js'
+import { monthsAge, nearestMilestone, daysSince } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
-  level: { type: String, default: 'card' },   // 'page' | 'card'
+  level: { type: String, default: 'card' },   // 'page' | 'card' | 'issue'
   block: { type: Object, default: null },     // card 级的目标卡
   page: { type: Object, default: null },      // page 级的整页配置
   kid: { type: Object, default: () => ({}) },
+  issue: { type: Object, default: null },     // issue 级的问题对象(从详情层来)
 })
 const emit = defineEmits(['close'])
 
 const anonymized = ref(false)
 const branded = ref(true)
 const exporting = ref(false)
-const selected = ref([])       // card 级:条目勾选
+const selected = ref([])       // card/issue 级:条目勾选
 const blocksOn = ref([])       // page 级:卡片勾选
 const nodeEl = ref(null)
 
@@ -63,6 +64,25 @@ const todayStr = () => {
 }
 
 // 每种卡 → 通用行模型(kind 决定渲染分支);一律返回 { rows, ...附加信息 }
+// 问题级(issue):从口径卡渲染,why/how 条目可勾选剔除(templates.md 问题分享卡节)
+const ISSUE_ST = { active: '进行中', watching: '观察中', resolved: '已解决' }
+
+const issuePack = computed(() => {
+  const i = props.issue
+  if (!i) return null
+  const b = i.brief || {}
+  const rows = []
+  if (b.what) rows.push({ kind: 'issue-what', text: b.what, label: '情况', fixed: true, group: '现在的情况' })
+  const why = (b.why || []).map(w => ({ kind: 'issue-why', text: w, label: `为什么·${w.slice(0, 8)}` }))
+  if (why.length) { why[0].group = '为什么这么做'; rows.push(...why) }
+  const how = (b.how || []).map(h => ({ kind: 'issue-how', text: h, label: `怎么做·${h.slice(0, 8)}` }))
+  if (how.length) { how[0].group = '全家怎么做'; rows.push(...how) }
+  if (b.redline) rows.push({ kind: 'issue-red', text: b.redline, label: '就医线', fixed: true })
+  const d = daysSince(i.opened)
+  const dayNoTxt = d !== null ? `第 ${d + 1} 天` : `自 ${i.opened}`
+  return { rows, st: ISSUE_ST[i.status] || i.status, dayNoTxt, name: i.name }
+})
+
 function rowsFor(b) {
   const kid = props.kid || {}
   const t = b?.type
@@ -143,6 +163,12 @@ function rowsFor(b) {
 
 const sections = computed(() => {
   if (!props.open) return []
+  if (props.level === 'issue') {
+    const pack = issuePack.value
+    if (!pack) return []
+    const rows = pack.rows.filter((_, i) => selected.value[i] !== false)
+    return [{ id: 'issue', type: 'issue', title: pack.name, rows, extra: { st: pack.st } }]
+  }
   if (props.level === 'page') {
     const bs = (props.page?.blocks || []).filter((b, i) => (blocksOn.value[i] ?? true) !== false)
     return bs.map(b => {
@@ -156,7 +182,15 @@ const sections = computed(() => {
   return [{ id: props.block.id, type: props.block.type, title: titleFor(props.block), rows, extra: r }]
 })
 
-const chips = computed(() => {   // card 级的条目勾选标签
+const chips = computed(() => {   // card/issue 级的条目勾选标签
+  if (props.level === 'issue') {
+    const pack = issuePack.value
+    if (!pack) return []
+    return pack.rows
+      .map((r, i) => ({ r, i }))
+      .filter(({ r }) => !r.fixed)
+      .map(({ r, i }) => ({ i, on: selected.value[i] !== false, label: r.label }))
+  }
   if (props.level !== 'card' || !props.block) return []
   return rowsFor(props.block).rows.map((row, i) => ({ i, on: selected.value[i] !== false, label: row.label }))
 })
@@ -166,9 +200,18 @@ const age = computed(() => {
   return m > 0 ? `${m} 个月` : ''
 })
 const dispName = computed(() => anonymized.value ? '宝宝' : (props.kid?.name || '宝宝'))
-const headTitle = computed(() => props.level === 'page' ? `${dispName.value}的成长视图` : (titleFor(props.block) || '成长卡片'))
-const headSub = computed(() =>
-  [props.level === 'card' ? dispName.value : '', age.value, `截至 ${todayStr()}`].filter(Boolean).join(' · '))
+const headTitle = computed(() => {
+  if (props.level === 'page') return `${dispName.value}的成长视图`
+  if (props.level === 'issue') return `${dispName.value}的${issuePack.value?.name || ''}:全家这样做`
+  return titleFor(props.block) || '成长卡片'
+})
+const headSub = computed(() => {
+  if (props.level === 'issue') {
+    return [age.value, issuePack.value?.st, issuePack.value?.dayNoTxt, `截至 ${todayStr()}`]
+      .filter(Boolean).join(' · ')
+  }
+  return [props.level === 'card' ? dispName.value : '', age.value, `截至 ${todayStr()}`].filter(Boolean).join(' · ')
+})
 
 watch(() => [props.open, props.level, props.block?.id], () => {
   selected.value = []
@@ -178,7 +221,11 @@ watch(() => [props.open, props.level, props.block?.id], () => {
 function toggleRow(i) { selected.value[i] = selected.value[i] === false ? true : false }
 function toggleBlock(i) { blocksOn.value[i] = blocksOn.value[i] === false ? true : false }
 
-const fileTitle = () => props.level === 'page' ? '成长视图' : (titleFor(props.block) || '卡片')
+const fileTitle = () => {
+  if (props.level === 'page') return '成长视图'
+  if (props.level === 'issue') return `${issuePack.value?.name || '问题'}-全家这样做`
+  return titleFor(props.block) || '卡片'
+}
 async function save() {
   if (!nodeEl.value || exporting.value) return
   exporting.value = true
@@ -235,7 +282,26 @@ async function save() {
               <template v-if="level === 'page'"><div class="sc-sec-title">{{ sec.title }}</div></template>
 
               <template v-for="(row, i) in sec.rows" :key="i">
-                <div v-if="row.kind === 'strategy'" class="sc-row strategy">
+                <div v-if="row.group" class="sc-sec-title">{{ row.group }}</div>
+                <div v-if="row.kind === 'issue-what'" class="sc-row issue-what">
+                  <span class="main">{{ row.text }}</span>
+                </div>
+                <div v-else-if="row.kind === 'issue-why'" class="sc-row issue-why">
+                  <span class="main">{{ row.text }}</span>
+                </div>
+                <div v-else-if="row.kind === 'issue-how'" class="sc-row issue-how">
+                  <div class="who-do">
+                    <template v-if="/^[^:]{1,4}:/.test(row.text)">
+                      <span class="w">{{ row.text.split(':', 1)[0] }}</span>
+                      <span>{{ row.text.slice(row.text.indexOf(':') + 1) }}</span>
+                    </template>
+                    <span v-else>{{ row.text }}</span>
+                  </div>
+                </div>
+                <div v-else-if="row.kind === 'issue-red'" class="sc-red">
+                  <b>出现这些当天就医:</b>{{ row.text }}
+                </div>
+                <div v-else-if="row.kind === 'strategy'" class="sc-row strategy">
                   <div class="r1"><b>{{ row.name }}</b><span class="pill" :class="row.stRaw">{{ row.st }}</span></div>
                   <div v-if="row.sinceLine" class="since">{{ row.sinceLine }}</div>
                   <div class="main">{{ row.applied }}</div>
@@ -372,6 +438,11 @@ async function save() {
 .focusrow .ftag { display: inline-block; background: #fff; color: var(--ink-blue);
   border: 1px solid var(--grid-line); border-radius: 6px; padding: 3px 12px; font-size: 14.5px; margin: 0 6px 6px 0; }
 .concern { display: flex; gap: 8px; align-items: baseline; }
+.who-do { display: flex; gap: 8px; align-items: baseline; }
+.who-do .w { flex: none; color: var(--ink-blue); font-weight: 600; font-size: 13.5px; }
+.sc-red { background: var(--todo-bg); border: 1px solid var(--todo); border-radius: 8px;
+  padding: 10px 12px; margin: 10px 0; font-size: 14px; }
+.sc-red b { color: var(--todo); }
 .textline .main { font-size: 15px; }
 .listrow { display: flex; gap: 8px; align-items: baseline; }
 .listrow .box { flex: none; color: var(--ink-blue); }

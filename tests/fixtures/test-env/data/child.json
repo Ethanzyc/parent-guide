@@ -23,13 +23,7 @@
       },
       "childcarePlan": "计划36月入托"
     },
-    "activeConcerns": [
-      {
-        "since": "09-05",
-        "text": "就餐时要求看动画片,不给则哭闹",
-        "status": "观察中"
-      }
-    ],
+    "activeConcerns": [],
     "milestones": {
       "30": {
         "source": "CDC「Learn the Signs. Act Early.」2.5 岁检查表(公有领域,中文化示例)",
@@ -136,7 +130,10 @@
         "started": "09-12",
         "followup": "09-19 回访:哭闹时长从 8 分钟缩短到 2 分钟内,但取消预告时仍反弹",
         "evidence": "回访 ×1,部分有效",
-        "status": "partial"
+        "status": "partial",
+        "issues": [
+          "P1"
+        ]
       }
     ],
     "suspended": [
@@ -157,12 +154,18 @@
       {
         "due": "10-03",
         "topic": "S12 注意力转移:预告撤除后是否稳定(第三次回访)",
-        "status": "pending"
+        "status": "pending",
+        "issues": [
+          "P1"
+        ]
       },
       {
         "due": "10-10",
         "topic": "夜醒:验证「睡前 30 分钟无屏幕」满两周后的夜醒次数",
-        "status": "pending"
+        "status": "pending",
+        "issues": [
+          "P2"
+        ]
       }
     ],
     "notes": [
@@ -223,6 +226,36 @@
         "topic": "幼儿园报名政策了解(以本地为准)",
         "source": "入园准备",
         "status": "done"
+      }
+    ],
+    "issues": [
+      {
+        "id": "P1",
+        "name": "就餐看动画",
+        "status": "active",
+        "opened": "09-05",
+        "summary": "要动画片不给则哭闹;预告+替代选择执行中",
+        "judged": "09-12",
+        "pendingCare": "儿保 10 月常规体检顺带问一句就餐屏幕",
+        "brief": {
+          "what": "就餐屏幕关联哭闹(L2 习惯议题,非急症)",
+          "why": [
+            "预告降低切换时的突发感",
+            "替代选择给掌控感,不硬碰"
+          ],
+          "how": [
+            "爸妈:饭前预告今天吃什么、吃完去哪",
+            "全家:给两个碗的选择,不给屏幕"
+          ],
+          "redline": "连续 3 天无法收场再议升级"
+        }
+      },
+      {
+        "id": "P2",
+        "name": "夜醒",
+        "status": "watching",
+        "opened": "09-20",
+        "summary": "睡前 30 分钟无屏幕试验第 2 周"
       }
     ]
   }

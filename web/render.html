@@ -13,6 +13,7 @@
   "blocks": [
     { "id": "profile", "type": "profile", "x": 0, "y": 0, "w": 6, "h": 8 },
     { "id": "focus", "type": "focus", "x": 6, "y": 0, "w": 6, "h": 4 },
+    { "id": "issue", "type": "issue", "x": 0, "y": 14, "w": 12, "h": 5 },
     { "id": "milestone-30m", "type": "milestone", "x": 6, "y": 4, "w": 6, "h": 4, "props": { "months": 30 } },
     { "id": "strategy-effect", "type": "strategy-effect", "x": 0, "y": 8, "w": 7, "h": 6, "props": { "status": "all" } },
     { "id": "followup", "type": "followup", "x": 7, "y": 8, "w": 5, "h": 5 },
@@ -27,7 +28,19 @@
   "demo-child": {
     "name": "桃子(示例)", "birthdate": "2024-04-10",
     "currentFocus": ["自主进食", "如厕训练", "夜醒回落"],
-    "activeConcerns": [{ "since": "09-05", "text": "就餐时要求看动画片,不给则哭闹", "status": "观察中" }],
+    "issues": [
+      { "id": "P1", "name": "就餐看动画", "status": "active", "opened": "09-05",
+        "summary": "要动画片不给则哭闹;预告+替代选择执行中,第三次回访在 10-03",
+        "judged": "09-12",
+        "brief": {
+          "what": "就餐屏幕关联哭闹:屏幕成了吃饭的前置条件(L2 习惯议题)",
+          "why": ["预告让切换不突发:孩子提前知道规则,哭闹从 8 分钟缩到 2 分钟内", "替代选择给掌控感:选碗不选屏幕,不硬碰意志"],
+          "how": ["爸妈:饭前预告今天吃什么、吃完去哪", "全家:给两个碗的选择,屏幕规则一致不破例"],
+          "redline": "连续 3 天无法收场,升级到专项计划"
+        } },
+      { "id": "P2", "name": "夜醒回落", "status": "watching", "opened": "09-28",
+        "summary": "睡前 30 分钟无屏幕满两周看夜醒次数(上周均 1.1 次)" }
+    ],
     "milestones": { "30": { "source": "CDC「Learn the Signs. Act Early.」2.5 岁检查表(公有领域,中文化示例)", "items": [
       { "domain": "社交/情感", "status": "ok", "text": "和其他孩子玩耍时,会注意到对方受伤或不开心" },
       { "domain": "社交/情感", "status": "watch", "text": "可能开始轮流玩游戏(观察中)" },
@@ -48,11 +61,11 @@
     ], "note": "入睡时间目标 21:30 前;夜醒回落中(上周均 2.4 次 → 本周均 1.1 次)" },
     "strategies": [
       { "id": "M1", "name": "正面强化", "applied": "如厕:每次成功坐盆后立即具体表扬(「你自己走到小马桶,真厉害」),不物质奖励", "started": "09-08", "followup": "09-22 回访:白天尿裤从 4 次/天降到 1 次/天,午睡起床会主动说「要小便」", "evidence": "回访 ×2,持续有效", "status": "effective" },
-      { "id": "S12", "name": "注意力转移", "applied": "就餐看动画片哭闹:预告+替代选择(「吃饭时不看动画片,你可以选用蓝色碗还是黄色碗」)", "started": "09-12", "followup": "09-19 回访:哭闹时长从 8 分钟缩短到 2 分钟内,但取消预告时仍反弹", "evidence": "回访 ×1,部分有效", "status": "partial" }
+      { "id": "S12", "name": "注意力转移", "applied": "就餐看动画片哭闹:预告+替代选择(「吃饭时不看动画片,你可以选用蓝色碗还是黄色碗」)", "started": "09-12", "followup": "09-19 回访:哭闹时长从 8 分钟缩短到 2 分钟内,但取消预告时仍反弹", "evidence": "回访 ×1,部分有效", "status": "partial", "issues": ["P1"] }
     ],
     "followups": [
-      { "due": "10-03", "topic": "S12 注意力转移:预告撤除后是否稳定(第三次回访)", "status": "pending" },
-      { "due": "10-10", "topic": "夜醒:验证「睡前 30 分钟无屏幕」满两周后的夜醒次数", "status": "pending" }
+      { "due": "10-03", "topic": "S12 注意力转移:预告撤除后是否稳定(第三次回访)", "status": "pending", "issues": ["P1"] },
+      { "due": "10-10", "topic": "夜醒:验证「睡前 30 分钟无屏幕」满两周后的夜醒次数", "status": "pending", "issues": ["P2"] }
     ],
     "growth": { "records": [
       { "date": "2026-06-12", "height": 87.5, "weight": 12.1, "months": 26 },

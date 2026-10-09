@@ -5,15 +5,18 @@ import GridBoard from './components/GridBoard.vue'
 import JsonDrawer from './components/JsonDrawer.vue'
 import ShareModal from './components/ShareModal.vue'
 import CardManager from './components/CardManager.vue'
+import IssueDetail from './components/IssueDetail.vue'
 import { CARD_META } from './components/cards/index.js'
 
 onMounted(init)
 
 const drawerOpen = ref(false)
 const managerOpen = ref(false)
-const shareState = ref(null)     // null | { level: 'page' | 'card', block }
+const shareState = ref(null)     // null | { level: 'page' | 'card' | 'issue', block, issue }
+const issueOpen = ref(null)      // 打开详情覆盖层的 issue id;#issue-P1 hash 可直链
 const print = () => window.print()
 const openSite = () => window.open('/site/index.html', '_blank')
+if (/^#issue-P\d+$/.test(window.location.hash)) issueOpen.value = window.location.hash.slice(7)
 
 function onApplyPage(next) {
   applyJsonPage(next)
@@ -111,7 +114,7 @@ function exportReport() {
     <GridBoard :key="state.version" :page="state.page" :kid="currentChild()"
                :editing="state.editing" :server-mode="state.serverMode"
                @geometry="applyGeometry" @share-card="b => shareState = { level: 'card', block: b }"
-               @props-update="onPropsUpdate" />
+               @props-update="onPropsUpdate" @open-issue="id => issueOpen = id" />
 
     <footer class="page">示例数据为虚构 · 布局模型:{x, y, w, h} 网格坐标(与 grid-layout-plus 同构)</footer>
 
@@ -123,6 +126,11 @@ function exportReport() {
 
     <ShareModal :open="!!shareState" :level="shareState?.level || 'card'"
                 :block="shareState?.block" :page="state.page" :kid="currentChild()"
+                :issue="shareState?.issue"
                 @close="shareState = null" />
+
+    <IssueDetail :open="!!issueOpen" :kid="currentChild()" :issue-id="issueOpen"
+                 @close="issueOpen = null"
+                 @share-issue="i => shareState = { level: 'issue', block: null, issue: i }" />
   </template>
 </template>

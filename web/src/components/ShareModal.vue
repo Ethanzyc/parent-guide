@@ -78,6 +78,8 @@ const issuePack = computed(() => {
   const how = (b.how || []).map(h => ({ kind: 'issue-how', text: h, label: `怎么做·${h.slice(0, 8)}` }))
   if (how.length) { how[0].group = '全家怎么做'; rows.push(...how) }
   if (b.redline) rows.push({ kind: 'issue-red', text: b.redline, label: '就医线', fixed: true })
+  const srcs = (b.sources || []).map(x => ({ kind: 'issue-src', text: x, label: `依据·${x.slice(0, 8)}` }))
+  if (srcs.length) { srcs[0].group = '依据'; rows.push(...srcs) }
   const d = daysSince(i.opened)
   const dayNoTxt = d !== null ? `第 ${d + 1} 天` : `自 ${i.opened}`
   return { rows, st: ISSUE_ST[i.status] || i.status, dayNoTxt, name: i.name }
@@ -295,6 +297,9 @@ async function save() {
                 <div v-else-if="row.kind === 'issue-red'" class="sc-red">
                   <b>出现这些当天就医：</b>{{ zhPunct(row.text) }}
                 </div>
+                <div v-else-if="row.kind === 'issue-src'" class="sc-row issue-src">
+                  <span class="main">{{ zhPunct(row.text) }}</span>
+                </div>
                 <div v-else-if="row.kind === 'strategy'" class="sc-row strategy">
                   <div class="r1"><b>{{ row.name }}</b><span class="pill" :class="row.stRaw">{{ row.st }}</span></div>
                   <div v-if="row.sinceLine" class="since">{{ row.sinceLine }}</div>
@@ -441,5 +446,6 @@ async function save() {
 .listrow.done .main { color: #9aacba; text-decoration: line-through; }
 .sc-empty { color: var(--sub); font-size: 13.5px; padding: 8px 0; }
 .sc-src { font-size: 11.5px; color: var(--sub); margin-top: 6px; }
+.issue-src .main { font-size: 12.5px; color: var(--sub); }
 .sc-foot { text-align: center; color: #9aacba; font-size: 11.5px; margin-top: 14px; }
 </style>

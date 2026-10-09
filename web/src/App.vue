@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { state, init, currentChild, applyGeometry, applyJsonPage, persistPage, resetDefault } from './lib/store.js'
 import GridBoard from './components/GridBoard.vue'
 import JsonDrawer from './components/JsonDrawer.vue'
@@ -14,6 +14,10 @@ const drawerOpen = ref(false)
 const managerOpen = ref(false)
 const shareState = ref(null)     // null | { level: 'page' | 'card' | 'issue', block, issue }
 const issueOpen = ref(null)      // 打开详情覆盖层的 issue id;#issue-P1 hash 可直链
+// 背景滚动锁(单一来源:任一弹窗开即锁;组件各管会互相覆盖)
+watch([() => !!shareState.value, () => !!issueOpen.value], ([a, b]) => {
+  document.body.style.overflow = (a || b) ? 'hidden' : ''
+}, { immediate: true })
 const print = () => window.print()
 const openSite = () => window.open('/site/index.html', '_blank')
 if (/^#issue-P\d+$/.test(window.location.hash)) issueOpen.value = window.location.hash.slice(7)
@@ -131,6 +135,6 @@ function exportReport() {
 
     <IssueDetail :open="!!issueOpen" :kid="currentChild()" :issue-id="issueOpen"
                  @close="issueOpen = null"
-                 @share-issue="i => shareState = { level: 'issue', block: null, issue: i }" />
+                 @share-issue="i => { issueOpen = null; shareState = { level: 'issue', block: null, issue: i } }" />
   </template>
 </template>

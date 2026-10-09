@@ -568,5 +568,21 @@ class T(unittest.TestCase):
         code, _ = run(self.tmp, "set-note-title", "--note", "2026-10-09:不存在", "--title", "x")
         self.assertNotEqual(code, 0)
 
+    def test_51_issue_sources(self):
+        run(self.tmp, "add-issue", "--name", "便秘", "--status", "active",
+                        "--summary", "x", "--what", "w",
+                        "--source", "AAP·USDA 膳食口径——2-3 岁奶量 480-600ml/日",
+                        "--source", "CHOP——一线软便剂遵医嘱")
+        it = self.child()["issues"][-1]
+        self.assertEqual(len(it["brief"]["sources"]), 2)
+        code, msg = run(self.tmp, "set-issue-brief",
+                        "--id", it["id"],
+                        "--source", "ESPGHAN 共识——纤维补剂证据弱")
+        it = next(i for i in self.child()["issues"] if i["id"] == it["id"])
+        self.assertEqual(it["brief"]["sources"], ["ESPGHAN 共识——纤维补剂证据弱"])
+        code, _ = run(self.tmp, "set-issue-brief", "--id", it["id"], "--source", "")
+        it = next(i for i in self.child()["issues"] if i["id"] == it["id"])
+        self.assertNotIn("sources", it["brief"])            # 空串=清空
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

@@ -138,6 +138,11 @@ const briefSections = computed(() => {
               <h4>出现这些直接就医,不等观察</h4>
               <p>{{ zhPunct(issue.brief.redline) }}</p>
             </div>
+
+            <div v-if="issue.brief?.sources?.length" class="srcbox">
+              <h4>依据</h4>
+              <ul><li v-for="(src, i) in issue.brief.sources" :key="i">{{ zhPunct(src) }}</li></ul>
+            </div>
           </div>
 
           <div class="is-right">
@@ -238,6 +243,11 @@ h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
   border-radius: 10px; padding: 12px 16px; margin-top: 10px; }
 .redline h4 { font-size: 13px; color: var(--todo); font-weight: 600; margin-bottom: 4px; }
 .redline p { font-size: 13.5px; }
+.srcbox { border-top: 1px dashed var(--line); margin-top: 12px; padding-top: 8px; }
+.srcbox h4 { font-size: 11.5px; color: var(--sub); font-weight: 600;
+  letter-spacing: .15em; margin-bottom: 3px; }
+.srcbox ul { padding-left: 16px; margin: 0; }
+.srcbox li { font-size: 12px; color: var(--sub); line-height: 1.55; }
 .tl-panel { border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px 14px;
   background: rgba(255,255,255,.7); }
 .tl-panel h3 { margin-top: 0; }

@@ -256,8 +256,10 @@ def execute(argv=None):
     p.add_argument("--pending-care", default=None, help="待办就医动作;存在=红")
     p.add_argument("--what", default=None, help="brief.what:这是什么问题(判定与现状)")
     p.add_argument("--why", action="append", default=None, help="为什么这么做:一条一传")
-    p.add_argument("--how", action="append", default=None, help="全家怎么做:一条一传")
+    p.add_argument("--how", action="append", default=None, help="怎么做:一条一传")
     p.add_argument("--redline", default=None, help="出现即就医/评估的红线")
+    p.add_argument("--source", action="append", default=None,
+                   help="依据来源:一条一传(机构/知识页+细则一句,分享卡尾渲染)")
 
     p = sub.add_parser("set-issue-status")
     p.add_argument("--id", required=True)
@@ -271,6 +273,8 @@ def execute(argv=None):
                    help="整组覆盖;传空串清空该节")
     p.add_argument("--how", action="append", default=None)
     p.add_argument("--redline", default=None)
+    p.add_argument("--source", action="append", default=None,
+                   help="依据来源整组覆盖;传空串清空")
     p.add_argument("--pending-care", default=None, help="传 none 清除")
     p.add_argument("--judged", default=None)
 
@@ -571,6 +575,8 @@ def execute(argv=None):
             brief["how"] = list(args.how)
         if args.redline:
             brief["redline"] = args.redline
+        if args.source:
+            brief["sources"] = list(args.source)
         if brief:
             issue["brief"] = brief
         if args.judged:
@@ -608,7 +614,7 @@ def execute(argv=None):
             if val is not None:
                 brief[key] = val
                 touched.append(key)
-        for key, val in (("why", args.why), ("how", args.how)):
+        for key, val in (("why", args.why), ("how", args.how), ("sources", args.source)):
             if val is None:
                 continue
             if val == [""]:

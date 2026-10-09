@@ -356,7 +356,7 @@ async function save() {
 
 <style scoped>
 /* A·生长图纸(与页面同系统):坐标纸底+墨蓝+serif 数字+描边小章 */
-.share-mask { position: fixed; inset: 0; background: rgba(30,58,82,.4); z-index: 50;
+.share-mask { position: fixed; inset: 0; background: rgba(30,58,82,.58); z-index: 50;
   display: flex; align-items: center; justify-content: center; padding: 20px; }
 .share-dialog { background: #fdfdfb; border-radius: 12px; width: min(460px, 100%);
   max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;

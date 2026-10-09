@@ -556,5 +556,17 @@ class T(unittest.TestCase):
         code, _ = run(self.tmp, "set-note-time", "--note", "2026-10-09:晨起想", "--time", "99:00")
         self.assertNotEqual(code, 0)
 
+    def test_50_note_title(self):
+        code, msg = run(self.tmp, "add-note", "--date", "2026-10-09",
+                        "--title", "晨起想拉没拉出", "--text", "晨起想大便但未拉出;随后状态好")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["notes"][-1].get("title"), "晨起想拉没拉出")
+        code, msg = run(self.tmp, "set-note-title", "--note", "2026-10-09:晨起想大便但未拉出",
+                        "--title", "晨起想拉没拉出,白天正常")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["notes"][-1].get("title"), "晨起想拉没拉出,白天正常")
+        code, _ = run(self.tmp, "set-note-title", "--note", "2026-10-09:不存在", "--title", "x")
+        self.assertNotEqual(code, 0)
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

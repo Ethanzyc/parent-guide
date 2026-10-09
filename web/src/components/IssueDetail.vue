@@ -2,7 +2,7 @@
 // 问题病历层:左列=当前状态卡(行动格优先)+口径卡+红线,右列=时间轴(倒序,
 // 最新在最上;窄屏折叠单列)。大节点只认机械事件(opened/judged/strategy.started)
 // ——语义归一留读侧(spec issue-tracking-v1 §6.3)。只读:内容变更一律回对话。
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { daysSince, dueLabel } from '../lib/util.js'
 
 const props = defineProps({
@@ -11,6 +11,16 @@ const props = defineProps({
   issueId: { type: String, default: null },
 })
 const emit = defineEmits(['close', 'share-issue'])
+
+// 时间轴渐进披露(NN Group/EHR collapsed-note 模式):标题行扫读+原文展开。
+// title 是 note 的可选字段(add-note --title / set-note-title),原文不动。
+const openEv = ref(new Set())
+const isOpen = (i) => openEv.value.has(i)
+function toggle(i) {
+  const s = new Set(openEv.value)
+  s.has(i) ? s.delete(i) : s.add(i)
+  openEv.value = s
+}
 
 const ST_LABEL = { active: '进行中', watching: '观察中', resolved: '已解决' }
 const ST_CLASS = { active: 'watch', watching: 'plain', resolved: 'ok' }
@@ -67,7 +77,8 @@ const events = computed(() => {
       ev.push({ date: s.started, dstr: fullDate(s.started), big: '方案', text: `${s.id} ${s.name}` })
   for (const n of props.kid?.notes || [])
     if ((n.issues || []).includes(i.id))
-      ev.push({ date: n.date, dstr: dispDate(n.date, n.precision), time: n.time, text: n.text,
+      ev.push({ date: n.date, dstr: dispDate(n.date, n.precision), time: n.time,
+                title: n.title, text: n.text,
                 tags: (n.tags || []).filter(t => t !== i.name) })
   for (const f of props.kid?.followups || [])
     if ((f.issues || []).includes(i.id))
@@ -136,14 +147,30 @@ const briefSections = computed(() => {
                 <div v-for="(e, i) in events" :key="i" class="tl-item"
                      :class="{ big: e.big, future: e.fu && e.status === 'pending' }">
                   <span class="d">{{ dispLabel(e) }}</span>
-                  <span class="tt">
-                    <span v-if="e.big" class="node-b">{{ e.big }}</span>
-                    <span :class="{ b: e.big }">{{ e.text }}</span>
-                    <span v-for="t in e.tags" :key="t" class="chip">{{ t }}</span>
-                    <span v-if="e.fu && e.status === 'pending'" class="due-b"
-                          :class="dueLabel(e.date).urgency || 'later'">{{ dueLabel(e.date).label }}</span>
-                    <span v-else-if="e.fu" class="fu-done">{{ e.status === 'done' ? '已回访' : '已跳过' }}</span>
-                  </span>
+                  <template v-if="e.big">
+                    <span class="tt">
+                      <span class="node-b">{{ e.big }}</span>
+                      <span class="b">{{ e.text }}</span>
+                    </span>
+                  </template>
+                  <template v-else-if="e.fu">
+                    <span class="tt">
+                      <span>{{ e.text }}</span>
+                      <span v-if="e.status === 'pending'" class="due-b"
+                            :class="dueLabel(e.date).urgency || 'later'">{{ dueLabel(e.date).label }}</span>
+                      <span v-else class="fu-done">{{ e.status === 'done' ? '已回访' : '已跳过' }}</span>
+                    </span>
+                  </template>
+                  <div v-else class="ev">
+                    <div v-if="e.title" class="ev-title" @click="toggle(i)">{{ e.title }}</div>
+                    <div v-if="e.tags.length" class="ev-chips">
+                      <span v-for="t in e.tags" :key="t" class="chip">{{ t }}</span>
+                    </div>
+                    <div v-if="!e.title || isOpen(i)" class="ev-body"
+                         :class="{ clamp: !e.title && !isOpen(i) }">{{ e.text }}</div>
+                    <button v-if="e.title || e.text.length > 42" class="ev-toggle"
+                            @click="toggle(i)">{{ isOpen(i) ? '收起' : '详情' }}</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -159,7 +186,7 @@ const briefSections = computed(() => {
 </template>
 
 <style scoped>
-.issue-mask { position: fixed; inset: 0; background: rgba(30,58,82,.35); z-index: 40;
+.issue-mask { position: fixed; inset: 0; background: rgba(30,58,82,.58); z-index: 40;
   display: flex; align-items: center; justify-content: center; padding: 24px; }
 .issue-sheet { background-color: var(--card);
   background-image: linear-gradient(var(--grid) 1px, transparent 1px),
@@ -214,9 +241,18 @@ h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
 .tl-item::before { content: ''; position: absolute; left: -18px; top: 9px;
   width: 8px; height: 8px; border-radius: 99px; background: var(--ink-blue);
   box-shadow: 0 0 0 2px var(--accent-soft); }
-.tl-item .d { color: var(--sub); margin-right: 8px; font-size: 12px;
-  font-variant-numeric: tabular-nums; }
+.tl-item .d { display: block; color: var(--sub); font-size: 12px;
+  font-variant-numeric: tabular-nums; margin-bottom: 1px; }
 .tl-item .tt { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.ev { min-width: 0; flex: 1; }
+.ev-title { font-size: 13.5px; font-weight: 600; cursor: pointer; line-height: 1.5; }
+.ev-chips { margin: 1px 0 2px; }
+.ev-body { font-size: 12.5px; color: var(--sub); white-space: pre-wrap;
+  margin-top: 2px; line-height: 1.55; }
+.ev-body.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; }
+.ev-toggle { border: 0; background: none; color: var(--ink-blue); font-size: 11.5px;
+  cursor: pointer; padding: 2px 0; margin-top: 1px; }
 .tl-item.big { padding: 6px 0 10px; }
 .tl-item.big::before { left: -21px; top: 6px; width: 12px; height: 12px;
   background: #fff; border: 3px solid var(--ink-blue); box-shadow: 0 0 0 2px var(--accent-soft); }

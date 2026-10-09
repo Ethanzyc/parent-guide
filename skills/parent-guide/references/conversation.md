@@ -86,7 +86,7 @@
 | 定回访 | `update-child.py add-followup --due MM-DD --topic ...`(重复写入会被拒绝) |
 | 回访发生 | `update-child.py mark-revisited --id ... --result ... [--status effective/partial/ineffective]`(回访计数自动+1);对应的 pending 回访项如果已了结,顺带 `set-followup-status --due ... --topic ... --status done/skipped`(due+topic 双精确匹配;留档作历史,卡片与热区只显示 pending——过期红标不退场会堆积稀释紧迫感) |
 | 策略被新计划取代/挂起 | `update-child.py set-status --id ... --status absorbed/suspended [--note ...]` |
-| 值得记的事件 | `update-child.py add-note --date ... --text ...`(保守:只记对养育决策有影响的;同日多条/顺序重要时带 `--time HH:MM`,知道才填不编造) |
+| 值得记的事件 | `update-child.py add-note --date ... --text ...`(保守:只记对养育决策有影响的;带 `--title 一句话标题`(<=25 字,时间轴扫读层);同日多条/顺序重要时带 `--time HH:MM`,知道才填不编造) |
 | 当前重点更新(整组覆盖,从对话证据派生) | `update-child.py set-focus --items 发脾气,如厕`(空字符串=清空;划掉旧项在回执可见) |
 | 问题开题 | `update-child.py add-issue --name ... --status active/watching --summary ... [--what/--why/--how/--redline/--judged/--pending-care]`(家长认领后;见 §2.8 问题归属) |
 | 问题挂靠/补挂 | `link-issue --id P1 [--note 日期:前缀] [--strategy S4] [--followup due:topic]`;记录侧写入时直接 `--issue P1` |

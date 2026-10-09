@@ -202,6 +202,8 @@ def execute(argv=None):
     p.add_argument("--text", required=True)
     p.add_argument("--time", default=None,
                    help="HH:MM 当天时刻(可选;同日多条精确排序用;不知道就不填,不编造)")
+    p.add_argument("--title", default=None,
+                   help="一句话标题(可选,<=25 字;时间轴扫读层,原文进展开)")
     p.add_argument("--issue", action="append", default=None,
                    help="挂到问题 P 号(可重复;先 add-issue)")
 
@@ -283,6 +285,10 @@ def execute(argv=None):
     p = sub.add_parser("set-note-time", help="补记历史 note 的时刻(问题时间轴同日排序)")
     p.add_argument("--note", required=True, help="YYYY-MM-DD:前缀(同 link-issue 定位)")
     p.add_argument("--time", required=True, help="HH:MM(事件发生时刻,用户口径)")
+
+    p = sub.add_parser("set-note-title", help="补记历史 note 的一句话标题(时间轴扫读层)")
+    p.add_argument("--note", required=True, help="YYYY-MM-DD:前缀(同 link-issue 定位)")
+    p.add_argument("--title", required=True, help="一句话标题,<=25 字,意思不变")
 
     p = sub.add_parser("check", help="validate the archive: required fields, date "
                   "formats (YYYY-MM-DD / MM-DD), status enums, numeric fields, "
@@ -440,6 +446,8 @@ def execute(argv=None):
         if linked is None:
             return 1, f"ERROR: --issue 挂了不存在的问题:{'/'.join(args.issue)}(先 add-issue)"
         rec = {"date": iso, "precision": precision, "tags": tags, "text": args.text}
+        if args.title:
+            rec["title"] = args.title
         if args.time is not None:
             t = _norm_time(args.time)
             if t is None:
@@ -671,6 +679,13 @@ def execute(argv=None):
             return 1, f"ERROR: --time 须为 HH:MM(00-23:00-59,现在是 {args.time!r})"
         n["time"] = t
         msg = f"recorded note time {n.get('date')} {t}:{str(n.get('text', ''))[:30]}"
+
+    elif args.action == "set-note-title":
+        n, err = _find_note(child, args.note)
+        if err:
+            return 1, err
+        n["title"] = args.title
+        msg = f"recorded note title 「{args.title}」({n.get('date')}:{str(n.get('text', ''))[:24]})"
 
     elif args.action == "check":
         problems, ph = _check(child)

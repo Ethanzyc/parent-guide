@@ -114,3 +114,9 @@
 - JSON 解析失败 → 保持上一版配置并提示,不白屏
 - id 重复 → 拒绝写入(编辑配置抽屉与本地服务端都会校验)
 - 服务端 POST 校验:缺 blocks 数组拒绝写入;原子写(tmp+rename)防半截文件
+
+## 新增内置卡的上线清单(贡献者)
+
+1. 组件 + REGISTRY/CARD_META 登记 + 本表加行 + check-card-style 门禁(既有流程);
+2. demo 内嵌页(`web/render.html` 的 embedded page)加上新卡,file mode 开箱可见;
+3. **活跃用户的 `data/page.json` 不会自动获得新卡**——功能卡上页只有两条路:用户在「卡片管理」面板手动打开,或对话里 AI 按本规范补 blocks。发布后主动检查活跃档案,需要时按「修改规则」整文件替换补卡(2026-10-09 实例:issue 卡上线后用户页面看不到,根因=只改了 demo 没改用户 page.json)。

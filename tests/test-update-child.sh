@@ -546,5 +546,15 @@ class T(unittest.TestCase):
         self.assertEqual(code, 0)                             # 单数位归一零填充
         self.assertEqual(self.child()["notes"][-1].get("time"), "09:05")
 
+    def test_49_set_note_time(self):
+        run(self.tmp, "add-note", "--date", "2026-10-09", "--text", "晨起想大便没拉出")
+        code, msg = run(self.tmp, "set-note-time", "--note", "2026-10-09:晨起想", "--time", "7:30")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["notes"][-1].get("time"), "07:30")
+        code, _ = run(self.tmp, "set-note-time", "--note", "2026-10-09:不存在", "--time", "08:00")
+        self.assertNotEqual(code, 0)
+        code, _ = run(self.tmp, "set-note-time", "--note", "2026-10-09:晨起想", "--time", "99:00")
+        self.assertNotEqual(code, 0)
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

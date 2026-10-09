@@ -147,6 +147,25 @@ def _validated_issues(child, ids):
     return list(dict.fromkeys(ids))
 
 
+def _find_note(child, spec):
+    """--note 定位:YYYY-MM-DD:前缀;零命中/撞车都报错(撞车列候选)。"""
+    d, _, prefix = spec.partition(":")
+    prefix = prefix.strip()
+    if not prefix:
+        return None, f"ERROR: --note 须为 YYYY-MM-DD:前缀(现在是 {spec!r})"
+    hits = [n for n in child.get("notes", [])
+            if n.get("date") == d and str(n.get("text", "")).startswith(prefix)]
+    if not hits:
+        same = [f"  {n.get('date')}:{str(n.get('text', ''))[:20]}"
+                for n in child.get("notes", []) if n.get("date") == d]
+        return None, (f"ERROR: 没有匹配的 note {spec!r}"
+                      + ("\n当天候选:\n" + "\n".join(same) if same else "(该日期无 note)"))
+    if len(hits) > 1:
+        return None, (f"ERROR: 前缀撞车({len(hits)} 条),加长前缀重试:\n"
+                      + "\n".join(f"  {h.get('text', '')[:30]}" for h in hits))
+    return hits[0], None
+
+
 def execute(argv=None):
     ap = argparse.ArgumentParser(prog="update-child.py")
     ap.add_argument("--data", default="./data", help="data directory (default ./data)")
@@ -260,6 +279,10 @@ def execute(argv=None):
     p.add_argument("--strategy", action="append", default=None, help="如 S4")
     p.add_argument("--followup", action="append", default=None, help="MM-DD:topic")
     p.add_argument("--remove", action="store_true")
+
+    p = sub.add_parser("set-note-time", help="补记历史 note 的时刻(问题时间轴同日排序)")
+    p.add_argument("--note", required=True, help="YYYY-MM-DD:前缀(同 link-issue 定位)")
+    p.add_argument("--time", required=True, help="HH:MM(事件发生时刻,用户口径)")
 
     p = sub.add_parser("check", help="validate the archive: required fields, date "
                   "formats (YYYY-MM-DD / MM-DD), status enums, numeric fields, "
@@ -610,21 +633,10 @@ def execute(argv=None):
             return 1, "ERROR: 至少给一个 --note/--strategy/--followup"
         targets = []
         for spec in args.note or []:
-            d, _, prefix = spec.partition(":")
-            prefix = prefix.strip()
-            if not prefix:
-                return 1, f"ERROR: --note 须为 YYYY-MM-DD:前缀(现在是 {spec!r})"
-            hits = [n for n in child.get("notes", [])
-                    if n.get("date") == d and str(n.get("text", "")).startswith(prefix)]
-            if not hits:
-                same = [f"  {n.get('date')}:{str(n.get('text', ''))[:20]}"
-                        for n in child.get("notes", []) if n.get("date") == d]
-                return 1, (f"ERROR: 没有匹配的 note {spec!r}"
-                           + ("\n当天候选:\n" + "\n".join(same) if same else "(该日期无 note)"))
-            if len(hits) > 1:
-                return 1, (f"ERROR: 前缀撞车({len(hits)} 条),加长前缀重试:\n"
-                           + "\n".join(f"  {h.get('text', '')[:30]}" for h in hits))
-            targets.append((hits[0], f"note {d}:{prefix[:10]}"))
+            n, err = _find_note(child, spec)
+            if err:
+                return 1, err
+            targets.append((n, f"note {spec.split(':', 1)[0]}:{spec.partition(':')[2][:10]}"))
         for sid in args.strategy or []:
             s = next((s for s in child.get("strategies", []) if s.get("id") == sid), None)
             if s is None:
@@ -649,6 +661,16 @@ def execute(argv=None):
                     lst.append(args.id)
                 detail.append(f"+{label}")
         msg = f"{'un' if args.remove else ''}linked issue {args.id}: " + " ".join(detail)
+
+    elif args.action == "set-note-time":
+        n, err = _find_note(child, args.note)
+        if err:
+            return 1, err
+        t = _norm_time(args.time)
+        if t is None:
+            return 1, f"ERROR: --time 须为 HH:MM(00-23:00-59,现在是 {args.time!r})"
+        n["time"] = t
+        msg = f"recorded note time {n.get('date')} {t}:{str(n.get('text', ''))[:30]}"
 
     elif args.action == "check":
         problems, ph = _check(child)

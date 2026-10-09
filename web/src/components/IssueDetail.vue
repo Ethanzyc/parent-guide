@@ -53,6 +53,9 @@ const fullDate = (d) => {
 }
 const dispDate = (d, precision) =>
   (precision && precision !== 'day' ? '≈' : '') + fullDate(d)
+const dispLabel = (e) => e.dstr + (e.time ? ' ' + e.time : '')
+// 排序键=日期+时刻(倒序,最新在最上);无 time 的视为当天最早(空串排底)
+const evKey = (e) => `${normKey(e.date)} ${e.time || ''}`
 const events = computed(() => {
   const i = issue.value
   if (!i) return []
@@ -64,12 +67,12 @@ const events = computed(() => {
       ev.push({ date: s.started, dstr: fullDate(s.started), big: '方案', text: `${s.id} ${s.name}` })
   for (const n of props.kid?.notes || [])
     if ((n.issues || []).includes(i.id))
-      ev.push({ date: n.date, dstr: dispDate(n.date, n.precision), text: n.text,
+      ev.push({ date: n.date, dstr: dispDate(n.date, n.precision), time: n.time, text: n.text,
                 tags: (n.tags || []).filter(t => t !== i.name) })
   for (const f of props.kid?.followups || [])
     if ((f.issues || []).includes(i.id))
       ev.push({ date: f.due, dstr: fullDate(f.due), text: f.topic, fu: true, status: f.status || 'pending' })
-  return ev.sort((a, b) => normKey(b.date).localeCompare(normKey(a.date)))   // 倒序:最新在最上
+  return ev.sort((a, b) => evKey(b).localeCompare(evKey(a)))   // 倒序:最新在最上
 })
 const briefSections = computed(() => {
   const b = issue.value?.brief || {}
@@ -132,7 +135,7 @@ const briefSections = computed(() => {
               <div class="tl">
                 <div v-for="(e, i) in events" :key="i" class="tl-item"
                      :class="{ big: e.big, future: e.fu && e.status === 'pending' }">
-                  <span class="d">{{ e.dstr }}</span>
+                  <span class="d">{{ dispLabel(e) }}</span>
                   <span class="tt">
                     <span v-if="e.big" class="node-b">{{ e.big }}</span>
                     <span :class="{ b: e.big }">{{ e.text }}</span>

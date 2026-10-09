@@ -529,5 +529,22 @@ class T(unittest.TestCase):
         self.assertNotEqual(code, 0)
         self.assertIn("P9", msg)
 
+    def test_48_note_time_optional(self):
+        run(self.tmp, "add-issue", "--name", "便秘", "--status", "active", "--summary", "x")
+        iid = self.child()["issues"][-1]["id"]
+        code, msg = run(self.tmp, "add-note", "--date", "2026-10-09", "--time", "14:30",
+                        "--text", "午后排便一次", "--issue", iid)
+        self.assertEqual(code, 0, msg)
+        n = self.child()["notes"][-1]
+        self.assertEqual(n.get("time"), "14:30")
+        code, msg = run(self.tmp, "add-note", "--date", "2026-10-09", "--text", "无时间也合法")
+        self.assertEqual(code, 0, msg)
+        self.assertNotIn("time", self.child()["notes"][-1])   # 可选,缺省不写键
+        code, _ = run(self.tmp, "add-note", "--date", "2026-10-09", "--time", "25:99", "--text", "y")
+        self.assertNotEqual(code, 0)                          # 坏格式写入即拒
+        code, _ = run(self.tmp, "add-note", "--date", "2026-10-09", "--time", "9:5", "--text", "z")
+        self.assertEqual(code, 0)                             # 单数位归一零填充
+        self.assertEqual(self.child()["notes"][-1].get("time"), "09:05")
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

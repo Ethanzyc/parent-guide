@@ -48,6 +48,15 @@ from pathlib import Path
 VALID_STATUS = {"active", "effective", "partial", "ineffective", "suspended", "absorbed"}
 MILESTONE_STATUS = {"ok", "watch", "todo"}
 ISSUE_STATUS = {"active", "watching", "resolved"}   # docs/specs/issue-tracking-v1.md
+TIME_OF_DAY = re.compile(r"^(\d{1,2}):(\d{1,2})$")  # note.time HH:MM(可选,容忍 9:5)
+
+
+def _norm_time(v):
+    """--time 容忍 9:5 这类单数位,存零填充 HH:MM;非法值原样返回交上层拒绝。"""
+    m = TIME_OF_DAY.match(str(v or ""))
+    if m and int(m.group(1)) < 24 and int(m.group(2)) < 60:
+        return f"{int(m.group(1)):02d}:{int(m.group(2)):02d}"
+    return None
 NOTE_PRECISION = {"day", "week", "month"}
 DATE_FULL = re.compile(r"^\d{4}-\d{2}-\d{2}$")   # birthdate
 DATE_SHORT = re.compile(r"^\d{2}-\d{2}$")        # MM-DD everywhere else
@@ -172,6 +181,8 @@ def execute(argv=None):
                    "(<=7 day, <=21 week, else month) -- never invent exactness")
     p.add_argument("--tags", default=None, help="comma-separated event tags")
     p.add_argument("--text", required=True)
+    p.add_argument("--time", default=None,
+                   help="HH:MM 当天时刻(可选;同日多条精确排序用;不知道就不填,不编造)")
     p.add_argument("--issue", action="append", default=None,
                    help="挂到问题 P 号(可重复;先 add-issue)")
 
@@ -400,17 +411,24 @@ def execute(argv=None):
             iso = _days_ago(back)
             precision = "day" if back <= 7 else ("week" if back <= 21 else "month")
         tags = [t.strip() for t in (args.tags or "").split(",") if t.strip()]
+        if args.date is None and args.time is not None:
+            return 1, "ERROR: --time 与 --approx-days 互斥(模糊回忆不带精确时间,不编造)"
         linked = _validated_issues(child, args.issue)
         if linked is None:
             return 1, f"ERROR: --issue 挂了不存在的问题:{'/'.join(args.issue)}(先 add-issue)"
         rec = {"date": iso, "precision": precision, "tags": tags, "text": args.text}
+        if args.time is not None:
+            t = _norm_time(args.time)
+            if t is None:
+                return 1, f"ERROR: --time 须为 HH:MM(00-23:00-59,现在是 {args.time!r})"
+            rec["time"] = t
         if linked:
             rec["issues"] = linked
         child.setdefault("notes", []).append(rec)
         prefix = iso if precision == "day" else f"≈{iso}"
         tagpart = f" [{'/'.join(tags)}]" if tags else ""
         issuepart = f" [→{'/'.join(linked)}]" if linked else ""
-        msg = f"recorded note {prefix}({precision}){tagpart}{issuepart}: {args.text[:40]}"
+        msg = f"recorded note {prefix}{(' ' + rec['time']) if 'time' in rec else ''}({precision}){tagpart}{issuepart}: {args.text[:40]}"
 
     elif args.action == "mark-revisited":
         s = next((s for s in child.get("strategies", []) if s.get("id") == args.id), None)
@@ -716,6 +734,8 @@ def _check(child):
         tags = n.get("tags", [])
         if not isinstance(tags, list) or not all(isinstance(t, str) for t in tags):
             problems.append(f"notes[{i}].tags: 须为字符串数组(现在是 {tags!r})")
+        if n.get("time") is not None and _norm_time(n.get("time")) is None:
+            problems.append(f"notes[{i}].time: 须为 HH:MM 00-23:00-59(现在是 {n.get('time')!r})")
 
     # profile free-text fields: placeholder originals count as "not filled yet"
     prof = child.get("profile", {})

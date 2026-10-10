@@ -101,7 +101,7 @@ function scheduleSync() {
       <div class="grid-stack-item-content">
         <div class="card">
           <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" @open-issue="id => emit('open-issue', id)" />
-          <button class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
+          <button class="share-fab" title="分享此卡给家人" @click.stop="emit('share-card', b)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M4 14v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/></svg></button>
         </div>
       </div>
     </div>
@@ -112,20 +112,21 @@ function scheduleSync() {
     <section v-for="b in items" :key="b.id" class="card"
              :style="{ '--w': clampInt(b.w, 1, 12, 6) }">
       <component :is="cardFor(b.type)" :block="b" :kid="kid" @update="p => onPropsUpdate(b, p)" @open-issue="id => emit('open-issue', id)" />
-      <button class="share-fab" title="生成家人分享长图" @click.stop="emit('share-card', b)">⤴ 分享</button>
+      <button class="share-fab" title="分享此卡给家人" @click.stop="emit('share-card', b)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M4 14v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/></svg></button>
     </section>
   </main>
 </template>
 
 <style scoped>
-.share-fab { position: absolute; top: 8px; right: 8px; z-index: 3; opacity: 0;
-  border: 1px solid #efe9e0; background: rgba(255,255,255,.95); color: #8a8478;
-  border-radius: 99px; padding: 2px 10px; font-size: 12px; cursor: pointer;
-  transition: opacity .15s; }
-.card:hover .share-fab { opacity: 1; }
-.share-fab:hover { border-color: #e8734a; color: #e8734a; }
+.share-fab { position: absolute; top: 10px; right: 12px; z-index: 5;
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); background: #fff; color: var(--sub);
+  border-radius: 8px; cursor: pointer; transition: all .15s; padding: 0; font: inherit; }
+.share-fab:hover { border-color: var(--ink-blue); color: var(--ink-blue);
+  background: var(--accent-soft); }
 /* 编辑布局时整卡都是拖拽把手,分享按钮退场防误触。
    注意::global() 必须包裹完整选择器——混合形态 `:global(body.editing) .share-fab`
    会被 Vue scoped 编译成 `body.editing{display:none}`(整页隐藏,编辑模式白屏的根因) */
 :global(body.editing .share-fab) { display: none; }
+:global(body.capturing .share-fab) { display: none; }   /* WYSIWYG 长图不带走交互钮 */
 </style>

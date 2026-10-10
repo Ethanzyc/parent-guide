@@ -33,28 +33,35 @@ const dayNo = (i) => {
 </script>
 
 <template>
-  <h3>问题追踪<span v-if="counts.care" class="care-n">{{ counts.care }} 件就医待办</span></h3>
-  <template v-if="all.length">
-    <div class="mnums num-serif">
-      <span class="mn"><i style="color:var(--watch)">{{ counts.live }}</i><small>进行中</small></span>
-      <span class="mn"><i style="color:var(--todo)">{{ counts.care }}</i><small>待就医</small></span>
-      <span class="mn"><i style="color:var(--ok)">{{ counts.done }}</i><small>已解决</small></span>
+  <div class="cband">
+    <h3>问题追踪</h3>
+    <div v-if="counts.care" class="cbsub">
+      <span class="care-n">{{ counts.care }} 件就医待办</span>
     </div>
-    <div v-for="i in list" :key="i.id" class="irow" @click="emit('open-issue', i.id)">
-      <span class="st" :class="ST_CLASS[i.status] || 'plain'">{{ ST_LABEL[i.status] || i.status }}</span>
-      <span class="nm">{{ i.name }}</span>
-      <span class="dy">{{ dayNo(i) }}</span>
-      <span class="nx">
-        <span v-if="i.pendingCare" class="care">{{ i.pendingCare }}</span>
-        <template v-else-if="nextOf(i)">{{ nextOf(i).due }} · {{ dueLabel(nextOf(i).due).label }}</template>
-        <template v-else>{{ (i.summary || '').slice(0, 14) }}</template>
-      </span>
-    </div>
-    <div v-if="!list.length" class="src">当前过滤下没有问题。</div>
-  </template>
-  <template v-else>
-    <div class="src">还没有在管问题——聊到持续议题(便秘/发脾气/戒断类)时开题,记录会自动归集到这里。</div>
-  </template>
+  </div>
+  <div class="cbody">
+    <template v-if="all.length">
+      <div class="mnums num-serif">
+        <span class="mn"><i style="color:var(--watch)">{{ counts.live }}</i><small>进行中</small></span>
+        <span class="mn"><i style="color:var(--todo)">{{ counts.care }}</i><small>待就医</small></span>
+        <span class="mn"><i style="color:var(--ok)">{{ counts.done }}</i><small>已解决</small></span>
+      </div>
+      <div v-for="i in list" :key="i.id" class="irow" @click="emit('open-issue', i.id)">
+        <span class="st" :class="ST_CLASS[i.status] || 'plain'">{{ ST_LABEL[i.status] || i.status }}</span>
+        <span class="nm">{{ i.name }}</span>
+        <span class="dy">{{ dayNo(i) }}</span>
+        <span class="nx">
+          <span v-if="i.pendingCare" class="care">{{ i.pendingCare }}</span>
+          <template v-else-if="nextOf(i)">{{ nextOf(i).due }} · {{ dueLabel(nextOf(i).due).label }}</template>
+          <template v-else>{{ (i.summary || '').slice(0, 14) }}</template>
+        </span>
+      </div>
+      <div v-if="!list.length" class="src">当前过滤下没有问题。</div>
+    </template>
+    <template v-else>
+      <div class="src">还没有在管问题——聊到持续议题(便秘/发脾气/戒断类)时开题,记录会自动归集到这里。</div>
+    </template>
+  </div>
 </template>
 
 <style scoped>

@@ -87,13 +87,17 @@ const list = computed(() => records.value.slice(-6).reverse())
 </script>
 
 <template>
-  <template v-if="records.length">
-    <h3>生长曲线
+  <div class="cband">
+    <h3>生长曲线</h3>
+    <div v-if="records.length" class="cbsub">
       <span class="head-stats">
         <span>共 <b>{{ records.length }}</b> 条</span>
         <span v-if="latest">最近 {{ latest.date }}</span>
       </span>
-    </h3>
+    </div>
+  </div>
+  <div class="cbody">
+  <template v-if="records.length">
 
     <div v-if="latest && (latest.height || latest.weight)" class="latest">
       <span class="lm">{{ latest.months }} 月龄</span>
@@ -130,10 +134,8 @@ const list = computed(() => records.value.slice(-6).reverse())
     </div>
     <div class="src">区间:WS/T 423—2022(写入 knowledge/growth.md) · 筛查参照非诊断,出区间或跨百分位线建议儿保</div>
   </template>
-  <template v-else>
-    <h3>生长曲线</h3>
-    <div class="src">还没有生长记录——儿保体检本的身高体重抄回来:对话里说「记一下身高体重」,曲线和参考区间就亮了。</div>
-  </template>
+  <div v-else class="src">还没有生长记录——儿保体检本的身高体重抄回来:对话里说「记一下身高体重」,曲线和参考区间就亮了。</div>
+  </div>
 </template>
 
 <style scoped>

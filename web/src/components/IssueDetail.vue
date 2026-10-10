@@ -93,7 +93,7 @@ const briefSections = computed(() => {
           <span class="st" :class="ST_CLASS[issue.status]">{{ ST_LABEL[issue.status] }}</span>
           <span class="meta">{{ dayNo }} · 立案 {{ issue.opened }}
             · 策略{{ linked.s }} 记录{{ linked.n }} 回访{{ linked.f }}</span>
-          <button class="share-btn" @click="emit('share-issue', issue)">分享问题卡给家人</button>
+          <button class="share-btn" @click="emit('share-issue', issue)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M4 14v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/></svg>分享问题卡给家人</button>
           <button class="x" title="关闭" @click="emit('close')">✕</button>
         </div>
 

@@ -21,22 +21,24 @@ const allDone = computed(() => items.value.length > 0 && doneCount.value === ite
 </script>
 
 <template>
-  <template v-if="items.length">
-    <h3>{{ title }}
+  <div class="cband">
+    <h3>{{ title }}</h3>
+    <div v-if="items.length" class="cbsub">
       <span class="head-stats"><span :class="allDone ? 'ok' : ''"><b>{{ doneCount }}</b>/{{ items.length }}</span></span>
-    </h3>
-    <div class="track" :title="`${doneCount}/${items.length}`">
-      <div class="fill" :class="{ done: allDone }" :style="{ width: pct + '%' }"></div>
     </div>
-    <label v-for="(it, i) in items" :key="i" class="li" :class="{ done: it.done }">
-      <input type="checkbox" :checked="it.done" @change="toggle(i)">
-      <span>{{ it.text }}</span>
-    </label>
-  </template>
-  <template v-else>
-    <h3>{{ title }}<span class="tag">自定义</span></h3>
-    <div class="src">清单为空——回到对话对 AI 说「{{ title }}加上…」即可补充条目。</div>
-  </template>
+  </div>
+  <div class="cbody">
+    <template v-if="items.length">
+      <div class="track" :title="`${doneCount}/${items.length}`">
+        <div class="fill" :class="{ done: allDone }" :style="{ width: pct + '%' }"></div>
+      </div>
+      <label v-for="(it, i) in items" :key="i" class="li" :class="{ done: it.done }">
+        <input type="checkbox" :checked="it.done" @change="toggle(i)">
+        <span>{{ it.text }}</span>
+      </label>
+    </template>
+    <div v-else class="src">清单为空——回到对话对 AI 说「{{ title }}加上…」即可补充条目。</div>
+  </div>
 </template>
 
 <style scoped>

@@ -88,7 +88,7 @@
 **贡献者新增内置卡时同样遵守**(机械断言见 `tests/check-card-style.sh`,publish 门禁会跑):
 
 1. 颜色只用 CSS 变量(`--ink/--ink-blue/--sub/--ok/--watch/--todo/--line/--grid-line`),不自造色值;色彩只表达状态,不装饰。
-2. 卡头用全局 `<h3>`(字距 eyebrow 风格),无 emoji、无图标、无色块。
+2. 卡头=**纯白标题带**(`.cband`,下边线,坐标纸从带下开始):`h3` 16px/700/墨蓝;**标题行只放标题**(分享钮在带右由页面框架渲染),徽章/计数类 meta 放带内副行 `.cbsub`;内容超出卡高时 `.cbody` 内部滚动、标题带常驻。无 emoji、无图标、无色块。
 3. 数字是第一语言:大数字用 `.num-serif`+`.num-hero`/`.num-mid`(Georgia 衬线),日期 tabular。
 4. 行式内容走 `.kv`/虚线分隔(`dashed var(--grid-line)`);状态徽章用描边式 `.st`;日期徽章 `.due-b`。
 5. 空态=`.src` 一句文字引导回对话,不做大图/emoji 块。

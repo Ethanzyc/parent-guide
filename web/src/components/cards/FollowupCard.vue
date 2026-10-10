@@ -18,22 +18,24 @@ const restParas = (t) => bodyParas(t)
 </script>
 
 <template>
-  <h3>待回访</h3>
-  <template v-if="list.length">
-    <div v-for="(f, i) in list" :key="i" class="frow">
-      <span class="due-b" :class="dl(f.due).urgency || 'plain'">{{ dl(f.due).label || fullDate(f.due) }}</span>
-      <span class="dorig">{{ fullDate(f.due) }}</span>
-      <div class="topic">
-        <b>{{ splitTopic(f.topic).lead }}</b>
-        <div v-if="splitTopic(f.topic).rest" class="ev-body">
-          <p v-for="(seg, j) in restParas(splitTopic(f.topic).rest)" :key="j">
-            <b v-if="segLabel(seg)" class="seg-lab">{{ segLabel(seg) }}</b>{{ segLabel(seg) ? seg.slice(segLabel(seg).length) : seg }}
-          </p>
+  <div class="cband"><h3>待回访</h3></div>
+  <div class="cbody">
+    <template v-if="list.length">
+      <div v-for="(f, i) in list" :key="i" class="frow">
+        <span class="due-b" :class="dl(f.due).urgency || 'plain'">{{ dl(f.due).label || fullDate(f.due) }}</span>
+        <span class="dorig">{{ fullDate(f.due) }}</span>
+        <div class="topic">
+          <b>{{ splitTopic(f.topic).lead }}</b>
+          <div v-if="splitTopic(f.topic).rest" class="ev-body">
+            <p v-for="(seg, j) in restParas(splitTopic(f.topic).rest)" :key="j">
+              <b v-if="segLabel(seg)" class="seg-lab">{{ segLabel(seg) }}</b>{{ segLabel(seg) ? seg.slice(segLabel(seg).length) : seg }}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  </template>
-  <div v-else class="src">暂无待回访项 🎉</div>
+    </template>
+    <div v-else class="src">暂无待回访项 🎉</div>
+  </div>
 </template>
 
 <style scoped>

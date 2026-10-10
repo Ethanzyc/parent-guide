@@ -37,18 +37,26 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
     linear-gradient(var(--grid) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
   background-size: 14px 14px;
-  border: 1px solid var(--grid-line); border-radius: 10px; padding: 18px 20px;
-  box-shadow: 0 1px 2px rgba(30,58,82,.03); position: relative; }
+  border: 1px solid var(--grid-line); border-radius: 10px; padding: 0;
+  box-shadow: 0 1px 2px rgba(30,58,82,.03); position: relative;
+  display: flex; flex-direction: column; overflow: hidden; }
 @media (max-width: 720px) { .card { grid-column: 1 / -1 !important; } }
 
 /* 服务模式:GridStack 网格 */
 #grid.grid-stack { padding: 20px; max-width: 1200px; margin: 0 auto; }
 .grid-stack-item-content { border-radius: 14px; overflow: hidden; }
-.grid-stack .card { height: 100%; overflow: auto; }
+.grid-stack .card { height: 100%; }   /* 内部 .cbody 滚动,标题带常驻 */
 body.editing .grid-stack .card { outline: 2px dashed #d8b7a4; outline-offset: -2px; }
 
-.card h3 { font-size: 13px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
-  color: var(--sub); font-weight: 600; letter-spacing: .22em; }
+/* 卡头标题带(2026-10-10 E 案):纯白底+下边线,标题行只放标题(meta 入带内副行),
+   分享钮常驻带右;内容超高时 .cbody 内部滚动,标题带不动 */
+.cband { flex: none; background: #fff; border-bottom: 1px solid var(--grid-line);
+  padding: 12px 20px 10px; border-radius: 10px 10px 0 0; }
+.cband h3 { font-size: 16px; color: var(--ink-blue); font-weight: 700;
+  letter-spacing: .06em; line-height: 1.35; margin: 0; padding-right: 34px; }
+.cband .cbsub { display: flex; gap: 8px; align-items: center; margin-top: 3px; }
+.cband .cbsub .head-stats, .cband .cbsub .care-n { margin-left: 0; }
+.cbody { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 20px 14px; }
 .card h3 .tag { font-size: 11px; color: var(--sub); font-weight: 400; letter-spacing: 0;
   border: 1px solid var(--line); border-radius: 5px; padding: 1px 8px; }
 .card .src { font-size: 11px; color: var(--sub); margin-top: 10px; }
@@ -152,7 +160,7 @@ body.editing .grid-stack .card { outline: 2px dashed #d8b7a4; outline-offset: -2
 
 body.report .toolbar { display: none; }   /* 单文件报告=纯视图,无编辑工具 */
 @media print {
-  .toolbar, .menu-mask, .manage-panel { display: none; }
+  .toolbar, .menu-mask, .manage-panel, .share-fab { display: none; }
   body { background: #fff; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }  /* 坐标纸底色照打 */
   .grid-stack-item, .card { break-inside: avoid; }

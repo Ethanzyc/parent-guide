@@ -37,6 +37,7 @@ async function shareBoard() {
   const board = document.querySelector('#grid') || document.querySelector('main.grid')
   if (!board || exporting.value) return
   exporting.value = true
+  document.body.classList.add('capturing')   // 长图不带走卡上的分享交互钮
   try {
     const url = await domToPng(board, { scale: 2, backgroundColor: '#fdfdfb' })
     const blob = await (await fetch(url)).blob()
@@ -53,7 +54,10 @@ async function shareBoard() {
     a.download = name
     a.click()
     URL.revokeObjectURL(a.href)
-  } finally { exporting.value = false; exportOpen.value = false }
+  } finally {
+    document.body.classList.remove('capturing')
+    exporting.value = false; exportOpen.value = false
+  }
 }
 function pickExport(fn) {
   exportOpen.value = false

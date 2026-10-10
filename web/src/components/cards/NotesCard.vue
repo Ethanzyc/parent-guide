@@ -20,33 +20,32 @@ function toggle(i) {
 </script>
 
 <template>
-  <template v-if="list.length">
-    <h3>成长速记</h3>
-    <div class="tl">
-      <div v-for="(n, i) in list" :key="i" class="tl-item">
-        <span class="d dline">{{ dispLabel(n) }}</span>
-        <div class="ev">
-          <div v-if="n.title" class="ev-title" @click="toggle(i)">{{ zhPunct(n.title) }}</div>
-          <div v-if="(n.tags || []).length" class="ev-chips">
-            <span v-for="t in n.tags" :key="t" class="chip">{{ t }}</span>
+  <div class="cband"><h3>成长速记</h3></div>
+  <div class="cbody">
+    <template v-if="list.length">
+      <div class="tl">
+        <div v-for="(n, i) in list" :key="i" class="tl-item">
+          <span class="d dline">{{ dispLabel(n) }}</span>
+          <div class="ev">
+            <div v-if="n.title" class="ev-title" @click="toggle(i)">{{ zhPunct(n.title) }}</div>
+            <div v-if="(n.tags || []).length" class="ev-chips">
+              <span v-for="t in n.tags" :key="t" class="chip">{{ t }}</span>
+            </div>
+            <div v-if="!n.title || isOpen(i)" class="ev-body"
+                 :class="{ clamp: !n.title && !isOpen(i) }">
+              <p v-for="(seg, j) in bodyParas(n.text).slice(0, !n.title && !isOpen(i) ? 1 : 99)"
+                 :key="j">
+                <b v-if="segLabel(seg)" class="seg-lab">{{ segLabel(seg) }}</b>{{ segLabel(seg) ? seg.slice(segLabel(seg).length) : seg }}
+              </p>
+            </div>
+            <button v-if="n.title || (n.text || '').length > 42" class="ev-toggle"
+                    @click="toggle(i)">{{ isOpen(i) ? '收起' : '详情' }}</button>
           </div>
-          <div v-if="!n.title || isOpen(i)" class="ev-body"
-               :class="{ clamp: !n.title && !isOpen(i) }">
-            <p v-for="(seg, j) in bodyParas(n.text).slice(0, !n.title && !isOpen(i) ? 1 : 99)"
-               :key="j">
-              <b v-if="segLabel(seg)" class="seg-lab">{{ segLabel(seg) }}</b>{{ segLabel(seg) ? seg.slice(segLabel(seg).length) : seg }}
-            </p>
-          </div>
-          <button v-if="n.title || (n.text || '').length > 42" class="ev-toggle"
-                  @click="toggle(i)">{{ isOpen(i) ? '收起' : '详情' }}</button>
         </div>
       </div>
-    </div>
-  </template>
-  <template v-else>
-    <h3>成长速记</h3>
-    <div class="src">还没有记录过事件——值得记的瞬间(第一次/可爱时刻/生病)回到对话随手说,会积累在这里。</div>
-  </template>
+    </template>
+    <div v-else class="src">还没有记录过事件——值得记的瞬间(第一次/可爱时刻/生病)回到对话随手说,会积累在这里。</div>
+  </div>
 </template>
 
 <style scoped>

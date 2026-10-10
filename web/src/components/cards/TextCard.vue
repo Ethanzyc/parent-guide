@@ -6,14 +6,11 @@ const text = computed(() => (props.block?.props?.text || '').trim())
 </script>
 
 <template>
-  <template v-if="text">
-    <h3>{{ title }}</h3>
-    <p class="text-body">{{ text }}</p>
-  </template>
-  <template v-else>
-    <h3>{{ title }}</h3>
-    <div class="src">内容为空——回到对话对 AI 说「把{{ title }}的内容写成…」即可填入。</div>
-  </template>
+  <div class="cband"><h3>{{ title }}</h3></div>
+  <div class="cbody">
+    <p v-if="text" class="text-body">{{ text }}</p>
+    <div v-else class="src">内容为空——回到对话对 AI 说「把{{ title }}的内容写成…」即可填入。</div>
+  </div>
 </template>
 
 <style scoped>

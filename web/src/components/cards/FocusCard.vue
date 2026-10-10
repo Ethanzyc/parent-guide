@@ -26,29 +26,28 @@ const hasAny = computed(() => focus.value.length || liveIssues.value.length || r
 </script>
 
 <template>
-  <template v-if="hasAny">
-    <h3>当前重点</h3>
-    <div v-if="focus.length" style="margin-bottom:10px">
-      <span v-for="f in focus" :key="f" class="chip" style="font-size:13px;margin:0 6px 6px 0">{{ f }}</span>
-    </div>
-    <div v-if="liveIssues.length">
-      <div v-for="c in liveIssues" :key="c.id" class="crow">
-        <span style="flex:1;min-width:0">{{ c.name }}</span>
-        <span class="csince">{{ c.days !== null ? `第 ${c.days + 1} 天` : `自 ${c.opened || '?'}` }}</span>
+  <div class="cband"><h3>当前重点</h3></div>
+  <div class="cbody">
+    <template v-if="hasAny">
+      <div v-if="focus.length" style="margin-bottom:10px">
+        <span v-for="f in focus" :key="f" class="chip" style="font-size:13px;margin:0 6px 6px 0">{{ f }}</span>
       </div>
-    </div>
-    <div v-if="running.length || nearestFu" class="rollup">
-      <template v-if="running.length">在跑 {{ running.length }} 个计划({{ running.map(s => s.id).slice(0, 3).join('/') }}{{ running.length > 3 ? '…' : '' }})</template>
-      <template v-if="nearestFu">
-        <span v-if="running.length"> · </span>
-        最近回访 <span class="due-mini" :class="dueLabel(nearestFu.due).urgency">{{ nearestFu.due }}</span>
-      </template>
-    </div>
-  </template>
-  <template v-else>
-    <h3>当前重点</h3>
-    <div class="src">还没有记录当前关注——回到对话聊聊最近头疼什么,认领后显示在这里。</div>
-  </template>
+      <div v-if="liveIssues.length">
+        <div v-for="c in liveIssues" :key="c.id" class="crow">
+          <span style="flex:1;min-width:0">{{ c.name }}</span>
+          <span class="csince">{{ c.days !== null ? `第 ${c.days + 1} 天` : `自 ${c.opened || '?'}` }}</span>
+        </div>
+      </div>
+      <div v-if="running.length || nearestFu" class="rollup">
+        <template v-if="running.length">在跑 {{ running.length }} 个计划({{ running.map(s => s.id).slice(0, 3).join('/') }}{{ running.length > 3 ? '…' : '' }})</template>
+        <template v-if="nearestFu">
+          <span v-if="running.length"> · </span>
+          最近回访 <span class="due-mini" :class="dueLabel(nearestFu.due).urgency">{{ nearestFu.due }}</span>
+        </template>
+      </div>
+    </template>
+    <div v-else class="src">还没有记录当前关注——回到对话聊聊最近头疼什么,认领后显示在这里。</div>
+  </div>
 </template>
 
 <style scoped>

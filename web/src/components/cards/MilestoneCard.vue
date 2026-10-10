@@ -19,24 +19,23 @@ const assessed = computed(() => pack.value.data?.assessed || '')
 </script>
 
 <template>
-  <template v-if="pack.data">
-    <h3>里程碑 · {{ pack.m }} 月</h3>
-    <div class="mnums num-serif">
-      <span class="mn"><i style="color:var(--ok)">{{ counts.ok }}</i><small>已会</small></span>
-      <span class="mn"><i style="color:var(--watch)">{{ counts.watch }}</i><small>观察</small></span>
-      <span class="mn"><i style="color:var(--todo)">{{ counts.todo }}</i><small>尚未</small></span>
-    </div>
-    <div v-for="(i, idx) in (pack.data.items || [])" :key="idx" class="mrow">
-      <span class="st" :class="i.status">{{ stLabel[i.status] || i.status }}</span>
-      <span style="color:var(--sub);flex:none;width:5.5em">{{ i.domain }}</span>
-      <span>{{ i.text }}</span>
-    </div>
-    <div class="src">来源:{{ pack.data.source }}<template v-if="assessed"> · 盘于 {{ assessed }}</template></div>
-  </template>
-  <template v-else>
-    <h3>里程碑 · {{ pack.m }} 月</h3>
-    <div class="src">还没盘过这个月龄。回到对话说「做个发育盘点」,几分钟判定完会显示在这里。</div>
-  </template>
+  <div class="cband"><h3>里程碑 · {{ pack.m }} 月</h3></div>
+  <div class="cbody">
+    <template v-if="pack.data">
+      <div class="mnums num-serif">
+        <span class="mn"><i style="color:var(--ok)">{{ counts.ok }}</i><small>已会</small></span>
+        <span class="mn"><i style="color:var(--watch)">{{ counts.watch }}</i><small>观察</small></span>
+        <span class="mn"><i style="color:var(--todo)">{{ counts.todo }}</i><small>尚未</small></span>
+      </div>
+      <div v-for="(i, idx) in (pack.data.items || [])" :key="idx" class="mrow">
+        <span class="st" :class="i.status">{{ stLabel[i.status] || i.status }}</span>
+        <span style="color:var(--sub);flex:none;width:5.5em">{{ i.domain }}</span>
+        <span>{{ i.text }}</span>
+      </div>
+      <div class="src">来源:{{ pack.data.source }}<template v-if="assessed"> · 盘于 {{ assessed }}</template></div>
+    </template>
+    <div v-else class="src">还没盘过这个月龄。回到对话说「做个发育盘点」,几分钟判定完会显示在这里。</div>
+  </div>
 </template>
 
 <style scoped>

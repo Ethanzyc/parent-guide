@@ -54,12 +54,21 @@ export function dueLabel(due) {
 }
 
 // 完整日期显示(YYYY-MM-DD,用户拍板 2026-10-09 全局统一):MM-DD 补当年,
-// ISO 原样;其他原样返回。与 IssueDetail/卡片/分享卡共用。
+// ISO 原样;其他原样返回。与 IssueDetail/卡片/分享卡共用。逐段补零
+// ("6-7"→"06-07",整串 padStart 会补出 "006-7")。
 export function fullDate(d) {
   const s2 = String(d || '')
-  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s2)) return s2
-  if (/^\d{1,2}-\d{1,2}$/.test(s2)) return `${new Date().getFullYear()}-${s2.padStart(5, '0')}`
+  let m = s2.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`
+  m = s2.match(/^(\d{1,2})-(\d{1,2})$/)
+  if (m) return `${new Date().getFullYear()}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`
   return s2
+}
+
+// 排序键:due 字段现在 MM-DD(近程)与 YYYY-MM-DD(跨年节点,如 2027 入园)混存,
+// 字符串 localeCompare 会排错;统一归一成可比较的完整日期串。
+export function dueKey(d) {
+  return fullDate(d)
 }
 
 // 中文语境标点归一(读侧机械转换,档案原文不动——中文文案排版指北口径):

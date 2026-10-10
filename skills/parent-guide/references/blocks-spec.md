@@ -62,9 +62,9 @@
 | `sleep-week` | 一周睡眠 | 无 | w 4-6 |
 | `strategy-effect` | 策略效果 | `status`(`all\|effective\|partial`,默认 all) | w 6-12 |
 | `followup` | 待回访清单 | 无 | w 4-6 |
-| `reminder` | 前瞻提醒(pending 按 due 排序) | 无 | w 4-6 |
-| `note` | 成长速记(最近事件) | `limit`(number,默认 5) | w 3-4 或整行 |
-| `timeline` | 事件时间线(按标签过滤) | `tag`(string,如「可爱瞬间」「社交」), `limit`(默认 5) | w 6-12 |
+| `reminder` | 前瞻提醒(pending 按 due 排序;跨年节点存 YYYY-MM-DD,徽章显示完整日期+相对天数) | 无 | w 4-6 |
+| `note` | 成长速记(最新在最上;与 timeline 同一数据源,不要两卡同页——重复) | `limit`(number,默认 5) | w 3-4 或整行 |
+| `timeline` | 事件时间线(=速记+标签过滤;无 tag 时与速记完全相同) | `tag`(string,如「可爱瞬间」「社交」), `limit`(默认 5) | w 6-12 |
 
 ### 自定义卡(内容自含在 props,不碰 child.json)
 

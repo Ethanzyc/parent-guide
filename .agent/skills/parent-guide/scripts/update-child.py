@@ -80,6 +80,15 @@ def _norm_short(v):
     return v[5:] if DATE_FULL.match(v) else v
 
 
+def _norm_reminder_due(v):
+    """reminders[].due: near-term nodes stay MM-DD, cross-year nodes (入园/
+    疫苗季) keep YYYY-MM-DD verbatim -- year-stripping here is what turned
+    2027-06-07 into a 06-07 that every reader parsed as this-year and
+    rendered months-overdue (2026-10-10 dogfooding bug report)."""
+    v = str(v or "")
+    return v if DATE_FULL.match(v) else _norm_short(v)
+
+
 def _days_ago(n):
     from datetime import timedelta
     return (date.today() - timedelta(days=n)).isoformat()
@@ -213,7 +222,8 @@ def execute(argv=None):
     p.add_argument("--status", default=None, choices=["effective", "partial", "ineffective"])
 
     p = sub.add_parser("add-reminder")
-    p.add_argument("--due", required=True, help="MM-DD (YYYY-MM-DD auto-normalized)")
+    p.add_argument("--due", required=True,
+                   help="近程 MM-DD;跨年节点直接给 YYYY-MM-DD(年份原样保留)")
     p.add_argument("--topic", required=True)
     p.add_argument("--source", required=True, help="e.g. 疫苗/入园准备/自定义")
 
@@ -495,7 +505,7 @@ def execute(argv=None):
         msg = f"recorded {args.field} = {args.value[:40]}"
 
     elif args.action == "add-reminder":
-        due = _norm_short(args.due)
+        due = _norm_reminder_due(args.due)
         items = child.setdefault("reminders", [])
         if any(r.get("due") == due and r.get("topic") == args.topic for r in items):
             return 1, f"ERROR: reminder {due}「{args.topic}」already exists"
@@ -504,7 +514,7 @@ def execute(argv=None):
         msg = f"recorded reminder {due}「{args.topic}」({args.source})"
 
     elif args.action == "set-reminder-status":
-        due = _norm_short(args.due)
+        due = _norm_reminder_due(args.due)
         r = next((r for r in child.get("reminders", [])
                   if r.get("due") == due and r.get("topic") == args.topic), None)
         if r is None:
@@ -794,7 +804,10 @@ def _check(child):
 
     REMINDER_STATUS = {"pending", "done", "skipped"}
     for i, r in enumerate(child.get("reminders", [])):
-        short_date(f"reminders[{i}].due", r.get("due"))
+        rd = str(r.get("due") or "")
+        if not (DATE_SHORT.match(rd) or DATE_FULL.match(rd)):
+            problems.append(f"reminders[{i}].due: 须为 MM-DD 或 YYYY-MM-DD"
+                            f"(跨年节点,现在是 {r.get('due')!r})")
         if r.get("status") not in REMINDER_STATUS:
             problems.append(f"reminders[{i}].status: 不在枚举 pending/done/skipped"
                             f"(现在是 {r.get('status')!r})")

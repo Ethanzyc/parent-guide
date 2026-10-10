@@ -3,7 +3,7 @@
 // 最新在最上;窄屏折叠单列)。大节点只认机械事件(opened/judged/strategy.started)
 // ——语义归一留读侧(spec issue-tracking-v1 §6.3)。只读:内容变更一律回对话。
 import { computed, ref } from 'vue'
-import { daysSince, dueLabel, zhPunct, bodyParas, segLabel, fullDate } from '../lib/util.js'
+import { daysSince, dueKey, dueLabel, zhPunct, bodyParas, segLabel, fullDate } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
@@ -45,20 +45,14 @@ const next = computed(() =>
   (props.kid?.followups || [])
     .filter(f => (f.status || 'pending') === 'pending'
                  && (f.issues || []).includes(props.issueId))
-    .sort((a, b) => String(a.due).localeCompare(String(b.due)))[0] || null)
+    .sort((a, b) => dueKey(a.due).localeCompare(dueKey(b.due)))[0] || null)
 
-function normKey(d) {
-  const s = String(d || ''), y = new Date().getFullYear()
-  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) return s
-  if (/^\d{1,2}-\d{1,2}$/.test(s)) return `${y}-${s.padStart(5, '0')}`
-  return s
-}
 // 日期显示统一完整格式(util.fullDate,用户拍板全局统一)
 const dispDate = (d, precision) =>
   (precision && precision !== 'day' ? '≈' : '') + fullDate(d)
 const dispLabel = (e) => e.dstr + (e.time ? ' ' + e.time : '')
 // 排序键=日期+时刻(倒序,最新在最上);无 time 的视为当天最早(空串排底)
-const evKey = (e) => `${normKey(e.date)} ${e.time || ''}`
+const evKey = (e) => `${dueKey(e.date)} ${e.time || ''}`
 const events = computed(() => {
   const i = issue.value
   if (!i) return []

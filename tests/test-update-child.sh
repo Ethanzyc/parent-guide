@@ -397,11 +397,22 @@ class T(unittest.TestCase):
         code, msg = run(self.tmp, "set-followup-status", "--due", "2026-10-22",
                         "--topic", "规则回访", "--status", "done")
         self.assertEqual(code, 0, msg)
-        # add-reminder 的 --due 同样归一
+        # add-reminder 的 --due:YYYY-MM-DD 一律原样保留(近程/跨年同规则,
+        # 层级由调用方决定);2026-10-10 判例:年份被剥后 2027 入园节点渲染成已到期
         code, msg = run(self.tmp, "add-reminder", "--due", "2026-11-02",
                         "--topic", "流感疫苗", "--source", "疫苗")
         self.assertEqual(code, 0, msg)
-        self.assertEqual(self.child()["reminders"][-1]["due"], "11-02")
+        self.assertEqual(self.child()["reminders"][-1]["due"], "2026-11-02")
+        code, msg = run(self.tmp, "add-reminder", "--due", "2027-06-07",
+                        "--topic", "入园准备窗口", "--source", "入园准备")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["reminders"][-1]["due"], "2027-06-07")
+        # set-reminder-status 用完整日期也能命中跨年条目
+        code, msg = run(self.tmp, "set-reminder-status", "--due", "2027-06-07",
+                        "--topic", "入园准备窗口", "--status", "done")
+        self.assertEqual(code, 0, msg)
+        code, msg = run(self.tmp, "check")
+        self.assertEqual(code, 0, msg)
 
     def test_40_add_issue_sequence(self):
         code, msg = run(self.tmp, "add-issue", "--name", "功能性便秘", "--status", "active",

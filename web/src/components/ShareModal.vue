@@ -6,7 +6,7 @@
 // 整页分享 = 页面级导出,按卡勾选(用户拍板 2026-10-01)。
 import { ref, computed, watch } from 'vue'
 import { domToPng } from 'modern-screenshot'
-import { monthsAge, nearestMilestone, daysSince, zhPunct, fullDate } from '../lib/util.js'
+import { monthsAge, nearestMilestone, daysSince, dueKey, zhPunct, fullDate } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
@@ -32,6 +32,7 @@ const MS = { ok: '已会', watch: '观察中', todo: '还没会' }
 const TITLES = { 'profile': '孩子档案', 'milestone': '里程碑', 'sleep-week': '一周睡眠',
   'strategy-effect': '策略口径', 'followup': '待回访', 'note': '成长速记',
   'focus': '当前重点', 'timeline': '事件时间线', 'reminder': '前瞻提醒',
+  'issue': '问题追踪', 'growth': '生长记录',
   'text': '便签', 'list': '清单' }
 
 // custom cards carry their own title in props
@@ -88,6 +89,28 @@ const issuePack = computed(() => {
 function rowsFor(b) {
   const kid = props.kid || {}
   const t = b?.type
+  if (t === 'issue') {
+    // 卡/页级的问题卡分享:一问题一行(名+状态+当前摘要),就医线跟着所属问题走;
+    // 完整口径卡(情况→为什么→怎么做)在问题详情层的「分享问题卡」里
+    const want = b?.props?.status
+    const rows = []
+    for (const i of (kid.issues || [])) {
+      if (!(want ? i.status === want : i.status !== 'resolved')) continue
+      const d = daysSince(i.opened)
+      rows.push({ kind: 'issue-row', label: i.name, name: i.name,
+        st: ISSUE_ST[i.status] || i.status, stRaw: i.status,
+        dayNoTxt: d !== null ? `第 ${d + 1} 天` : `自 ${i.opened}`,
+        care: i.pendingCare || '', summary: i.summary || '' })
+      if (i.brief?.redline)
+        rows.push({ kind: 'issue-red', label: `${i.name}·就医线`, text: i.brief.redline, fixed: true })
+    }
+    return { rows }
+  }
+  if (t === 'growth') {
+    const rows = (kid.growth?.records || []).slice(-6).map(r => ({
+      kind: 'growth', label: r.date, date: r.date, height: r.height, weight: r.weight }))
+    return { rows }
+  }
   if (t === 'strategy-effect') {
     const want = b?.props?.status
     const rows = (kid.strategies || [])
@@ -117,22 +140,23 @@ function rowsFor(b) {
   }
   if (t === 'followup') {
     const rows = (kid.followups || [])
+      .filter(f => (f.status || 'pending') === 'pending')
+      .sort((a, c) => dueKey(a.due).localeCompare(dueKey(c.due)))
       .map(f => ({ kind: 'followup', label: `${f.due} ${f.topic}`.slice(0, 14), due: f.due, topic: f.topic }))
     return { rows }
   }
   if (t === 'note') {
-    const rows = (kid.notes || []).slice(0, b?.props?.limit || 5)
+    // 与 NotesCard 同源同序(最新在前):页面看到什么,长图就发什么
+    const rows = (kid.notes || []).slice(-(b?.props?.limit || 5)).reverse()
       .map(n => ({ kind: 'note', label: (n.precision && n.precision !== 'day' ? '≈' : '') + n.date,
         approx: n.precision && n.precision !== 'day', date: n.date, tags: n.tags || [], text: n.text }))
     return { rows }
   }
   if (t === 'profile') return { rows: [{ kind: 'profile', label: '档案' }] }
   if (t === 'focus') {
-    const rows = [
-      ...(kid.currentFocus || []).map(f => ({ kind: 'focus', label: f, text: f })),
-      ...(kid.activeConcerns || []).filter(c => (c?.status || '观察中') !== '已解决')
-        .map(c => ({ kind: 'concern', label: c.text, text: c.text, since: c.since })),
-    ]
+    // activeConcerns 已废弃(issues 取代,check 会报),只分享 currentFocus
+    const rows = (kid.currentFocus || [])
+      .map(f => ({ kind: 'focus', label: f, text: f }))
     return { rows }
   }
   if (t === 'timeline') {
@@ -147,7 +171,7 @@ function rowsFor(b) {
   if (t === 'reminder') {
     const rows = (kid.reminders || [])
       .filter(r => (r?.status || 'pending') === 'pending')
-      .sort((a, c) => String(a.due).localeCompare(String(c.due)))
+      .sort((a, c) => dueKey(a.due).localeCompare(dueKey(c.due)))
       .map(r => ({ kind: 'followup', label: `${r.due} ${r.topic}`.slice(0, 14), due: r.due, topic: r.topic }))
     return { rows }
   }
@@ -172,11 +196,15 @@ const sections = computed(() => {
     return [{ id: 'issue', type: 'issue', title: pack.name, rows, extra: { st: pack.st } }]
   }
   if (props.level === 'page') {
-    const bs = (props.page?.blocks || []).filter((b, i) => (blocksOn.value[i] ?? true) !== false)
-    return bs.map(b => {
-      const r = rowsFor(b)
-      return { id: b.id, type: b.type, title: titleFor(b), rows: r.rows, extra: r }
-    })
+    // hidden 卡不进分享(页面上没有的内容不该出现在长图里);blocksOn 索引与可见列表对齐;
+    // 空数据卡(如还没记过的生长曲线)整段跳过——家人版不发「暂无内容」噪音
+    const bs = (props.page?.blocks || []).filter(b => !b.hidden)
+    return bs.filter((b, i) => (blocksOn.value[i] ?? true) !== false)
+      .map(b => {
+        const r = rowsFor(b)
+        return { id: b.id, type: b.type, title: titleFor(b), rows: r.rows, extra: r }
+      })
+      .filter(sec => sec.rows.length)
   }
   if (!props.block) return []
   const r = rowsFor(props.block)
@@ -217,7 +245,7 @@ const headSub = computed(() => {
 
 watch(() => [props.open, props.level, props.block?.id], () => {
   selected.value = []
-  blocksOn.value = (props.page?.blocks || []).map(() => true)
+  blocksOn.value = (props.page?.blocks || []).filter(b => !b.hidden).map(() => true)
 })
 
 function toggleRow(i) { selected.value[i] = selected.value[i] === false ? true : false }
@@ -272,7 +300,8 @@ async function save() {
                     @click="toggleRow(c.i)">{{ c.on ? '✓ ' : '' }}{{ c.label }}</span>
             </div>
             <div v-else-if="level === 'page'" class="share-chips">
-              <span class="chip" :class="{ off: blocksOn[i] === false }" v-for="(b, i) in (page?.blocks || [])" :key="b.id"
+              <span class="chip" :class="{ off: blocksOn[i] === false }"
+                    v-for="(b, i) in (page?.blocks || []).filter(x => !x.hidden)" :key="b.id"
                     @click="toggleBlock(i)">{{ blocksOn[i] === false ? '' : '✓ ' }}{{ titleFor(b) }}</span>
             </div>
 
@@ -305,6 +334,20 @@ async function save() {
                 <div v-else-if="row.kind === 'issue-red'" class="sc-red">
                   <b>出现这些当天就医：</b>{{ zhPunct(row.text) }}
                 </div>
+                <div v-else-if="row.kind === 'issue-row'" class="sc-row issuerow">
+                  <div class="r1">
+                    <b>{{ row.name }}</b>
+                    <span class="pill" :class="row.stRaw === 'active' ? 'watch'
+                      : row.stRaw === 'resolved' ? 'ok' : 'plain'">{{ row.st }}</span>
+                    <span class="since" style="margin:0 0 0 auto">{{ row.dayNoTxt }}</span>
+                  </div>
+                  <div v-if="row.care" class="careline">就医待办：{{ zhPunct(row.care) }}</div>
+                  <div v-if="row.summary" class="main">{{ zhPunct(row.summary) }}</div>
+                </div>
+                <div v-else-if="row.kind === 'growth'" class="sc-row growthrow">
+                  <span class="date">{{ fullDate(row.date) }}</span>
+                  <span class="main">身高 {{ row.height ?? '—' }} cm · 体重 {{ row.weight ?? '—' }} kg</span>
+                </div>
                 <div v-else-if="row.kind === 'issue-src'" class="sc-row issue-src">
                   <span class="main">{{ zhPunct(row.text) }}</span>
                 </div>
@@ -325,7 +368,7 @@ async function save() {
                   <span class="hrs">{{ row.hours }}h</span>
                 </div>
                 <div v-else-if="row.kind === 'followup'" class="sc-row followup">
-                  <span class="due">{{ row.due }}</span><span class="main">{{ row.topic }}</span>
+                  <span class="due">{{ fullDate(row.due) }}</span><span class="main">{{ row.topic }}</span>
                 </div>
                 <div v-else-if="row.kind === 'note'" class="sc-row note">
                   <span class="date">{{ row.approx ? '≈' : '' }}{{ fullDate(row.date) }}</span>
@@ -339,11 +382,6 @@ async function save() {
                 </div>
                 <div v-else-if="row.kind === 'focus'" class="sc-row focusrow">
                   <span class="ftag">{{ row.text }}</span>
-                </div>
-                <div v-else-if="row.kind === 'concern'" class="sc-row concern">
-                  <span class="eye">👀</span>
-                  <span class="main">{{ row.text }}</span>
-                  <span v-if="row.since" class="since" style="margin:0 0 0 auto">自 {{ row.since }}</span>
                 </div>
                 <div v-else-if="row.kind === 'textline'" class="sc-row textline">
                   <span class="main" style="white-space:pre-wrap">{{ row.text }}</span>
@@ -435,6 +473,11 @@ async function save() {
 .pill.ineffective, .pill.suspended, .pill.absorbed { background: #f0f3f6; color: var(--sub); }
 .pill.ok { background: var(--ok-bg); color: var(--ok); }
 .pill.watch { background: var(--watch-bg); color: var(--watch); }
+.pill.plain { background: #f0f3f6; color: var(--sub); }
+.issuerow .careline { font-size: 13px; color: var(--todo); margin: 2px 0 3px; }
+.growthrow { display: flex; gap: 10px; align-items: baseline; }
+.growthrow .date { flex: none; color: var(--sub); font-family: Georgia, serif;
+  font-variant-numeric: tabular-nums; }
 .pill.todo { background: var(--todo-bg); color: var(--todo); }
 .since { font-size: 12.5px; color: var(--sub); margin: 1px 0 3px; font-variant-numeric: tabular-nums; }
 .main { display: block; }
@@ -458,7 +501,6 @@ async function save() {
 .profile .kv b { flex: none; color: var(--sub); font-weight: 500; min-width: 4.5em; }
 .focusrow .ftag { display: inline-block; background: #fff; color: var(--ink-blue);
   border: 1px solid var(--grid-line); border-radius: 6px; padding: 3px 12px; font-size: 14.5px; margin: 0 6px 6px 0; }
-.concern { display: flex; gap: 8px; align-items: baseline; }
 .sc-red { background: var(--todo-bg); border: 1px solid var(--todo); border-radius: 8px;
   padding: 10px 12px; margin: 10px 0; font-size: 14px; }
 .sc-red b { color: var(--todo); }

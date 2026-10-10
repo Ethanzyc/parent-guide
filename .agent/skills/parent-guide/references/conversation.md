@@ -141,7 +141,9 @@
 - **时效分级**(冲突时先提高级):报名类(错过晚一年)>疫苗类(保护空窗)>
   准备类(可弹性)>软性建议。
 - **认领制**:只有家长说「记着/帮我留意」才 `Run update-child.py add-reminder`
-  落档(due+topic+source);完成/跳过用 set-reminder-status 更新,不删(回忆价值)。
+  落档(due+topic+source;近程节点 MM-DD,跨年节点给 YYYY-MM-DD 年份原样保留——
+  年份被去年份存档后页面会渲染成「已到期 N 天」);完成/跳过用 set-reminder-status
+  更新,不删(回忆价值)。
 - **不追溯**:只前瞻未来节点,过去已完成的(打过的疫苗)不提不生成。
 - **childcarePlan 驱动**:profile.childcarePlan「未定」且孩子 ≥30 月 → 提一次
   「该想想托班/幼儿园了」(提醒做决定本身就是价值);有计划 → 按表生成

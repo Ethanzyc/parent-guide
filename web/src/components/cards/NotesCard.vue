@@ -2,7 +2,9 @@
 import { computed } from 'vue'
 import { fullDate } from '../../lib/util.js'
 const props = defineProps({ block: Object, kid: Object })
-const list = computed(() => (props.kid?.notes || []).slice(0, props.block?.props?.limit || 5))
+// 与 TimelineCard 同源同序:notes 落档按时间正序,取末尾 N 条倒序=最新在最上
+const list = computed(() =>
+  (props.kid?.notes || []).slice(-(props.block?.props?.limit || 5)).reverse())
 </script>
 
 <template>

@@ -3,7 +3,7 @@
 // 骨架字段直读;next/倒计时从该问题 pending followups 机械派生
 // (spec issue-tracking-v1 §2.4,不存冗余字段)。
 import { computed } from 'vue'
-import { daysSince, dueLabel } from '../../lib/util.js'
+import { daysSince, dueKey, dueLabel } from '../../lib/util.js'
 
 const props = defineProps({ block: Object, kid: Object })
 const emit = defineEmits(['open-issue'])
@@ -24,7 +24,7 @@ const counts = computed(() => ({
 function nextOf(i) {
   return (props.kid?.followups || [])
     .filter(f => (f.status || 'pending') === 'pending' && (f.issues || []).includes(i.id))
-    .sort((a, b) => String(a.due).localeCompare(String(b.due)))[0] || null
+    .sort((a, b) => dueKey(a.due).localeCompare(dueKey(b.due)))[0] || null
 }
 const dayNo = (i) => {
   const d = daysSince(i.opened)

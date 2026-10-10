@@ -1,10 +1,22 @@
 <script setup>
-import { computed } from 'vue'
-import { fullDate } from '../../lib/util.js'
+// 与 TimelineCard 同源同序:notes 落档按时间正序,取末尾 N 条倒序=最新在最上。
+// 条目排版=IssueDetail 时间轴同款(那次打磨的成果):标题行渐进披露+
+// 正文分号切段圆点+段首 ≤8 字标签加粗+标点全角归一——读侧机械转换,原文不动。
+import { computed, ref } from 'vue'
+import { bodyParas, fullDate, segLabel, zhPunct } from '../../lib/util.js'
 const props = defineProps({ block: Object, kid: Object })
-// 与 TimelineCard 同源同序:notes 落档按时间正序,取末尾 N 条倒序=最新在最上
 const list = computed(() =>
   (props.kid?.notes || []).slice(-(props.block?.props?.limit || 5)).reverse())
+const dispDate = (n) => (n.precision && n.precision !== 'day' ? '≈' : '') + fullDate(n.date)
+const dispLabel = (n) => dispDate(n) + (n.time ? ' ' + n.time : '')
+// 时间轴渐进披露(NN Group/EHR collapsed-note 模式):标题行扫读+原文展开
+const openEv = ref(new Set())
+const isOpen = (i) => openEv.value.has(i)
+function toggle(i) {
+  const s = new Set(openEv.value)
+  s.has(i) ? s.delete(i) : s.add(i)
+  openEv.value = s
+}
 </script>
 
 <template>
@@ -12,11 +24,22 @@ const list = computed(() =>
     <h3>成长速记</h3>
     <div class="tl">
       <div v-for="(n, i) in list" :key="i" class="tl-item">
-        <span class="d">{{ n.precision && n.precision !== 'day' ? '≈' : '' }}{{ fullDate(n.date) }}</span>
-        <span v-if="(n.tags || []).length" class="note-tags">
-          <span v-for="t in n.tags" :key="t" class="ntag">{{ t }}</span>
-        </span>
-        {{ n.text }}
+        <span class="d dline">{{ dispLabel(n) }}</span>
+        <div class="ev">
+          <div v-if="n.title" class="ev-title" @click="toggle(i)">{{ zhPunct(n.title) }}</div>
+          <div v-if="(n.tags || []).length" class="ev-chips">
+            <span v-for="t in n.tags" :key="t" class="chip">{{ t }}</span>
+          </div>
+          <div v-if="!n.title || isOpen(i)" class="ev-body"
+               :class="{ clamp: !n.title && !isOpen(i) }">
+            <p v-for="(seg, j) in bodyParas(n.text).slice(0, !n.title && !isOpen(i) ? 1 : 99)"
+               :key="j">
+              <b v-if="segLabel(seg)" class="seg-lab">{{ segLabel(seg) }}</b>{{ segLabel(seg) ? seg.slice(segLabel(seg).length) : seg }}
+            </p>
+          </div>
+          <button v-if="n.title || (n.text || '').length > 42" class="ev-toggle"
+                  @click="toggle(i)">{{ isOpen(i) ? '收起' : '详情' }}</button>
+        </div>
       </div>
     </div>
   </template>
@@ -27,7 +50,22 @@ const list = computed(() =>
 </template>
 
 <style scoped>
-.note-tags { margin-right: 6px; }
-.ntag { display: inline-block; background: var(--accent-soft); color: var(--accent);
-  border-radius: 6px; padding: 0 6px; font-size: 11px; margin-right: 3px; }
+.tl-item .d.dline { display: block; margin-right: 0; margin-bottom: 1px;
+  font-size: 12px; }
+.ev { min-width: 0; }
+.ev-title { font-size: 13.5px; font-weight: 600; cursor: pointer; line-height: 1.5; }
+.ev-chips { margin: 1px 0 2px; }
+.chip { display: inline-block; background: rgba(255,255,255,.75); color: var(--ink-blue);
+  border: 1px dashed var(--grid-line); border-radius: 6px; padding: 0 8px;
+  font-size: 11.5px; margin-right: 4px; }
+.ev-body { font-size: 12.5px; color: var(--sub); margin-top: 2px; line-height: 1.55; }
+.ev-body.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; }
+.ev-toggle { border: 0; background: none; color: var(--ink-blue); font-size: 11.5px;
+  cursor: pointer; padding: 2px 0; margin-top: 1px; }
+.ev-body p { margin: 0 0 4px; padding-left: 13px; position: relative; }
+.ev-body p:last-child { margin-bottom: 0; }
+.ev-body p::before { content: '•'; position: absolute; left: 1px;
+  color: var(--ink-blue); font-size: 11px; line-height: 1.9; }
+.seg-lab { color: var(--ink); font-weight: 600; }
 </style>

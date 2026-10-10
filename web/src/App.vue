@@ -8,7 +8,16 @@ import CardManager from './components/CardManager.vue'
 import IssueDetail from './components/IssueDetail.vue'
 import { CARD_META } from './components/cards/index.js'
 
-onMounted(init)
+onMounted(async () => {
+  await init()
+  const h = window.location.hash
+  if (/^#issue-P\d+$/.test(h)) issueOpen.value = h.slice(7)
+  if (/^#share-P\d+$/.test(h)) {           // 调试后门:详情+分享弹窗直链
+    issueOpen.value = h.slice(8)
+    const iss = (currentChild()?.issues || []).find(i => i.id === h.slice(8))
+    if (iss) shareState.value = { level: 'issue', block: null, issue: iss }
+  }
+})
 
 const drawerOpen = ref(false)
 const managerOpen = ref(false)
@@ -20,7 +29,6 @@ watch([() => !!shareState.value, () => !!issueOpen.value], ([a, b]) => {
 }, { immediate: true })
 const print = () => window.print()
 const openSite = () => window.open('/site/index.html', '_blank')
-if (/^#issue-P\d+$/.test(window.location.hash)) issueOpen.value = window.location.hash.slice(7)
 
 function onApplyPage(next) {
   applyJsonPage(next)
@@ -135,6 +143,6 @@ function exportReport() {
 
     <IssueDetail :open="!!issueOpen" :kid="currentChild()" :issue-id="issueOpen"
                  @close="issueOpen = null"
-                 @share-issue="i => { issueOpen = null; shareState = { level: 'issue', block: null, issue: i } }" />
+                 @share-issue="i => shareState = { level: 'issue', block: null, issue: i }" />
   </template>
 </template>

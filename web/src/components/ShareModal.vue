@@ -258,22 +258,30 @@ async function save() {
           <button class="x" @click="emit('close')">✕</button>
         </div>
 
-        <div class="share-controls">
-          <label><input type="checkbox" v-model="anonymized"> 隐去小名</label>
-          <label><input type="checkbox" v-model="branded"> 署名页脚</label>
-          <button class="btn primary" :disabled="exporting" @click="save">{{ exporting ? '生成中…' : '保存长图' }}</button>
-        </div>
+        <div class="share-body">
+          <aside class="share-side">
+            <div class="opt-chips">
+              <label class="opt-chip" :class="{ on: anonymized }">
+                <input type="checkbox" v-model="anonymized">隐去小名</label>
+              <label class="opt-chip" :class="{ on: branded }">
+                <input type="checkbox" v-model="branded">署名页脚</label>
+            </div>
 
-        <div v-if="chips.length" class="share-chips">
-          <span class="chip" :class="{ off: !c.on }" v-for="c in chips" :key="c.i"
-                @click="toggleRow(c.i)">{{ c.on ? '✓ ' : '' }}{{ c.label }}</span>
-        </div>
-        <div v-else-if="level === 'page'" class="share-chips">
-          <span class="chip" :class="{ off: blocksOn[i] === false }" v-for="(b, i) in (page?.blocks || [])" :key="b.id"
-                @click="toggleBlock(i)">{{ blocksOn[i] === false ? '' : '✓ ' }}{{ titleFor(b) }}</span>
-        </div>
+            <div v-if="chips.length" class="share-chips">
+              <span class="chip" :class="{ off: !c.on }" v-for="c in chips" :key="c.i"
+                    @click="toggleRow(c.i)">{{ c.on ? '✓ ' : '' }}{{ c.label }}</span>
+            </div>
+            <div v-else-if="level === 'page'" class="share-chips">
+              <span class="chip" :class="{ off: blocksOn[i] === false }" v-for="(b, i) in (page?.blocks || [])" :key="b.id"
+                    @click="toggleBlock(i)">{{ blocksOn[i] === false ? '' : '✓ ' }}{{ titleFor(b) }}</span>
+            </div>
 
-        <div class="share-scroll">
+            <div class="side-foot">
+              <button class="btn primary" :disabled="exporting" @click="save">{{ exporting ? '生成中…' : '保存长图' }}</button>
+            </div>
+          </aside>
+
+          <div class="share-scroll">
           <div class="share-card" ref="nodeEl">
             <div class="sc-head">
               <div class="sc-title">{{ headTitle }}</div>
@@ -353,6 +361,7 @@ async function save() {
 
             <div class="sc-foot">{{ branded ? '由 parent-guide 生成' : '\u00a0' }}</div>
           </div>
+          </div>
         </div>
       </div>
     </div>
@@ -363,7 +372,7 @@ async function save() {
 /* A·生长图纸(与页面同系统):坐标纸底+墨蓝+serif 数字+描边小章 */
 .share-mask { position: fixed; inset: 0; background: rgba(30,58,82,.58); z-index: 50;
   display: flex; align-items: center; justify-content: center; padding: 20px; }
-.share-dialog { background: #fdfdfb; border-radius: 12px; width: min(460px, 100%);
+.share-dialog { background: #fdfdfb; border-radius: 12px; width: min(920px, 100%);
   max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;
   box-shadow: 0 12px 40px rgba(30,58,82,.22); }
 .share-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px;
@@ -372,19 +381,30 @@ async function save() {
 .share-head .hint { font-size: 12px; color: var(--sub); }
 .share-head .x { margin-left: auto; border: 0; background: none; font-size: 15px;
   cursor: pointer; color: var(--sub); padding: 4px 8px; }
-.share-controls { display: flex; align-items: center; gap: 16px; padding: 10px 16px;
-  background: #fff; border-bottom: 1px solid var(--grid-line); font-size: 13px; }
-.share-controls label { color: var(--ink); display: flex; gap: 5px; align-items: center; cursor: pointer; }
-.share-controls .btn { margin-left: auto; border: 0; background: var(--ink-blue); color: #fff;
-  border-radius: 8px; padding: 7px 16px; font-size: 13px; cursor: pointer; }
-.share-controls .btn:disabled { opacity: .5; }
-.share-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px;
-  border-bottom: 1px solid var(--grid-line); background: #fff; }
+.share-body { display: grid; grid-template-columns: 264px minmax(0, 1fr);
+  min-height: 0; flex: 1; }
+@media (max-width: 760px) { .share-body { grid-template-columns: 1fr; }
+  .share-side { border-right: 0; border-bottom: 1px solid var(--grid-line); } }
+.share-side { border-right: 1px solid var(--grid-line); background: #fff;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+.opt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.opt-chip { position: relative; display: inline-flex; align-items: center;
+  border: 1px solid var(--grid-line); border-radius: 6px; padding: 4px 12px 4px 10px;
+  font-size: 12.5px; cursor: pointer; user-select: none; color: var(--sub); }
+.opt-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.opt-chip.on { border-color: var(--ink-blue); background: var(--accent-soft);
+  color: var(--ink-blue); }
+.opt-chip.on::before { content: '✓'; font-size: 12px; margin-right: 5px; }
+.share-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .share-chips .chip { background: #fff; color: var(--ink-blue); border: 1px solid var(--grid-line);
   border-radius: 6px;
   padding: 2px 10px; font-size: 12px; cursor: pointer; user-select: none; max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .share-chips .chip.off { background: #f0f3f6; color: #9aacba; border-color: transparent; text-decoration: line-through; }
+.side-foot { margin-top: auto; padding-top: 10px; }
+.side-foot .btn { width: 100%; border: 0; background: var(--ink-blue); color: #fff;
+  border-radius: 8px; padding: 9px 16px; font-size: 13px; cursor: pointer; }
+.side-foot .btn:disabled { opacity: .5; }
 .share-scroll { overflow: auto; padding: 16px; }
 
 /* ↓ 导出节点:自包含、375px 手机宽、大字号(家人版);坐标纸底 */

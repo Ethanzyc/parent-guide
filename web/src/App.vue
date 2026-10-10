@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
+import { domToPng } from 'modern-screenshot'
 import { state, init, currentChild, applyGeometry, applyJsonPage, persistPage } from './lib/store.js'
 import GridBoard from './components/GridBoard.vue'
 import ShareModal from './components/ShareModal.vue'
@@ -19,14 +20,47 @@ onMounted(async () => {
 })
 
 const managerOpen = ref(false)
-const shareState = ref(null)     // null | { level: 'page' | 'card' | 'issue', block, issue }
+const exportOpen = ref(false)    // 导出下拉菜单
+const exporting = ref(false)     // 板面长图生成中
+const shareState = ref(null)     // null | { level: 'card' | 'issue', block, issue }
 const issueOpen = ref(null)      // 打开详情覆盖层的 issue id;#issue-P1 hash 可直链
 // 背景滚动锁(单一来源:任一弹窗开即锁;组件各管会互相覆盖)
 watch([() => !!shareState.value, () => !!issueOpen.value], ([a, b]) => {
   document.body.style.overflow = (a || b) ? 'hidden' : ''
 }, { immediate: true })
-const print = () => window.print()
+const print = () => { exportOpen.value = false; window.print() }
 const openSite = () => window.open('/site/index.html', '_blank')
+
+// 页面级长图 = 所见即所得(用户拍板 2026-10-10:家人版卡片排版显示不好,
+// 页面怎么显示就怎么导出):直接截板面,不走 ShareModal 重排;卡级/问题级
+// 家人卡(一条口径给长辈)仍是重排版,入口在卡片 ⤴ 与问题详情层。
+async function shareBoard() {
+  const board = document.querySelector('#grid') || document.querySelector('main.grid')
+  if (!board || exporting.value) return
+  exporting.value = true
+  try {
+    const url = await domToPng(board, { scale: 2, backgroundColor: '#fdfdfb' })
+    const blob = await (await fetch(url)).blob()
+    const d = new Date()
+    const ts = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const name = `成长视图-${currentChild().name || '页面'}-${ts}.png`
+    const file = new File([blob], name, { type: 'image/png' })
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: name }); return }
+      catch (e) { if (e?.name === 'AbortError') return }
+    }
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(a.href)
+  } finally { exporting.value = false; exportOpen.value = false }
+}
+function pickExport(fn) {
+  exportOpen.value = false
+  if (fn === 'image') shareBoard()
+  else if (fn === 'report') exportReport()
+}
 
 function toggleEdit() {
   if (!state.serverMode) {
@@ -109,23 +143,28 @@ function exportReport() {
       <button v-if="state.serverMode" class="btn" title="睡眠/营养/情绪/如厕等专题与速查表(本地只读)" @click="openSite">📖 知识库</button>
       <button class="btn" :class="{ active: state.editing }" :disabled="!state.serverMode"
               @click="toggleEdit">{{ state.editing ? '完成编辑' : '编辑布局' }}</button>
-      <button class="btn" title="生成发家人微信的长图;卡片右上角 ⤴ 可单卡分享" @click="shareState = { level: 'page', block: null }">分享长图</button>
-      <button class="btn" title="数据内嵌的单 HTML 文件,可转发/迁移/存档" @click="exportReport">导出单文件报告</button>
-      <button class="btn primary" @click="print">导出 PDF</button>
+      <div class="export-wrap">
+        <button class="btn primary" @click="exportOpen = !exportOpen">导出</button>
+        <div v-if="exportOpen" class="export-menu">
+          <button :disabled="exporting" @click="pickExport('image')">{{ exporting ? '生成中…' : '长图(微信分享)' }}</button>
+          <button @click="print()">PDF(打印/存档)</button>
+          <button @click="pickExport('report')">单文件网页(转发/存档)</button>
+        </div>
+      </div>
     </div>
+
+    <div v-if="exportOpen" class="menu-mask" @click="exportOpen = false"></div>
 
     <GridBoard :key="state.version" :page="state.page" :kid="currentChild()"
                :editing="state.editing" :server-mode="state.serverMode"
                @geometry="applyGeometry" @share-card="b => shareState = { level: 'card', block: b }"
                @props-update="onPropsUpdate" @open-issue="id => issueOpen = id" />
 
-    <footer class="page">示例数据为虚构 · 布局模型:{x, y, w, h} 网格坐标(与 grid-layout-plus 同构)</footer>
-
     <CardManager :open="managerOpen" :page="state.page"
                  @close="managerOpen = false" @toggle="onToggle" @show="onShow" />
 
     <ShareModal :open="!!shareState" :level="shareState?.level || 'card'"
-                :block="shareState?.block" :page="state.page" :kid="currentChild()"
+                :block="shareState?.block" :kid="currentChild()"
                 :issue="shareState?.issue"
                 @close="shareState = null" />
 

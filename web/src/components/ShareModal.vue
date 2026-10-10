@@ -3,16 +3,16 @@
 // 家人版 ≠ 档案版(调研 docs/sharing-research-2026-10-01.md §3):
 //   大字号/去内部黑话(id、英文状态)/必带截至日期/familyNotes 永不出现在此。
 // 条目级分享 = 卡片分享时按条勾选(主场景:给长辈的「一条口径」)。
-// 整页分享 = 页面级导出,按卡勾选(用户拍板 2026-10-01)。
+// 页面级整页分享 2026-10-10 改为板面所见即所得直出(App.shareBoard 截 #grid),
+// 本组件只服务卡级(卡片 ⤴)与问题级(详情层)两类家人卡。
 import { ref, computed, watch } from 'vue'
 import { domToPng } from 'modern-screenshot'
 import { monthsAge, nearestMilestone, daysSince, dueKey, zhPunct, fullDate } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
-  level: { type: String, default: 'card' },   // 'page' | 'card' | 'issue'
+  level: { type: String, default: 'card' },   // 'card' | 'issue'
   block: { type: Object, default: null },     // card 级的目标卡
-  page: { type: Object, default: null },      // page 级的整页配置
   kid: { type: Object, default: () => ({}) },
   issue: { type: Object, default: null },     // issue 级的问题对象(从详情层来)
 })
@@ -22,7 +22,6 @@ const anonymized = ref(false)
 const branded = ref(true)
 const exporting = ref(false)
 const selected = ref([])       // card/issue 级:条目勾选
-const blocksOn = ref([])       // page 级:卡片勾选
 const nodeEl = ref(null)
 
 // 状态转人话(家人版不出现 S1/effective 这类内部口径)
@@ -195,17 +194,6 @@ const sections = computed(() => {
     const rows = pack.rows.filter((_, i) => selected.value[i] !== false)
     return [{ id: 'issue', type: 'issue', title: pack.name, rows, extra: { st: pack.st } }]
   }
-  if (props.level === 'page') {
-    // hidden 卡不进分享(页面上没有的内容不该出现在长图里);blocksOn 索引与可见列表对齐;
-    // 空数据卡(如还没记过的生长曲线)整段跳过——家人版不发「暂无内容」噪音
-    const bs = (props.page?.blocks || []).filter(b => !b.hidden)
-    return bs.filter((b, i) => (blocksOn.value[i] ?? true) !== false)
-      .map(b => {
-        const r = rowsFor(b)
-        return { id: b.id, type: b.type, title: titleFor(b), rows: r.rows, extra: r }
-      })
-      .filter(sec => sec.rows.length)
-  }
   if (!props.block) return []
   const r = rowsFor(props.block)
   const rows = r.rows.filter((_, i) => selected.value[i] !== false)
@@ -231,7 +219,6 @@ const age = computed(() => {
 })
 const dispName = computed(() => anonymized.value ? '宝宝' : (props.kid?.name || '宝宝'))
 const headTitle = computed(() => {
-  if (props.level === 'page') return `${dispName.value}的成长视图`
   if (props.level === 'issue') return `${dispName.value}的${issuePack.value?.name || ''}:全家这样做`
   return titleFor(props.block) || '成长卡片'
 })
@@ -240,19 +227,16 @@ const headSub = computed(() => {
     return [age.value, issuePack.value?.st, issuePack.value?.dayNoTxt, `截至 ${todayStr()}`]
       .filter(Boolean).join(' · ')
   }
-  return [props.level === 'card' ? dispName.value : '', age.value, `截至 ${todayStr()}`].filter(Boolean).join(' · ')
+  return [dispName.value, age.value, `截至 ${todayStr()}`].filter(Boolean).join(' · ')
 })
 
 watch(() => [props.open, props.level, props.block?.id], () => {
   selected.value = []
-  blocksOn.value = (props.page?.blocks || []).filter(b => !b.hidden).map(() => true)
 })
 
 function toggleRow(i) { selected.value[i] = selected.value[i] === false ? true : false }
-function toggleBlock(i) { blocksOn.value[i] = blocksOn.value[i] === false ? true : false }
 
 const fileTitle = () => {
-  if (props.level === 'page') return '成长视图'
   if (props.level === 'issue') return `${issuePack.value?.name || '问题'}-全家这样做`
   return titleFor(props.block) || '卡片'
 }
@@ -299,11 +283,6 @@ async function save() {
               <span class="chip" :class="{ off: !c.on }" v-for="c in chips" :key="c.i"
                     @click="toggleRow(c.i)">{{ c.on ? '✓ ' : '' }}{{ c.label }}</span>
             </div>
-            <div v-else-if="level === 'page'" class="share-chips">
-              <span class="chip" :class="{ off: blocksOn[i] === false }"
-                    v-for="(b, i) in (page?.blocks || []).filter(x => !x.hidden)" :key="b.id"
-                    @click="toggleBlock(i)">{{ blocksOn[i] === false ? '' : '✓ ' }}{{ titleFor(b) }}</span>
-            </div>
 
             <div class="side-foot">
               <button class="btn primary" :disabled="exporting" @click="save">{{ exporting ? '生成中…' : '保存长图' }}</button>
@@ -318,7 +297,6 @@ async function save() {
             </div>
 
             <div v-for="sec in sections" :key="sec.id" class="sc-sec">
-              <template v-if="level === 'page'"><div class="sc-sec-title">{{ sec.title }}</div></template>
 
               <template v-for="(row, i) in sec.rows" :key="i">
                 <div v-if="row.group" class="sc-sec-title">{{ row.group }}</div>

@@ -139,6 +139,22 @@ body.editing .grid-stack .card { outline: 2px dashed #d8b7a4; outline-offset: -2
   display: flex; gap: 10px; justify-content: flex-end; align-items: center; }
 .drawer .hint { font-size: 12px; color: var(--err); margin-right: auto; }
 
-footer.page { text-align: center; color: var(--sub); font-size: 12px; padding: 30px 0 40px; }
+/* 导出下拉:图纸语言(白底+细描边,无投影无渐变);mask 接管页外点击关闭 */
+.export-wrap { position: relative; }
+.export-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30;
+  background: #fff; border: 1px solid var(--grid-line); border-radius: 10px;
+  min-width: 190px; padding: 6px; display: flex; flex-direction: column; }
+.export-menu button { border: 0; background: none; text-align: left; padding: 8px 12px;
+  font-size: 13px; color: var(--ink); cursor: pointer; border-radius: 6px; }
+.export-menu button:hover { background: var(--accent-soft); }
+.export-menu button:disabled { opacity: .5; cursor: default; }
+.menu-mask { position: fixed; inset: 0; z-index: 5; }
+
 body.report .toolbar { display: none; }   /* 单文件报告=纯视图,无编辑工具 */
-@media print { .toolbar, footer.page { display: none; } body { background: #fff; } }
+@media print {
+  .toolbar, .menu-mask { display: none; }
+  body { background: #fff; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }  /* 坐标纸底色照打 */
+  .grid-stack-item, .card { break-inside: avoid; }
+}
+@page { size: A4 landscape; margin: 8mm; }

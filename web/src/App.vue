@@ -99,6 +99,13 @@ function onShow(type) {
   applyJsonPage({ ...state.page, blocks: [...blocks, block] })
 }
 
+// remove a block from the page entirely (builtin only in UI; data lives in
+// child.json so nothing is lost -- re-addable from the panel's add section)
+function onRemove({ id }) {
+  const blocks = state.page?.blocks || []
+  applyJsonPage({ ...state.page, blocks: blocks.filter(b => b.id !== id) })
+}
+
 // from GridBoard (list checkbox): snapshot already patched in place, so only
 // mirror into page.json + persist -- no rebuild (keeps the flicker out)
 function onPropsUpdate({ id, props }) {
@@ -160,7 +167,7 @@ function exportReport() {
                @props-update="onPropsUpdate" @open-issue="id => issueOpen = id" />
 
     <CardManager v-if="state.editing" :page="state.page"
-                 @toggle="onToggle" @show="onShow" />
+                 @toggle="onToggle" @show="onShow" @remove="onRemove" />
 
     <ShareModal :open="!!shareState" :level="shareState?.level || 'card'"
                 :block="shareState?.block" :kid="currentChild()"

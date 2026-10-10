@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { state, init, currentChild, applyGeometry, applyJsonPage, persistPage, resetDefault } from './lib/store.js'
+import { state, init, currentChild, applyGeometry, applyJsonPage, persistPage } from './lib/store.js'
 import GridBoard from './components/GridBoard.vue'
 import ShareModal from './components/ShareModal.vue'
 import CardManager from './components/CardManager.vue'
@@ -109,7 +109,6 @@ function exportReport() {
       <button v-if="state.serverMode" class="btn" title="睡眠/营养/情绪/如厕等专题与速查表(本地只读)" @click="openSite">📖 知识库</button>
       <button class="btn" :class="{ active: state.editing }" :disabled="!state.serverMode"
               @click="toggleEdit">{{ state.editing ? '完成编辑' : '编辑布局' }}</button>
-      <button class="btn" title="恢复默认功能卡;自定义卡会保留在页面末尾" @click="resetDefault()">重置默认</button>
       <button class="btn" title="生成发家人微信的长图;卡片右上角 ⤴ 可单卡分享" @click="shareState = { level: 'page', block: null }">分享长图</button>
       <button class="btn" title="数据内嵌的单 HTML 文件,可转发/迁移/存档" @click="exportReport">导出单文件报告</button>
       <button class="btn primary" @click="print">导出 PDF</button>

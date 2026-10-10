@@ -6,7 +6,7 @@
 // 整页分享 = 页面级导出,按卡勾选(用户拍板 2026-10-01)。
 import { ref, computed, watch } from 'vue'
 import { domToPng } from 'modern-screenshot'
-import { monthsAge, nearestMilestone, daysSince, zhPunct } from '../lib/util.js'
+import { monthsAge, nearestMilestone, daysSince, zhPunct, fullDate } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
@@ -328,7 +328,7 @@ async function save() {
                   <span class="due">{{ row.due }}</span><span class="main">{{ row.topic }}</span>
                 </div>
                 <div v-else-if="row.kind === 'note'" class="sc-row note">
-                  <span class="date">{{ row.approx ? '≈' : '' }}{{ row.date }}</span>
+                  <span class="date">{{ row.approx ? '≈' : '' }}{{ fullDate(row.date) }}</span>
                   <span v-for="t in row.tags" :key="t" class="ntag">{{ t }}</span>
                   <span class="main">{{ row.text }}</span>
                 </div>

@@ -16,16 +16,6 @@ export function clampInt(v, lo, hi, dflt) {
   return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : dflt
 }
 
-// Short display date: this year drops the year (09-27), other years keep it.
-// Handles YYYY-MM-DD and MM-DD; anything else returns as-is.
-export function dateShort(d) {
-  const s = String(d || '')
-  const now = new Date()
-  const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
-  if (m) return +m[1] === now.getFullYear() ? `${+m[2]}-${+m[3]}` : s
-  return s
-}
-
 // Whole days since a MM-DD (treated as this year) or YYYY-MM-DD date.
 // Negative (cross-year artifacts) clamps to null -> caller hides the badge.
 export function daysSince(d) {
@@ -61,6 +51,15 @@ export function dueLabel(due) {
   if (diff === 1) return { label: '明天', urgency: 'soon' }
   if (diff <= 7) return { label: `${diff} 天后`, urgency: 'soon' }
   return { label: `${diff} 天后`, urgency: 'later' }
+}
+
+// 完整日期显示(YYYY-MM-DD,用户拍板 2026-10-09 全局统一):MM-DD 补当年,
+// ISO 原样;其他原样返回。与 IssueDetail/卡片/分享卡共用。
+export function fullDate(d) {
+  const s2 = String(d || '')
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s2)) return s2
+  if (/^\d{1,2}-\d{1,2}$/.test(s2)) return `${new Date().getFullYear()}-${s2.padStart(5, '0')}`
+  return s2
 }
 
 // 中文语境标点归一(读侧机械转换,档案原文不动——中文文案排版指北口径):

@@ -3,7 +3,7 @@
 // 最新在最上;窄屏折叠单列)。大节点只认机械事件(opened/judged/strategy.started)
 // ——语义归一留读侧(spec issue-tracking-v1 §6.3)。只读:内容变更一律回对话。
 import { computed, ref } from 'vue'
-import { daysSince, dueLabel, zhPunct, bodyParas, segLabel } from '../lib/util.js'
+import { daysSince, dueLabel, zhPunct, bodyParas, segLabel, fullDate } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
@@ -53,14 +53,7 @@ function normKey(d) {
   if (/^\d{1,2}-\d{1,2}$/.test(s)) return `${y}-${s.padStart(5, '0')}`
   return s
 }
-// 展示日期统一补全年份(2026-10-09 完整格式,用户拍板 2026-10-09)——
-// notes 存 ISO 全日期,opened/started/due 存 MM-DD,读侧归一为同一形态。
-const fullDate = (d) => {
-  const s = String(d || '')
-  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) return s
-  if (/^\d{1,2}-\d{1,2}$/.test(s)) return `${new Date().getFullYear()}-${s.padStart(5, '0')}`
-  return s
-}
+// 日期显示统一完整格式(util.fullDate,用户拍板全局统一)
 const dispDate = (d, precision) =>
   (precision && precision !== 'day' ? '≈' : '') + fullDate(d)
 const dispLabel = (e) => e.dstr + (e.time ? ' ' + e.time : '')

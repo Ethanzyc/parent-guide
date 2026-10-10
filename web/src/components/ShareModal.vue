@@ -406,7 +406,8 @@ async function save() {
   border-radius: 8px; padding: 9px 16px; font-size: 13px; cursor: pointer; }
 .side-foot .btn:disabled { opacity: .5; }
 .share-scroll { overflow: auto; padding: 16px;
-  display: flex; justify-content: center; }
+  display: flex; justify-content: center;
+  align-items: flex-start; }   /* 不 stretch:卡片高度=内容高,网格背景才铺全 */
 
 /* ↓ 导出节点:自包含、375px 手机宽、大字号(家人版);坐标纸底 */
 .share-card { width: 375px; background-color: #fff;

@@ -405,7 +405,8 @@ async function save() {
 .side-foot .btn { width: 100%; border: 0; background: var(--ink-blue); color: #fff;
   border-radius: 8px; padding: 9px 16px; font-size: 13px; cursor: pointer; }
 .side-foot .btn:disabled { opacity: .5; }
-.share-scroll { overflow: auto; padding: 16px; }
+.share-scroll { overflow: auto; padding: 16px;
+  display: flex; justify-content: center; }
 
 /* ↓ 导出节点:自包含、375px 手机宽、大字号(家人版);坐标纸底 */
 .share-card { width: 375px; background-color: #fff;

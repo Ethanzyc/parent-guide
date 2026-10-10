@@ -25,12 +25,10 @@ const selected = ref([])       // card/issue 级:条目勾选
 const nodeEl = ref(null)
 
 // 状态转人话(家人版不出现 S1/effective 这类内部口径)
-const ST = { active: '试行中', effective: '有效', partial: '部分有效',
-  ineffective: '效果不佳', suspended: '已暂停', absorbed: '已成日常' }
 const MS = { ok: '已会', watch: '观察中', todo: '还没会' }
-const TITLES = { 'profile': '孩子档案', 'milestone': '里程碑', 'sleep-week': '一周睡眠',
-  'strategy-effect': '策略口径', 'followup': '待回访', 'note': '成长速记',
-  'focus': '当前重点', 'timeline': '事件时间线', 'reminder': '前瞻提醒',
+const TITLES = { 'profile': '孩子档案', 'milestone': '里程碑',
+  'followup': '待回访', 'note': '成长速记',
+  'focus': '当前重点', 'reminder': '前瞻提醒',
   'issue': '问题追踪', 'growth': '生长记录',
   'text': '便签', 'list': '清单' }
 
@@ -41,23 +39,6 @@ function titleFor(b) {
   return TITLES[b.type] || b.type
 }
 
-// 「第 N 天」:MM-DD 视为当年;算不出/太久远就退回「自 x-x」
-function dayNo(started) {
-  if (!started) return ''
-  const now = new Date()
-  let s = null
-  if (/^\d{4}-\d{2}-\d{2}$/.test(started)) s = new Date(started)
-  else if (/^\d{1,2}-\d{1,2}$/.test(started)) {
-    const [m, d] = started.split('-').map(Number)
-    s = new Date(now.getFullYear(), m - 1, d)
-  }
-  if (!s || isNaN(s)) return ''
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const n = Math.round((today - s) / 86400000) + 1
-  return (n >= 1 && n <= 999) ? `第 ${n} 天` : `自 ${started}`
-}
-
-const dots = (w) => '●'.repeat(Number(w) || 0) || '—'
 const todayStr = () => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -110,19 +91,6 @@ function rowsFor(b) {
       kind: 'growth', label: r.date, date: r.date, height: r.height, weight: r.weight }))
     return { rows }
   }
-  if (t === 'strategy-effect') {
-    const want = b?.props?.status
-    const rows = (kid.strategies || [])
-      .filter(s => !want || want === 'all' || s.status === want)
-      .map(s => {
-        const d = dayNo(s.started)
-        const sinceLine = !s.started ? '' : d.startsWith('第') ? `自 ${s.started} · ${d}` : `自 ${s.started}`
-        const fu = s.followup && s.evidence ? `${s.followup}(${s.evidence})` : (s.followup || s.evidence || '')
-        return { kind: 'strategy', label: s.name, name: s.name,
-          st: ST[s.status] || s.status, stRaw: s.status, sinceLine, applied: s.applied, fu }
-      })
-    return { rows }
-  }
   if (t === 'milestone') {
     const m = b?.props?.months || nearestMilestone(monthsAge(kid.birthdate))
     const data = kid.milestones?.[m]
@@ -130,12 +98,6 @@ function rowsFor(b) {
       .map(i => ({ kind: 'milestone', label: i.domain, st: MS[i.status] || i.status,
         stRaw: i.status, domain: i.domain, text: i.text }))
     return { m, source: data?.source, rows }
-  }
-  if (t === 'sleep-week') {
-    const rows = (kid.sleep?.days || [])
-      .map(d => ({ kind: 'sleep', label: d.date, date: d.date,
-        dots: dots(d.wakings), hours: (Number(d.totalHours) || 0).toFixed(1) }))
-    return { note: kid.sleep?.note, rows }
   }
   if (t === 'followup') {
     const rows = (kid.followups || [])
@@ -156,15 +118,6 @@ function rowsFor(b) {
     // activeConcerns 已废弃(issues 取代,check 会报),只分享 currentFocus
     const rows = (kid.currentFocus || [])
       .map(f => ({ kind: 'focus', label: f, text: f }))
-    return { rows }
-  }
-  if (t === 'timeline') {
-    const tag = b?.props?.tag
-    const notes = kid.notes || []
-    const picked = tag ? notes.filter(n => (n.tags || []).includes(tag)) : notes
-    const rows = picked.slice(-(b?.props?.limit || 5)).reverse()
-      .map(n => ({ kind: 'note', label: (n.precision && n.precision !== 'day' ? '≈' : '') + n.date,
-        approx: n.precision && n.precision !== 'day', date: n.date, tags: n.tags || [], text: n.text }))
     return { rows }
   }
   if (t === 'reminder') {
@@ -329,21 +282,10 @@ async function save() {
                 <div v-else-if="row.kind === 'issue-src'" class="sc-row issue-src">
                   <span class="main">{{ zhPunct(row.text) }}</span>
                 </div>
-                <div v-else-if="row.kind === 'strategy'" class="sc-row strategy">
-                  <div class="r1"><b>{{ row.name }}</b><span class="pill" :class="row.stRaw">{{ row.st }}</span></div>
-                  <div v-if="row.sinceLine" class="since">{{ row.sinceLine }}</div>
-                  <div class="main">{{ row.applied }}</div>
-                  <div v-if="row.fu" class="fu">{{ row.fu }}</div>
-                </div>
                 <div v-else-if="row.kind === 'milestone'" class="sc-row milestone">
                   <span class="pill" :class="row.stRaw">{{ row.st }}</span>
                   <span class="domain">{{ row.domain }}</span>
                   <span class="main">{{ row.text }}</span>
-                </div>
-                <div v-else-if="row.kind === 'sleep'" class="sc-row sleep">
-                  <span class="date">{{ row.date }}</span>
-                  <span class="dots">{{ row.dots }}</span>
-                  <span class="hrs">{{ row.hours }}h</span>
                 </div>
                 <div v-else-if="row.kind === 'followup'" class="sc-row followup">
                   <span class="due">{{ fullDate(row.due) }}</span><span class="main">{{ row.topic }}</span>
@@ -445,10 +387,6 @@ async function save() {
 .sc-row .r1 { display: flex; align-items: center; gap: 8px; }
 .sc-row .r1 b { font-size: 16.5px; }
 .pill { flex: none; font-size: 12px; border-radius: 5px; padding: 1px 8px; }
-.pill.active { background: var(--watch-bg); color: var(--watch); }
-.pill.effective { background: var(--ok-bg); color: var(--ok); }
-.pill.partial { background: var(--watch-bg); color: var(--watch); }
-.pill.ineffective, .pill.suspended, .pill.absorbed { background: #f0f3f6; color: var(--sub); }
 .pill.ok { background: var(--ok-bg); color: var(--ok); }
 .pill.watch { background: var(--watch-bg); color: var(--watch); }
 .pill.plain { background: #f0f3f6; color: var(--sub); }
@@ -463,10 +401,6 @@ async function save() {
 .milestone { display: flex; gap: 8px; align-items: baseline; font-size: 15px; }
 .milestone .pill { min-width: 3.4em; text-align: center; }
 .milestone .domain { flex: none; width: 5em; color: var(--sub); font-size: 13.5px; }
-.sleep { display: flex; gap: 10px; align-items: baseline; font-size: 14.5px; }
-.sleep .date { flex: none; color: var(--sub); font-family: Georgia, serif; }
-.sleep .dots { color: var(--watch); letter-spacing: 2px; }
-.sleep .hrs { margin-left: auto; font-weight: 600; font-family: Georgia, serif; }
 .followup { display: flex; gap: 10px; align-items: baseline; }
 .followup .due { flex: none; background: var(--accent-soft); color: var(--ink-blue);
   border-radius: 5px; padding: 1px 8px; font-size: 13px;

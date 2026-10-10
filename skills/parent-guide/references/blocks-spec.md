@@ -15,7 +15,7 @@
 | 数据来源 | 自动读 `child.json` 对应数据区 | 内容全部在 block 的 `props` 里 |
 | 谁来更新 | 对话里的写入动作(update-child.py)自动更新 | 家长/AI 直接改 props 文本 |
 | 空态 | 引导文案(引回对话) | 「内容为空」提示 |
-| 典型用途 | 档案/里程碑/策略/待回访/提醒/事件 | 奶奶须知/出门清单/辅食黑名单 |
+| 典型用途 | 档案/里程碑/问题/生长/待回访/提醒/速记 | 奶奶须知/出门清单/辅食黑名单 |
 
 **边界:自定义卡不引用 child.json 字段**——child.json 是脚本契约(update-child.py/hot-context.sh),页面配置不往里写数据;反过来功能卡也不需要 props 塞内容。两类卡在 page.json 的 blocks 数组里平权混排。
 
@@ -59,12 +59,11 @@
 | `issue` | 问题追踪(三色计数+问题行,点击开详情覆盖层) | `status`(`active\|watching\|resolved\|all`,默认空=在管 active+watching) | w 6-12 |
 | `milestone` | 里程碑(CDC 检查表) | `months`(number,默认月龄就近档) | w 4-6 |
 | `growth` | 生长曲线(身高体重对照 P3-P97) | 无(数据 child.growth.records,`add-growth` 落档) | w 6-12 |
-| `sleep-week` | 一周睡眠 | 无 | w 4-6 |
-| `strategy-effect` | 策略效果 | `status`(`all\|effective\|partial`,默认 all) | w 6-12 |
 | `followup` | 待回访清单 | 无 | w 4-6 |
 | `reminder` | 前瞻提醒(pending 按 due 排序;跨年节点存 YYYY-MM-DD,徽章显示完整日期+相对天数) | 无 | w 4-6 |
-| `note` | 成长速记(最新在最上;与 timeline 同一数据源,不要两卡同页——重复) | `limit`(number,默认 5) | w 3-4 或整行 |
-| `timeline` | 事件时间线(=速记+标签过滤;无 tag 时与速记完全相同) | `tag`(string,如「可爱瞬间」「社交」), `limit`(默认 5) | w 6-12 |
+| `note` | 成长速记(最新在最上,详情时间轴同款排版) | `limit`(number,默认 5) | w 3-4 或整行 |
+
+> 2026-10-10 产品级退役:`strategy-effect`(策略数据仍在 child.json,由问题详情层「方案」节点/待回访/当前重点聚合呈现,不再有独立卡)、`timeline`(与速记同源重复)、`sleep-week`(睡眠不单独记,无数据生产者)。老 page.json 残留 block 由渲染器加载时静默剔除。
 
 ### 自定义卡(内容自含在 props,不碰 child.json)
 

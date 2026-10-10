@@ -36,15 +36,12 @@
       }
     },
     {
-      "id": "strategy-effect",
-      "type": "strategy-effect",
+      "id": "issue",
+      "type": "issue",
       "x": 0,
       "y": 8,
       "w": 7,
-      "h": 6,
-      "props": {
-        "status": "all"
-      }
+      "h": 6
     },
     {
       "id": "followup",

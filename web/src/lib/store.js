@@ -27,23 +27,35 @@ function stripBootstrapped(obj) {
   return obj
 }
 
+// 2026-10-10 产品级退役卡型:老 page.json 里残留的 block 加载时静默剔除
+// (不渲染错误占位卡);服务模式在 init 尾部写回一次,完成存量清理。
+const RETIRED_TYPES = ['strategy-effect', 'timeline', 'sleep-week']
+let retiredStripped = false
+function stripRetired(page) {
+  if (!page || !Array.isArray(page.blocks)
+      || !page.blocks.some(b => RETIRED_TYPES.includes(b?.type))) return page
+  retiredStripped = true
+  return { ...page, blocks: page.blocks.filter(b => !RETIRED_TYPES.includes(b?.type)) }
+}
+
 export async function init() {
   const apiPage = await tryFetch('/api/page')   // file:// fails here -> file mode
   if (apiPage && Array.isArray(apiPage.blocks)) {
     const apiData = await tryFetch('/api/data')
     if (apiData) {
       state.serverMode = true
-      state.page = stripBootstrapped(apiPage)
+      state.page = stripRetired(stripBootstrapped(apiPage))
       state.data = stripBootstrapped(apiData)
     }
   }
   if (!state.serverMode) {
     let stored = null
     try { stored = JSON.parse(localStorage.getItem('pg-page') || 'null') } catch {}
-    state.page = (stored && Array.isArray(stored.blocks) && stored) ||
-                 readEmbedded('pg-embedded-page')
+    state.page = stripRetired((stored && Array.isArray(stored.blocks) && stored) ||
+                 readEmbedded('pg-embedded-page'))
     state.data = readEmbedded('pg-embedded-data')
   }
+  if (state.serverMode && retiredStripped) persistPage()   // 存量清理写回
   document.title = state.page?.title || '成长视图'
   state.ready = true
 }
@@ -72,7 +84,7 @@ export function applyGeometry(blocks) {
 }
 
 export function applyJsonPage(next) {
-  state.page = next
+  state.page = stripRetired(next)
   persistPage()
   state.version++   // full board rebuild
 }

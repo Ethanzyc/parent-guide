@@ -2,7 +2,6 @@
 import { onMounted, ref, watch } from 'vue'
 import { state, init, currentChild, applyGeometry, applyJsonPage, persistPage, resetDefault } from './lib/store.js'
 import GridBoard from './components/GridBoard.vue'
-import JsonDrawer from './components/JsonDrawer.vue'
 import ShareModal from './components/ShareModal.vue'
 import CardManager from './components/CardManager.vue'
 import IssueDetail from './components/IssueDetail.vue'
@@ -19,7 +18,6 @@ onMounted(async () => {
   }
 })
 
-const drawerOpen = ref(false)
 const managerOpen = ref(false)
 const shareState = ref(null)     // null | { level: 'page' | 'card' | 'issue', block, issue }
 const issueOpen = ref(null)      // 打开详情覆盖层的 issue id;#issue-P1 hash 可直链
@@ -29,11 +27,6 @@ watch([() => !!shareState.value, () => !!issueOpen.value], ([a, b]) => {
 }, { immediate: true })
 const print = () => window.print()
 const openSite = () => window.open('/site/index.html', '_blank')
-
-function onApplyPage(next) {
-  applyJsonPage(next)
-  drawerOpen.value = false
-}
 
 function toggleEdit() {
   if (!state.serverMode) {
@@ -116,7 +109,6 @@ function exportReport() {
       <button v-if="state.serverMode" class="btn" title="睡眠/营养/情绪/如厕等专题与速查表(本地只读)" @click="openSite">📖 知识库</button>
       <button class="btn" :class="{ active: state.editing }" :disabled="!state.serverMode"
               @click="toggleEdit">{{ state.editing ? '完成编辑' : '编辑布局' }}</button>
-      <button class="btn" @click="drawerOpen = true">编辑配置</button>
       <button class="btn" title="恢复默认功能卡;自定义卡会保留在页面末尾" @click="resetDefault()">重置默认</button>
       <button class="btn" title="生成发家人微信的长图;卡片右上角 ⤴ 可单卡分享" @click="shareState = { level: 'page', block: null }">分享长图</button>
       <button class="btn" title="数据内嵌的单 HTML 文件,可转发/迁移/存档" @click="exportReport">导出单文件报告</button>
@@ -129,9 +121,6 @@ function exportReport() {
                @props-update="onPropsUpdate" @open-issue="id => issueOpen = id" />
 
     <footer class="page">示例数据为虚构 · 布局模型:{x, y, w, h} 网格坐标(与 grid-layout-plus 同构)</footer>
-
-    <JsonDrawer :open="drawerOpen" :page="state.page"
-                @close="drawerOpen = false" @apply="onApplyPage" />
 
     <CardManager :open="managerOpen" :page="state.page"
                  @close="managerOpen = false" @toggle="onToggle" @show="onShow" />

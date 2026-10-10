@@ -152,7 +152,7 @@ body.editing .grid-stack .card { outline: 2px dashed #d8b7a4; outline-offset: -2
 
 body.report .toolbar { display: none; }   /* 单文件报告=纯视图,无编辑工具 */
 @media print {
-  .toolbar, .menu-mask { display: none; }
+  .toolbar, .menu-mask, .manage-panel { display: none; }
   body { background: #fff; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }  /* 坐标纸底色照打 */
   .grid-stack-item, .card { break-inside: avoid; }

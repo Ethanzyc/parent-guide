@@ -19,7 +19,6 @@ onMounted(async () => {
   }
 })
 
-const managerOpen = ref(false)
 const exportOpen = ref(false)    // 导出下拉菜单
 const exporting = ref(false)     // 板面长图生成中
 const shareState = ref(null)     // null | { level: 'card' | 'issue', block, issue }
@@ -139,9 +138,9 @@ function exportReport() {
         : '未检测到本地服务;想体验布局编辑,运行 python3 server.py --open'">
         {{ state.serverMode ? '🔌 本地服务 · 编辑即保存' : '📄 文件模式 · 只读' }}
       </span>
-      <button class="btn" @click="managerOpen = true" title="显示/隐藏卡片;想加自定义卡(便签/清单)回对话跟 AI 说">☰ 卡片管理</button>
       <button v-if="state.serverMode" class="btn" title="睡眠/营养/情绪/如厕等专题与速查表(本地只读)" @click="openSite">📖 知识库</button>
       <button class="btn" :class="{ active: state.editing }" :disabled="!state.serverMode"
+              :title="state.editing ? '收起面板并退出拖拽' : '拖拽调布局;底部面板管卡片显隐与添加'"
               @click="toggleEdit">{{ state.editing ? '完成编辑' : '编辑布局' }}</button>
       <div class="export-wrap">
         <button class="btn primary" @click="exportOpen = !exportOpen">导出</button>
@@ -160,8 +159,8 @@ function exportReport() {
                @geometry="applyGeometry" @share-card="b => shareState = { level: 'card', block: b }"
                @props-update="onPropsUpdate" @open-issue="id => issueOpen = id" />
 
-    <CardManager :open="managerOpen" :page="state.page"
-                 @close="managerOpen = false" @toggle="onToggle" @show="onShow" />
+    <CardManager v-if="state.editing" :page="state.page"
+                 @toggle="onToggle" @show="onShow" />
 
     <ShareModal :open="!!shareState" :level="shareState?.level || 'card'"
                 :block="shareState?.block" :kid="currentChild()"

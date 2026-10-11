@@ -28,7 +28,7 @@ const nodeEl = ref(null)
 const MS = { ok: '已会', watch: '观察中', todo: '还没会' }
 const TITLES = { 'profile': '孩子档案', 'milestone': '里程碑',
   'followup': '待回访', 'note': '成长速记',
-  'focus': '当前重点', 'reminder': '前瞻提醒',
+  'focus': '今日行动', 'reminder': '前瞻提醒',
   'issue': '问题追踪', 'growth': '生长记录',
   'text': '便签', 'list': '清单' }
 
@@ -115,9 +115,23 @@ function rowsFor(b) {
   }
   if (t === 'profile') return { rows: [{ kind: 'profile', label: '档案' }] }
   if (t === 'focus') {
-    // activeConcerns 已废弃(issues 取代,check 会报),只分享 currentFocus
-    const rows = (kid.currentFocus || [])
-      .map(f => ({ kind: 'focus', label: f, text: f }))
+    // 今日行动:就医待办+≤48h 到期回访(与 FocusCard 同一机械口径)
+    const rows = []
+    for (const i of (kid.issues || []))
+      if (i.status !== 'resolved' && i.pendingCare)
+        rows.push({ kind: 'care', label: `就医待办·${i.name}`, text: i.pendingCare })
+    const dDiff = (due) => {
+      const d = new Date(fullDate(due))
+      if (isNaN(d)) return null
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      return Math.round((d - today) / 86400000)
+    }
+    for (const f of (kid.followups || [])) {
+      if ((f.status || 'pending') !== 'pending') continue
+      const diff = dDiff(f.due)
+      if (diff !== null && diff <= 2 && diff >= -7)
+        rows.push({ kind: 'followup', label: f.due, due: f.due, topic: f.topic })
+    }
     return { rows }
   }
   if (t === 'reminder') {
@@ -286,6 +300,9 @@ async function save() {
                   <span class="pill" :class="row.stRaw">{{ row.st }}</span>
                   <span class="domain">{{ row.domain }}</span>
                   <span class="main">{{ row.text }}</span>
+                </div>
+                <div v-else-if="row.kind === 'care'" class="sc-red">
+                  <b>就医待办：</b>{{ zhPunct(row.text) }}
                 </div>
                 <div v-else-if="row.kind === 'followup'" class="sc-row followup">
                   <span class="due">{{ fullDate(row.due) }}</span><span class="main">{{ row.topic }}</span>

@@ -132,7 +132,7 @@ const list = computed(() => records.value.slice(-6).reverse())
         <span class="rv">{{ r.weight ? r.weight + 'kg' : '—' }}</span>
       </div>
     </div>
-    <div class="src">区间:WS/T 423—2022(写入 knowledge/growth.md) · 筛查参照非诊断,出区间或跨百分位线建议儿保</div>
+    <div class="src">区间:WS/T 423—2022(写入 knowledge/growth.md) · 筛查参照非诊断,出区间或跨百分位线建议儿保<template v-if="records.length < 2">;再记一笔(下月儿保/在家量)即长出曲线与参考带</template></div>
   </template>
   <div v-else class="src">还没有生长记录——儿保体检本的身高体重抄回来:对话里说「记一下身高体重」,曲线和参考区间就亮了。</div>
   </div>

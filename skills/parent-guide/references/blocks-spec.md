@@ -55,7 +55,7 @@
 | type | 名称 | props | 建议宽度 |
 |---|---|---|---|
 | `profile` | 孩子档案 | 无 | w 3-4 |
-| `focus` | 当前重点(currentFocus+在管问题+在跑计划/最近回访聚合) | 无 | w 3-6 |
+| `focus` | 今日行动(就医待办+≤48h 到期回访+在跑计划/下一节点汇总;2026-10-11 由「当前重点」重定位——关注 chips 归档案卡,问题明细归问题卡) | 无 | w 4-6 |
 | `issue` | 问题追踪(三色计数+问题行,点击开详情覆盖层) | `status`(`active\|watching\|resolved\|all`,默认空=在管 active+watching) | w 6-12 |
 | `milestone` | 里程碑(CDC 检查表) | `months`(number,默认月龄就近档) | w 4-6 |
 | `growth` | 生长曲线(身高体重对照 P3-P97) | 无(数据 child.growth.records,`add-growth` 落档) | w 6-12 |

@@ -1,12 +1,28 @@
 <script setup>
 import { computed } from 'vue'
-import { monthsAge } from '../../lib/util.js'
+import { monthsAge, fullDate } from '../../lib/util.js'
 const props = defineProps({ block: Object, kid: Object })
+const emit = defineEmits(['open-issue'])
 const age = computed(() => props.kid?.birthdate ? monthsAge(props.kid.birthdate) : null)
-// 已解决留档作历史,「活跃问题」区只显示仍在观察的
-const liveConcerns = computed(() =>
-  (props.kid?.activeConcerns || []).filter(c => c.status !== '已解决'))
 const initial = computed(() => (props.kid?.name || '宝').slice(0, 1))
+
+// 下一档盘点钩子(纯计算):CDC 检查点档位表里第一个大于当前月龄的档
+const STEPS = [18, 24, 30, 36, 48, 60]
+const nextStep = computed(() => {
+  if (age.value === null || !props.kid?.birthdate) return null
+  const m = STEPS.find(s => s > age.value)
+  if (!m) return null
+  const b = new Date(props.kid.birthdate)
+  const d = new Date(b.getFullYear(), b.getMonth() + m, b.getDate())
+  return { months: m, ym: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
+})
+
+// 关注 chips 挂 P 号:与在管问题按名称精确匹配(机械),命中可点开病历
+const issueByName = computed(() => {
+  const map = {}
+  for (const i of (props.kid?.issues || [])) if (i.status !== 'resolved') map[i.name] = i
+  return map
+})
 
 // 画像字段:模板占位原文=未填,跳过不渲染(与 check 的占位感知同口径)
 const P = new Set(['语言发展一句话', '气质特点一句话', '安抚物(如有)',
@@ -29,8 +45,9 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
     <div>
       <div class="pname">{{ kid.name || '未填写' }}</div>
       <div class="big"><span class="num-serif num-hero" v-if="age !== null">{{ age }}</span><span v-if="age !== null" class="num-unit">个月</span></div>
+      <div v-if="nextStep" class="nextstep">下一档 <b>{{ nextStep.months }} 月</b> · {{ nextStep.ym }} 前后做发育盘点对照</div>
       <div class="meta">
-        <template v-if="kid.birthdate">{{ kid.birthdate }} 出生</template>
+        <template v-if="kid.birthdate">{{ fullDate(kid.birthdate) }} 出生</template>
         <template v-else>生日未填写</template>
         <template v-if="caregivers"> · {{ caregivers }}</template>
       </div>
@@ -40,15 +57,9 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
 
   <div v-if="(kid.currentFocus || []).length" class="psec">
     <div class="plabel">当前关注</div>
-    <div><span v-for="f in kid.currentFocus" :key="f" class="chip">{{ f }}</span></div>
-  </div>
-
-  <div v-if="liveConcerns.length" class="psec">
-    <div class="plabel">观察中的问题</div>
-    <div v-for="(c, i) in liveConcerns" :key="i" class="concern-row">
-      <span class="ctext">{{ c.text }}</span>
-      <span class="csince">自 {{ c.since || '?' }}</span>
-    </div>
+    <div><span v-for="f in kid.currentFocus" :key="f" class="chip"
+      :class="{ lnk: issueByName[f] }" :title="issueByName[f] ? '点击查看病历详情' : ''"
+      @click="issueByName[f] && emit('open-issue', issueByName[f].id)">{{ f }}<template v-if="issueByName[f]"><b class="p">{{ issueByName[f].id }}</b></template></span></div>
   </div>
 
   <div v-if="hasPref || temperament || language" class="psec">
@@ -74,6 +85,8 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
 .phead { display: flex; align-items: flex-start; gap: 12px; padding-bottom: 12px;
   border-bottom: 1px solid var(--grid-line); }
 .pname { font-size: 22px; font-weight: 700; line-height: 1.25; }
+.nextstep { font-size: 11.5px; color: var(--sub); margin: 5px 0 2px; }
+.nextstep b { color: var(--ink-blue); font-weight: 600; }
 .meta { font-size: 12.5px; color: var(--sub); margin-top: 2px; }
 .seal { flex: none; margin-left: auto; width: 46px; height: 46px; border-radius: 8px;
   border: 1.5px solid var(--grid-line); background: rgba(255,255,255,.8);
@@ -81,12 +94,10 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
   font-size: 20px; font-weight: 700; color: var(--ink-blue); }
 .psec { margin-top: 12px; }
 .plabel { font-size: 11.5px; color: var(--sub); margin-bottom: 5px; letter-spacing: .08em; }
-.concern-row { display: flex; gap: 8px; align-items: baseline; font-size: 13px;
-  padding: 6px 10px; border: 1px solid var(--line); border-left: 3px solid var(--watch);
-  background: rgba(255,255,255,.75); border-radius: 6px; margin-bottom: 5px; }
-.concern-row:last-child { margin-bottom: 0; }
-.ctext { flex: 1; min-width: 0; }
-.csince { flex: none; font-size: 11.5px; color: var(--sub); }
+.chip.lnk { border-style: solid; border-color: var(--ink-blue); cursor: pointer; }
+.chip.lnk:hover { background: var(--accent-soft); }
+.chip .p { font-size: 10px; font-weight: 700; margin-left: 4px;
+  font-family: Georgia, serif; }
 .kv { display: flex; gap: 10px; font-size: 13px; padding: 6px 0;
   border-bottom: 1px dashed var(--grid-line); align-items: baseline; }
 .kv:last-child { border-bottom: none; }

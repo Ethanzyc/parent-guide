@@ -44,17 +44,15 @@ const dayNo = (i) => {
       <div class="mnums num-serif">
         <span class="mn"><i style="color:var(--watch)">{{ counts.live }}</i><small>进行中</small></span>
         <span class="mn"><i style="color:var(--todo)">{{ counts.care }}</i><small>待就医</small></span>
-        <span class="mn"><i style="color:var(--ok)">{{ counts.done }}</i><small>已解决</small></span>
+        <span class="mn" :class="{ dim: !counts.done }"><i style="color:var(--ok)">{{ counts.done }}</i><small>已解决</small></span>
       </div>
-      <div v-for="i in list" :key="i.id" class="irow" @click="emit('open-issue', i.id)">
+      <div v-for="i in list" :key="i.id" class="irow" :class="{ wrap: i.pendingCare }" @click="emit('open-issue', i.id)">
         <span class="st" :class="ST_CLASS[i.status] || 'plain'">{{ ST_LABEL[i.status] || i.status }}</span>
         <span class="nm">{{ i.name }}</span>
         <span class="dy">{{ dayNo(i) }}</span>
-        <span class="nx">
-          <span v-if="i.pendingCare" class="care">{{ i.pendingCare }}</span>
-          <template v-else-if="nextOf(i)">{{ nextOf(i).due }} · {{ dueLabel(nextOf(i).due).label }}</template>
-          <template v-else>{{ (i.summary || '').slice(0, 14) }}</template>
-        </span>
+        <span v-if="i.pendingCare" class="nx full care">{{ i.pendingCare }}</span>
+        <span v-else-if="nextOf(i)" class="nx">{{ nextOf(i).due }} · {{ dueLabel(nextOf(i).due).label }}</span>
+        <span v-else class="nx">{{ (i.summary || '').slice(0, 14) }}</span>
       </div>
       <div v-if="!list.length" class="src">当前过滤下没有问题。</div>
     </template>
@@ -69,16 +67,22 @@ const dayNo = (i) => {
 .mn { text-align: center; }
 .mn i { display: block; font-style: normal; font-size: 27px; font-weight: 700; line-height: 1.15; }
 .mn small { font-size: 10.5px; color: var(--sub); letter-spacing: .06em; }
-.care-n { margin-left: auto; font-size: 11px; color: var(--todo); border: 1px solid var(--todo);
+.mn.dim i { font-size: 15px; color: var(--sub); line-height: 1.9; }
+.mn.dim small { letter-spacing: .04em; }
+.care-n { font-size: 11px; color: var(--todo); border: 1px solid var(--todo);
   border-radius: 4px; padding: 0 6px; letter-spacing: .04em; font-weight: 600; }
 .irow { display: flex; gap: 8px; align-items: baseline; padding: 7px 0;
   border-bottom: 1px dashed var(--line); font-size: 13.5px; cursor: pointer; }
 .irow:last-child { border-bottom: none; }
+.irow.wrap { flex-wrap: wrap; }
 .irow .nm { font-weight: 600; }
 .irow .dy { color: var(--sub); font-size: 12px; font-family: Georgia, serif; }
 .irow .nx { color: var(--sub); font-size: 12.5px; margin-left: auto; text-align: right;
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45%; }
+.irow .nx.full { flex-basis: 100%; max-width: none; white-space: normal;
+  text-align: left; overflow: visible; margin-left: 0; }
 .irow .nx .care { color: var(--todo); }
+.irow .nx.full.care { color: var(--todo); }
 .st { flex: none; font-size: 10.5px; border: 1px solid; border-radius: 4px; padding: 0 6px;
   min-width: 3.2em; text-align: center; font-weight: 600; letter-spacing: .04em; }
 .st.watch { background: transparent; color: var(--watch); border-color: var(--watch); }

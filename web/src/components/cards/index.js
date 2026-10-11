@@ -35,7 +35,7 @@ export const REGISTRY = {
 // sleep-week(睡眠不单独记,无数据生产者)——老页面残留 block 由 store.stripRetired 剔除。
 export const CARD_META = {
   'profile':        { group: 'builtin', name: '孩子档案',   desc: '小名/月龄/画像/当前重点一览', w: 6, h: 8 },
-  'focus':          { group: 'builtin', name: '当前重点',   desc: '正在关注的事+在跑计划+最近回访(动态)', w: 6, h: 4 },
+  'focus':          { group: 'builtin', name: '今日行动',   desc: '今天该管什么:就医待办+近期回访+在跑计划', w: 5, h: 4 },
   'issue':          { group: 'builtin', name: '问题追踪',   desc: '在管问题三色计数+病历详情(持续议题)', w: 6, h: 6 },
   'milestone':      { group: 'builtin', name: '里程碑',     desc: '发育盘点结果(按月龄档)', w: 6, h: 6 },
   'growth':         { group: 'builtin', name: '生长曲线',   desc: '身高体重记录对照参考区间', w: 6, h: 6 },

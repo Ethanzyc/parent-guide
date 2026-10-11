@@ -40,46 +40,50 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
 </script>
 
 <template>
-  <div class="eyebrow">档 案</div>
-  <div class="phead">
-    <div>
-      <div class="pname">{{ kid.name || '未填写' }}</div>
-      <div class="big"><span class="num-serif num-hero" v-if="age !== null">{{ age }}</span><span v-if="age !== null" class="num-unit">个月</span></div>
-      <div v-if="nextStep" class="nextstep">下一档 <b>{{ nextStep.months }} 月</b> · {{ nextStep.ym }} 前后做发育盘点对照</div>
-      <div class="meta">
-        <template v-if="kid.birthdate">{{ fullDate(kid.birthdate) }} 出生</template>
-        <template v-else>生日未填写</template>
-        <template v-if="caregivers"> · {{ caregivers }}</template>
+  <div class="cbody pf-body">
+    <div class="eyebrow">档 案</div>
+    <div class="phead">
+      <div>
+        <div class="pname">{{ kid.name || '未填写' }}</div>
+        <div class="big"><span class="num-serif num-hero" v-if="age !== null">{{ age }}</span><span v-if="age !== null" class="num-unit">个月</span></div>
+        <div v-if="nextStep" class="nextstep">下一档 <b>{{ nextStep.months }} 月</b> · {{ nextStep.ym }} 前后做发育盘点对照</div>
+        <div class="meta">
+          <template v-if="kid.birthdate">{{ fullDate(kid.birthdate) }} 出生</template>
+          <template v-else>生日未填写</template>
+          <template v-if="caregivers"> · {{ caregivers }}</template>
+        </div>
       </div>
+      <span class="seal">{{ initial }}</span>
     </div>
-    <span class="seal">{{ initial }}</span>
-  </div>
 
-  <div v-if="(kid.currentFocus || []).length" class="psec">
-    <div class="plabel">当前关注</div>
-    <div><span v-for="f in kid.currentFocus" :key="f" class="chip"
-      :class="{ lnk: issueByName[f] }" :title="issueByName[f] ? '点击查看病历详情' : ''"
-      @click="issueByName[f] && emit('open-issue', issueByName[f].id)">{{ f }}<template v-if="issueByName[f]"><b class="p">{{ issueByName[f].id }}</b></template></span></div>
-  </div>
+    <div v-if="(kid.currentFocus || []).length" class="psec">
+      <div class="plabel">当前关注</div>
+      <div><span v-for="f in kid.currentFocus" :key="f" class="chip"
+        :class="{ lnk: issueByName[f] }" :title="issueByName[f] ? '点击查看病历详情' : ''"
+        @click="issueByName[f] && emit('open-issue', issueByName[f].id)">{{ f }}<template v-if="issueByName[f]"><b class="p">{{ issueByName[f].id }}</b></template></span></div>
+    </div>
 
-  <div v-if="hasPref || temperament || language" class="psec">
-    <div class="plabel">孩子画像</div>
-    <div v-if="temperament" class="kv"><b>气质</b><span>{{ temperament }}</span></div>
-    <div v-if="language" class="kv"><b>语言</b><span>{{ language }}</span></div>
-    <div v-if="hasPref" class="kv"><b>偏好</b><span>
-      <span v-if="comfort" class="chip">🧸 {{ comfort }}</span>
-      <span v-if="activities" class="chip">🏃 {{ activities }}</span>
-      <span v-if="books" class="chip">📖 {{ books }}</span>
-    </span></div>
-    <div v-if="familyNotes" class="kv"><b>家庭口径</b><span class="muted">{{ familyNotes }}</span></div>
-  </div>
+    <div v-if="hasPref || temperament || language" class="psec">
+      <div class="plabel">孩子画像</div>
+      <div v-if="temperament" class="kv"><b>气质</b><span>{{ temperament }}</span></div>
+      <div v-if="language" class="kv"><b>语言</b><span>{{ language }}</span></div>
+      <div v-if="hasPref" class="kv"><b>偏好</b><span>
+        <span v-if="comfort" class="chip">🧸 {{ comfort }}</span>
+        <span v-if="activities" class="chip">🏃 {{ activities }}</span>
+        <span v-if="books" class="chip">📖 {{ books }}</span>
+      </span></div>
+      <div v-if="familyNotes" class="kv"><b>家庭口径</b><span class="muted">{{ familyNotes }}</span></div>
+    </div>
 
-  <div v-if="!hasPref && !temperament && !language" class="src">
-    画像(气质/语言/偏好)还没填——聊到这些话题时 AI 会顺带记录,这里会慢慢丰满。
+    <div v-if="!hasPref && !temperament && !language" class="src">
+      画像(气质/语言/偏好)还没填——聊到这些话题时 AI 会顺带记录,这里会慢慢丰满。
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* 无标题带特例:内容包 .cbody(可滚动),上内边距加大补 phead 呼吸感 */
+.pf-body { padding: 16px 20px 16px; }
 .eyebrow { font-size: 13px; color: var(--sub); font-weight: 600; letter-spacing: .22em;
   margin-bottom: 10px; }
 .phead { display: flex; align-items: flex-start; gap: 12px; padding-bottom: 12px;

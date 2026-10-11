@@ -40,8 +40,8 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
 </script>
 
 <template>
+  <div class="cband"><h3>档案</h3></div>
   <div class="cbody pf-body">
-    <div class="eyebrow">档 案</div>
     <div class="phead">
       <div>
         <div class="pname">{{ kid.name || '未填写' }}</div>
@@ -82,10 +82,8 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
 </template>
 
 <style scoped>
-/* 无标题带特例:内容包 .cbody(可滚动),上内边距加大补 phead 呼吸感 */
-.pf-body { padding: 16px 20px 16px; }
-.eyebrow { font-size: 13px; color: var(--sub); font-weight: 600; letter-spacing: .22em;
-  margin-bottom: 10px; }
+/* 卡头=标准 cband(2026-10-11 用户:规范不该有特例);phead 顶部加呼吸感 */
+.pf-body { padding-top: 14px; }
 .phead { display: flex; align-items: flex-start; gap: 12px; padding-bottom: 12px;
   border-bottom: 1px solid var(--grid-line); }
 .pname { font-size: 22px; font-weight: 700; line-height: 1.25; }

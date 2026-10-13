@@ -10,7 +10,6 @@ import GrowthCard from './GrowthCard.vue'
 import NotesCard from './NotesCard.vue'
 import FocusCard from './FocusCard.vue'
 import IssueCard from './IssueCard.vue'
-import ReminderCard from './ReminderCard.vue'
 import AnticipatoryCard from './AnticipatoryCard.vue'
 import TextCard from './TextCard.vue'
 import ListCard from './ListCard.vue'
@@ -23,7 +22,6 @@ export const REGISTRY = {
   'note': NotesCard,
   'focus': FocusCard,
   'issue': IssueCard,
-  'reminder': ReminderCard,
   'anticipatory': AnticipatoryCard,
   'text': TextCard,
   'list': ListCard,
@@ -33,15 +31,16 @@ export const REGISTRY = {
 // w/h = sensible defaults when instantiated from the panel.
 // 2026-10-10 退役:strategy-effect(被问题追踪取代)/timeline(与速记同源重复)/
 // sleep-week(睡眠不单独记,无数据生产者)——老页面残留 block 由 store.stripRetired 剔除。
-// 2026-10-13 退役:followup(与「今日与回访」卡重合,全量回访并入 focus 卡双区)。
+// 2026-10-13 退役:followup(与「今日与回访」卡重合,全量回访并入 focus 卡双区)、
+// reminder(与「前瞻」卡合并:认领 reminders 并入「记下的」区;add-reminder
+// 写入链与 hot-context 对话侧不变,只是页面不再有独立卡)。
 export const CARD_META = {
   'profile':        { group: 'builtin', name: '孩子档案',   desc: '小名/月龄/画像/当前重点一览', w: 6, h: 8 },
   'focus':          { group: 'builtin', name: '今日与回访', desc: '就医待办+到期回访+在途回访+在跑计划', w: 5, h: 6 },
   'issue':          { group: 'builtin', name: '问题追踪',   desc: '在管问题三色计数+病历详情(持续议题)', w: 6, h: 6 },
   'milestone':      { group: 'builtin', name: '里程碑',     desc: '发育盘点结果(按月龄档)', w: 6, h: 6 },
   'growth':         { group: 'builtin', name: '生长曲线',   desc: '身高体重记录对照参考区间', w: 6, h: 6 },
-  'reminder':       { group: 'builtin', name: '前瞻提醒',   desc: '疫苗/报名/季节节点', w: 4, h: 3 },
-  'anticipatory':   { group: 'builtin', name: '前瞻节点',   desc: '疫苗/体检/筛查/入园月龄时间线(进行中/接下来/已过)', w: 6, h: 5 },
+  'anticipatory':   { group: 'builtin', name: '前瞻',       desc: '记下的提醒+疫苗/体检/筛查/入园月龄时间线', w: 6, h: 5 },
   'note':           { group: 'builtin', name: '成长速记',   desc: '最近的事件笔记', w: 6, h: 5 },
   'text':           { group: 'custom', name: '文本卡',     desc: '标题+自由文本(奶奶须知/黑名单)', w: 4, h: 4 },
   'list':           { group: 'custom', name: '清单卡',     desc: '可勾选清单(出门清单/待办)', w: 4, h: 5 },

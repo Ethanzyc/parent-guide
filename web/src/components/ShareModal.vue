@@ -28,9 +28,9 @@ const nodeEl = ref(null)
 // 状态转人话(家人版不出现 S1/effective 这类内部口径)
 const MS = { ok: '已会', watch: '观察中', todo: '还没会' }
 const TITLES = { 'profile': '孩子档案', 'milestone': '里程碑',
-  'anticipatory': '前瞻节点',
+  'anticipatory': '前瞻',
   'note': '成长速记',
-  'focus': '今日与回访', 'reminder': '前瞻提醒',
+  'focus': '今日与回访',
   'issue': '问题追踪', 'growth': '生长记录',
   'text': '便签', 'list': '清单' }
 
@@ -137,18 +137,16 @@ function rowsFor(b) {
     }
     return { rows }
   }
-  if (t === 'reminder') {
+  if (t === 'anticipatory') {
+    // 与卡同口径:记下的(认领提醒)+进行中+接下来(已过不进长图);节点注
+    // 一起带走,家人看得懂
     const rows = (kid.reminders || [])
       .filter(r => (r?.status || 'pending') === 'pending')
       .sort((a, c) => dueKey(a.due).localeCompare(dueKey(c.due)))
-      .map(r => ({ kind: 'followup', label: `${r.due} ${r.topic}`.slice(0, 14), due: r.due, topic: r.topic }))
-    return { rows }
-  }
-  if (t === 'anticipatory') {
-    // 与卡同口径:进行中+接下来(已过不进长图);节点注一起带走,家人看得懂
-    const rows = anticipatoryNodes(kid).filter(r => r.status !== 'past')
-      .map(r => ({ kind: 'followup', label: r.due ? r.due.slice(0, 7) : '待定',
-        due: r.due || '', topic: r.name + (r.note ? ' · ' + r.note : '') }))
+      .map(r => ({ kind: 'followup', label: r.due, due: r.due, topic: r.topic }))
+    for (const r of anticipatoryNodes(kid).filter(r => r.status !== 'past'))
+      rows.push({ kind: 'followup', label: r.due ? r.due.slice(0, 7) : '待定',
+        due: r.due || '', topic: r.name + (r.note ? ' · ' + r.note : '') })
     return { rows }
   }
   if (t === 'text') {

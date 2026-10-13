@@ -72,7 +72,8 @@ const trendStable = computed(() => genderKey.value && records.value.length >= 2
   && !trendRows.value.length)
 
 // -- SVG chart ---------------------------------------------------------------
-// W=300 H=96 viewBox units; band + P50 + child's polyline.
+// viewBox 300x102; band + P50 + child's polyline + axes. Left 30 / bottom 14
+// viewBox units are gutters for tick labels so values read without hover.
 function chart(metric) {
   const recs = records.value.filter(r => r[metric] != null)
   if (recs.length < 2) return null
@@ -90,8 +91,9 @@ function chart(metric) {
   }
   const pad = (hi - lo) * 0.08 || 1
   lo -= pad; hi += pad
-  const X = (m) => 8 + (m - x0) / (x1 - x0) * 284
-  const Y = (v) => 90 - (v - lo) / (hi - lo) * 82
+  const PL = 30, PR = 8, PT = 8, PB = 84  // plot rect inside the viewBox
+  const X = (m) => PL + (m - x0) / (x1 - x0) * (300 - PL - PR)
+  const Y = (v) => PB - (v - lo) / (hi - lo) * (PB - PT)
   let bandPath = ''
   if (band) {
     const up = [], down = []
@@ -113,13 +115,32 @@ function chart(metric) {
     }
     p50Line = pts.join(' ')
   }
-  return {
-    bandPath, line, p50Line,
-    dots: recs.map(r => ({ x: X(r.months), y: Y(r[metric]), r: r[metric],
-                           out: genderKey.value && (r[metric] < refAt(genderKey.value, metric, r.months)?.p3
-                             || r[metric] > refAt(genderKey.value, metric, r.months)?.p97) })),
-    x1, lastX: X(recs[recs.length - 1].months), lastY: Y(recs[recs.length - 1][metric]),
+  // y 刻度:1/2/5×10^k 步进,目标 ~4 条;x 刻度:每 6 个月
+  const step = [1, 2, 5, 10, 20, 50].find(s => (hi - lo) / s <= 4.5) || 50
+  const yTicks = []
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step)
+    yTicks.push({ v, y: Y(v), t: step >= 1 ? String(Math.round(v)) : (Math.round(v * 10) / 10).toFixed(1) })
+  const xTicks = []
+  for (let m = Math.ceil(x0 / 6) * 6; m <= x1; m += 6) xTicks.push({ m, x: X(m) })
+  // 节点数值标签:默认点上方,与前一标签横向太挤(<14 单位)时翻到点下方
+  const dots = [], labels = []
+  let prevX = -99
+  for (const r of recs) {
+    const x = X(r.months), y = Y(r[metric])
+    dots.push({ x, y, v: r[metric], date: r.date,
+      out: genderKey.value && (r[metric] < refAt(genderKey.value, metric, r.months)?.p3
+        || r[metric] > refAt(genderKey.value, metric, r.months)?.p97) })
+    const above = x - prevX >= 14
+    if (above) prevX = x
+    labels.push({ x, y: above ? y - 5.5 : y + 11, t: String(r[metric]) })
   }
+  // 最新月龄处的参考区间数值(图例行直读,出带时对着数字看差多少)
+  const last = recs[recs.length - 1]
+  const lastRef = band ? refAt(genderKey.value, metric, last.months) : null
+  const bandTxt = lastRef
+    ? `参考 ${last.months}月:P3 ${lastRef.p3.toFixed(1)} · P50 ${lastRef.p50.toFixed(1)} · P97 ${lastRef.p97.toFixed(1)}`
+    : ''
+  return { bandPath, line, p50Line, dots, labels, yTicks, xTicks, bandTxt }
 }
 const hChart = computed(() => chart('height'))
 const wChart = computed(() => chart('weight'))
@@ -158,26 +179,47 @@ const list = computed(() => records.value.slice(-6).reverse())
     <div v-if="trendStable" class="trend calm">两次记录同一参考区间,沿自身通道稳定生长</div>
 
     <div v-if="hChart" class="chart">
-      <div class="ct">身高 cm<span v-if="genderKey" class="cb">阴影=P3-P97 虚线=P50</span></div>
-      <svg viewBox="0 0 300 96">
+      <div class="ct">身高 cm<span v-if="genderKey" class="cb">{{ hChart.bandTxt }}</span></div>
+      <svg viewBox="0 0 300 102">
         <path v-if="hChart.bandPath" :d="hChart.bandPath" class="band" />
         <polyline v-if="hChart.p50Line" :points="hChart.p50Line" class="p50" />
+        <line v-for="t in hChart.yTicks" :key="'yg'+t.v" :x1="30" :x2="292" :y1="t.y" :y2="t.y" class="gridline" />
         <polyline :points="hChart.line" class="cline" />
-        <circle v-for="(d, i) in hChart.dots" :key="i" :cx="d.x" :cy="d.y" r="3" :class="d.out ? 'cdot out' : 'cdot'" />
+        <circle v-for="(d, i) in hChart.dots" :key="i" :cx="d.x" :cy="d.y" r="2" :class="d.out ? 'cdot out' : 'cdot'">
+          <title>{{ d.date }} {{ d.v }}</title>
+        </circle>
+        <text v-for="(l, i) in hChart.labels" :key="'hl'+i" :x="l.x" :y="l.y" class="dlabel" text-anchor="middle">{{ l.t }}</text>
+        <line :x1="30" :x2="30" :y1="8" :y2="84" class="axis" />
+        <line :x1="30" :x2="292" :y1="84" :y2="84" class="axis" />
+        <line v-for="t in hChart.xTicks" :key="'xt'+t.m" :x1="t.x" :x2="t.x" :y1="84" :y2="87" class="axis" />
+        <text v-for="t in hChart.yTicks" :key="'yt'+t.v" :x="27" :y="t.y + 2" class="tick" text-anchor="end">{{ t.t }}</text>
+        <text v-for="t in hChart.xTicks" :key="'xl'+t.m" :x="t.x" :y="95" class="tick" text-anchor="middle">{{ t.m }}</text>
+        <text :x="292" :y="95" class="tick" text-anchor="end">月龄</text>
       </svg>
     </div>
     <div v-if="wChart" class="chart">
-      <div class="ct">体重 kg</div>
-      <svg viewBox="0 0 300 96">
+      <div class="ct">体重 kg<span v-if="genderKey" class="cb">{{ wChart.bandTxt }}</span></div>
+      <svg viewBox="0 0 300 102">
         <path v-if="wChart.bandPath" :d="wChart.bandPath" class="band" />
         <polyline v-if="wChart.p50Line" :points="wChart.p50Line" class="p50" />
+        <line v-for="t in wChart.yTicks" :key="'yg'+t.v" :x1="30" :x2="292" :y1="t.y" :y2="t.y" class="gridline" />
         <polyline :points="wChart.line" class="cline" />
-        <circle v-for="(d, i) in wChart.dots" :key="i" :cx="d.x" :cy="d.y" r="3" :class="d.out ? 'cdot out' : 'cdot'" />
+        <circle v-for="(d, i) in wChart.dots" :key="i" :cx="d.x" :cy="d.y" r="2" :class="d.out ? 'cdot out' : 'cdot'">
+          <title>{{ d.date }} {{ d.v }}</title>
+        </circle>
+        <text v-for="(l, i) in wChart.labels" :key="'wl'+i" :x="l.x" :y="l.y" class="dlabel" text-anchor="middle">{{ l.t }}</text>
+        <line :x1="30" :x2="30" :y1="8" :y2="84" class="axis" />
+        <line :x1="30" :x2="292" :y1="84" :y2="84" class="axis" />
+        <line v-for="t in wChart.xTicks" :key="'xt'+t.m" :x1="t.x" :x2="t.x" :y1="84" :y2="87" class="axis" />
+        <text v-for="t in wChart.yTicks" :key="'yt'+t.v" :x="27" :y="t.y + 2" class="tick" text-anchor="end">{{ t.t }}</text>
+        <text v-for="t in wChart.xTicks" :key="'xl'+t.m" :x="t.x" :y="95" class="tick" text-anchor="middle">{{ t.m }}</text>
+        <text :x="292" :y="95" class="tick" text-anchor="end">月龄</text>
       </svg>
     </div>
     <div v-if="!genderKey" class="src">档案未填性别,暂无参考区间对照——回对话补一下性别即可。</div>
 
     <div class="rlist">
+      <div class="rrow rhead"><span>日期</span><span class="rm">月龄</span><span class="rv">身高</span><span class="rv">体重</span></div>
       <div v-for="r in list" :key="r.date" class="rrow">
         <span class="rd">{{ r.date }}</span><span class="rm">{{ r.months }}月</span>
         <span class="rv">{{ r.height ? r.height + 'cm' : '—' }}</span>
@@ -215,13 +257,18 @@ svg { width: 100%; height: auto; display: block; }
 .band { fill: rgba(90,130,180,.10); stroke: none; }
 .p50 { fill: none; stroke: var(--sub); stroke-width: 1; stroke-dasharray: 4 3; }
 .cline { fill: none; stroke: var(--ink-blue); stroke-width: 2; }
-.cdot { fill: #fff; stroke: var(--ink-blue); stroke-width: 2; }
+.cdot { fill: #fff; stroke: var(--ink-blue); stroke-width: 1.5; }
 .cdot.out { fill: var(--todo); stroke: var(--todo); }
+.gridline { stroke: var(--line); stroke-width: .5; opacity: .7; }
+.axis { stroke: var(--line); stroke-width: 1; }
+.tick { font-size: 6px; fill: var(--sub); }
+.dlabel { font-size: 6px; font-weight: 600; fill: var(--ink-blue); }
 .rlist { margin-top: 4px; }
-.rrow { display: flex; gap: 10px; font-size: 12.5px; padding: 3px 0;
+.rrow { display: grid; grid-template-columns: 7em 3.2em 4.6em 5em; gap: 0 6px;
+  font-size: 12.5px; padding: 3px 0;
   border-bottom: 1px dashed var(--line); font-variant-numeric: tabular-nums; }
 .rrow:last-child { border-bottom: none; }
-.rd { color: var(--sub); flex: none; }
-.rm { color: var(--sub); flex: none; width: 3.5em; }
-.rv { flex: 1; }
+.rhead { color: var(--sub); font-size: 11px; border-bottom: 1px solid var(--line); }
+.rd { color: var(--sub); }
+.rm, .rv { text-align: right; }
 </style>

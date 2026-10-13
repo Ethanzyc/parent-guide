@@ -107,13 +107,19 @@ export function escHtml(s) {
   return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
-// 渲染层统一转链:后续数据文本里新增的知识引用(含 §节号)零改动自动生效。
-export function linkKnowledge(text) {
-  return escHtml(text).replace(/([a-z-]+\.md)( ?§\d+)?/g, (m, file, sec) => {
+const KB_LINK_RE = /([a-z-]+\.md)( ?§\d+)?/g
+// 对已生成的 HTML 转链(不转义):知识库面板里 server 渲染的自建文档走这里,
+// 纯文本先 escHtml 再进来。白名单与 tests/check-knowledge.sh 清单同步维护。
+export function linkifyHtml(html) {
+  return String(html ?? '').replace(KB_LINK_RE, (m, file, sec) => {
     const base = file.slice(0, -3)
     const page = KB_REMAP[base] || (KB_PAGES.has(base) ? base : null)
     return page
       ? `<a class="klink" href="site/${page}.html" target="_blank" rel="noopener">${file}${sec || ''}</a>`
       : m
   })
+}
+// 渲染层统一转链:后续数据文本里新增的知识引用(含 §节号)零改动自动生效。
+export function linkKnowledge(text) {
+  return linkifyHtml(escHtml(text))
 }

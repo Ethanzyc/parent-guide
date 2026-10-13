@@ -15,10 +15,66 @@ import os
 import webbrowser
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
+
+from knowledge_render import md_to_html, parse_provenance
 
 ROOT = Path(__file__).resolve().parent
 TEMPLATE_PAGE = ROOT / "skills/parent-guide/data-templates/page.json"
 TEMPLATE_DATA = ROOT / "skills/parent-guide/data-templates/child.json"
+
+_KB_META_FILES = {"README.md", "LICENSE.md", "BACKLOG.md"}
+
+
+def _official_topics():
+    """Official knowledge metadata. site/knowledge.json is the build product
+    of build-site.py TOPICS (single source); the H1 scan below only covers
+    the unlikely case of a repo copy without a built site."""
+    try:
+        data = json.loads((ROOT / "site/knowledge.json").read_text("utf-8"))
+        if isinstance(data, list) and data:
+            return data
+    except (OSError, ValueError):
+        pass
+    fallback = []
+    for md in sorted((ROOT / "knowledge").glob("*.md")):
+        if md.name in _KB_META_FILES:
+            continue
+        slug = "tantrum" if md.stem == "tantrum-cdc" else md.stem
+        title, _, _ = parse_provenance(md.read_text("utf-8"))
+        fallback.append({"file": md.name, "slug": slug, "title": title or md.stem,
+                         "hook": None, "src": None})
+    return fallback
+
+
+def _user_knowledge():
+    """Self-built docs under knowledge/user/ (README.md is the convention
+    doc, not content). Local-only layer: never published, listed here only."""
+    udir = ROOT / "knowledge/user"
+    items = []
+    if not udir.is_dir():
+        return items
+    for md in sorted(udir.glob("*.md")):
+        if md.name == "README.md":
+            continue
+        title, meta, _ = parse_provenance(md.read_text("utf-8"))
+        items.append({"file": md.name, "title": title or md.stem, "meta": meta})
+    return items
+
+
+def _read_user_knowledge(name):
+    """Render one self-built doc to HTML. Accepts a bare file name only --
+    knowledge/user/ holds family-private notes, so nothing outside it (and
+    nothing but a single .md name) is reachable through this endpoint."""
+    if not name or "/" in name or "\\" in name or not name.endswith(".md"):
+        raise ValueError("只允许 knowledge/user/ 下的单个 .md 文件名")
+    if name == "README.md":
+        raise ValueError("README.md 是自建层约定文档,不是自建知识")
+    path = ROOT / "knowledge/user" / name
+    if not path.is_file():
+        raise FileNotFoundError(name)
+    title, meta, body = parse_provenance(path.read_text("utf-8"))
+    return {"file": name, "title": title or name, "meta": meta, "html": md_to_html(body)}
 
 
 def _load_json(path, bootstrap_flag=False):
@@ -101,6 +157,20 @@ def make_server(port, data_dir, web_dir):
                     if bootstrapped:
                         obj["bootstrapped"] = True
                     return self._send_json(200, obj)
+                if self.path == "/api/knowledge":
+                    return self._send_json(200, {"official": _official_topics(),
+                                                 "user": _user_knowledge()})
+                if self.path.startswith("/api/knowledge/read"):
+                    q = parse_qs(urlsplit(self.path).query)
+                    names = q.get("file") or []
+                    if not names:
+                        return self._send_json(400, {"error": "缺少 file 参数"})
+                    try:
+                        return self._send_json(200, _read_user_knowledge(names[0]))
+                    except ValueError as e:
+                        return self._send_json(400, {"error": str(e)})
+                    except OSError as e:
+                        return self._send_json(404, {"error": str(e)})
             except (OSError, ValueError) as e:
                 return self._send_json(500, {"error": str(e)})
             if self.path == "/":

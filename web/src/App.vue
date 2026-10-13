@@ -6,6 +6,7 @@ import GridBoard from './components/GridBoard.vue'
 import ShareModal from './components/ShareModal.vue'
 import CardManager from './components/CardManager.vue'
 import IssueDetail from './components/IssueDetail.vue'
+import KnowledgePanel from './components/KnowledgePanel.vue'
 import { CARD_META } from './components/cards/index.js'
 
 onMounted(async () => {
@@ -23,12 +24,12 @@ const exportOpen = ref(false)    // 导出下拉菜单
 const exporting = ref(false)     // 板面长图生成中
 const shareState = ref(null)     // null | { level: 'card' | 'issue', block, issue }
 const issueOpen = ref(null)      // 打开详情覆盖层的 issue id;#issue-P1 hash 可直链
+const kbOpen = ref(false)        // 应用内知识库面板(官方库+我的自建)
 // 背景滚动锁(单一来源:任一弹窗开即锁;组件各管会互相覆盖)
-watch([() => !!shareState.value, () => !!issueOpen.value], ([a, b]) => {
-  document.body.style.overflow = (a || b) ? 'hidden' : ''
+watch([() => !!shareState.value, () => !!issueOpen.value, () => kbOpen.value], ([a, b, c]) => {
+  document.body.style.overflow = (a || b || c) ? 'hidden' : ''
 }, { immediate: true })
 const print = () => { exportOpen.value = false; window.print() }
-const openSite = () => window.open('/site/index.html', '_blank')
 
 // 页面级长图 = 所见即所得(用户拍板 2026-10-10:家人版卡片排版显示不好,
 // 页面怎么显示就怎么导出):直接截板面,不走 ShareModal 重排;卡级/问题级
@@ -149,7 +150,7 @@ function exportReport() {
         : '未检测到本地服务;想体验布局编辑,运行 python3 server.py --open'">
         {{ state.serverMode ? '🔌 本地服务 · 编辑即保存' : '📄 文件模式 · 只读' }}
       </span>
-      <button v-if="state.serverMode" class="btn" title="睡眠/营养/情绪/如厕等专题与速查表(本地只读)" @click="openSite">📖 知识库</button>
+      <button v-if="state.serverMode" class="btn" title="官方循证知识 + 我的自建(knowledge/user/,仅本机)" @click="kbOpen = true">📖 知识库</button>
       <button class="btn" :class="{ active: state.editing }" :disabled="!state.serverMode"
               :title="state.editing ? '收起面板并退出拖拽' : '拖拽调布局;底部面板管卡片显隐与添加'"
               @click="toggleEdit">{{ state.editing ? '完成编辑' : '编辑布局' }}</button>
@@ -181,5 +182,7 @@ function exportReport() {
     <IssueDetail :open="!!issueOpen" :kid="currentChild()" :issue-id="issueOpen"
                  @close="issueOpen = null"
                  @share-issue="i => shareState = { level: 'issue', block: null, issue: i }" />
+
+    <KnowledgePanel :open="kbOpen" @close="kbOpen = false" />
   </template>
 </template>

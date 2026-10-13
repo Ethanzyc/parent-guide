@@ -29,6 +29,29 @@ done
 # self-built layer: convention doc exists (ships; content under user/ never does)
 [ -f "$K/user/README.md" ] || { echo "FAIL: knowledge/user/README.md (self-built layer convention) missing"; exit 1; }
 
+# knowledge.json (in-app panel's official-section data) must mirror the closed
+# set above — build-site.py TOPICS is the single source, this catches drift
+# the same way check-growth-ref.sh pins the md table to the curve card
+[ -f "$ROOT/site/knowledge.json" ] || { echo "FAIL: site/knowledge.json missing (run scripts/build-site.sh)"; exit 1; }
+python3 - "$ROOT" << 'EOF'
+import json, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+OFFICIAL = {"milestones.md", "sleep.md", "nutrition.md", "emotion.md", "activities.md",
+            "tantrum-cdc.md", "anticipatory.md", "weaning.md", "toilet.md", "growth.md",
+            "child-mind.md", "eczema.md", "newborn.md", "screen.md", "toys.md", "fears.md", "books.md"}
+REMAP = {"tantrum-cdc": "tantrum"}  # only non-same-name site page
+topics = json.loads((root / "site/knowledge.json").read_text("utf-8"))
+files = {t["file"] for t in topics}
+if files != OFFICIAL:
+    sys.exit(f"FAIL: knowledge.json file set drifted: +{sorted(files - OFFICIAL)} -{sorted(OFFICIAL - files)}")
+slugs = {t["slug"] for t in topics}
+if slugs != {REMAP.get(f[:-3], f[:-3]) for f in OFFICIAL}:
+    sys.exit(f"FAIL: knowledge.json slug set drifted: {sorted(slugs)}")
+for t in topics:
+    if not (t.get("title") and t.get("hook") and t.get("src")):
+        sys.exit(f"FAIL: knowledge.json entry incomplete: {t.get('file')}")
+EOF
+
 M="$K/milestones.md"
 # attribution + public-domain note
 grep -q "CDC" "$M" && grep -q "公有领域" "$M" || { echo "FAIL: CDC attribution/public-domain note missing"; exit 1; }

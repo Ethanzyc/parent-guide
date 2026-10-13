@@ -148,6 +148,41 @@ class ServerTest(unittest.TestCase):
         code, _ = raw("/site/../../data/child.json")  # traversal must not escape
         self.assertNotEqual(code, 200)
 
+    def test_12_knowledge_index_lists_both_layers(self):
+        code, body = call("GET", "/api/knowledge")
+        self.assertEqual(code, 200)
+        self.assertTrue(body["official"], "official topics must be non-empty")
+        for t in body["official"]:
+            self.assertTrue(t["file"].endswith(".md"))
+            self.assertTrue(t["slug"] and t["title"])
+        self.assertNotIn("README.md", [u["file"] for u in body["user"]],
+                         "user/README.md is the convention doc, not self-built content")
+
+    def test_13_knowledge_read_renders_user_doc(self):
+        fixture = ROOT / "knowledge/user/_test-fixture.md"
+        fixture.write_text(
+            "# 测试专题\n"
+            "> 自建:2026-10-13;类型=调研转述;来源=测试来源;核对=转述级\n\n"
+            "## 口径\n\n- 参考 sleep.md §2 的分阶思路\n",
+            encoding="utf-8")
+        self.addCleanup(fixture.unlink)
+        code, body = call("GET", "/api/knowledge/read?file=_test-fixture.md")
+        self.assertEqual(code, 200)
+        self.assertEqual(body["title"], "测试专题")
+        self.assertEqual(body["meta"]["type"], "调研转述")
+        self.assertIn("<h2>", body["html"])
+        # in-app doc keeps its knowledge refs plain; the panel linkifies client-side
+        self.assertIn("sleep.md §2", body["html"])
+
+    def test_14_knowledge_read_rejects_bad_names(self):
+        for path in ("/api/knowledge/read?file=../growth.md",   # traversal
+                     "/api/knowledge/read?file=sub/x.md",       # subdirectory
+                     "/api/knowledge/read?file=README.md",      # convention doc
+                     "/api/knowledge/read?file=nope.md",        # missing
+                     "/api/knowledge/read"):                    # no param
+            code, body = call("GET", path)
+            self.assertIn(code, (400, 404), path)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -170,3 +170,20 @@ body.report .toolbar { display: none; }   /* 单文件报告=纯视图,无编辑
 /* 知识引用链接(渲染层 linkKnowledge 注入)与段落标签(v-html 内容吃不到 scoped) */
 .klink { color: var(--ink-blue); text-decoration: underline; text-underline-offset: 2px; }
 .seg-lab { color: var(--ink); font-weight: 600; }
+
+/* 知识库面板·自建文档正文(server md_to_html 渲染,v-html 同样吃不到 scoped) */
+.kb-doc { font-size: 14px; line-height: 1.75; color: var(--ink); }
+.kb-doc h2 { font-size: 16.5px; color: var(--ink-blue); margin: 18px 0 8px; }
+.kb-doc h3 { font-size: 14.5px; color: var(--ink-blue); margin: 14px 0 6px; }
+.kb-doc p { margin: 8px 0; }
+.kb-doc ul, .kb-doc ol { padding-left: 1.4em; margin: 8px 0; }
+.kb-doc li { margin: 3px 0; }
+.kb-doc .note { border-left: 3px solid var(--grid-line); background: var(--accent-soft);
+  border-radius: 0 8px 8px 0; padding: 8px 12px; margin: 10px 0; font-size: 13.5px; }
+.kb-doc table { border-collapse: collapse; margin: 10px 0; font-size: 13px; width: 100%; }
+.kb-doc th, .kb-doc td { border: 1px solid var(--line); padding: 5px 9px; text-align: left; }
+.kb-doc th { background: var(--accent-soft); color: var(--ink-blue); font-weight: 600; }
+.kb-doc pre { background: #f4f7f9; border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 12px; overflow: auto; font-size: 12.5px; margin: 10px 0; }
+.kb-doc code { background: var(--accent-soft); border-radius: 4px; padding: 1px 5px; }
+.kb-doc hr { border: 0; border-top: 1px dashed var(--line); margin: 14px 0; }

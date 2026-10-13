@@ -52,6 +52,13 @@ def make_server(port, data_dir, web_dir):
         def log_message(self, *args):  # keep console quiet
             pass
 
+        def guess_type(self, path):
+            # .md must display in the browser, not trigger a download
+            # (mimetypes has no mapping for it on most systems).
+            if str(path).endswith(".md"):
+                return "text/plain; charset=utf-8"
+            return super().guess_type(path)
+
         def translate_path(self, path):
             # /site/* serves the repo's knowledge pages (site/) instead of
             # web/dist -- the local entry into the public knowledge base.
@@ -59,6 +66,14 @@ def make_server(port, data_dir, web_dir):
                 rel = path[len("/site"):].lstrip("/")
                 full = os.path.normpath(os.path.join(str(ROOT / "site"), rel))
                 if full == str(ROOT / "site") or full.startswith(str(ROOT / "site") + os.sep):
+                    return full
+            # /knowledge/* serves the raw official knowledge files (read-only),
+            # so page cards can deep-link their source (e.g. growth card ->
+            # knowledge/growth.md).
+            if path.startswith("/knowledge/") or path == "/knowledge":
+                rel = path[len("/knowledge"):].lstrip("/")
+                full = os.path.normpath(os.path.join(str(ROOT / "knowledge"), rel))
+                if full.startswith(str(ROOT / "knowledge") + os.sep):
                     return full
             return super().translate_path(path)
 

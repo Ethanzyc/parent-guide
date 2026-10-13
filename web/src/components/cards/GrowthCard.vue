@@ -3,7 +3,7 @@
 // Data: knowledge/growth.md (human) == lib/growth-ref.js (machine) -- keep in sync.
 // Honest-display rules: no gender -> no band (points only); screening not
 // diagnosis (T2 wording on out-of-band, guide to 儿保, never "abnormal").
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { monthsAge } from '../../lib/util.js'
 import { GROWTH_REF, refAt } from '../../lib/growth-ref.js'
 
@@ -74,6 +74,7 @@ const trendStable = computed(() => genderKey.value && records.value.length >= 2
 // -- SVG chart ---------------------------------------------------------------
 // viewBox 300x102; band + P50 + child's polyline + axes. Left 30 / bottom 14
 // viewBox units are gutters for tick labels so values read without hover.
+const PL = 30, PR = 8, PT = 8, PB = 84  // plot rect inside the viewBox
 function chart(metric) {
   const recs = records.value.filter(r => r[metric] != null)
   if (recs.length < 2) return null
@@ -91,7 +92,6 @@ function chart(metric) {
   }
   const pad = (hi - lo) * 0.08 || 1
   lo -= pad; hi += pad
-  const PL = 30, PR = 8, PT = 8, PB = 84  // plot rect inside the viewBox
   const X = (m) => PL + (m - x0) / (x1 - x0) * (300 - PL - PR)
   const Y = (v) => PB - (v - lo) / (hi - lo) * (PB - PT)
   let bandPath = ''
@@ -140,10 +140,32 @@ function chart(metric) {
   const bandTxt = lastRef
     ? `参考 ${last.months}月:P3 ${lastRef.p3.toFixed(1)} · P50 ${lastRef.p50.toFixed(1)} · P97 ${lastRef.p97.toFixed(1)}`
     : ''
-  return { bandPath, line, p50Line, dots, labels, yTicks, xTicks, bandTxt }
+  return { bandPath, line, p50Line, dots, labels, yTicks, xTicks, bandTxt, x0, x1 }
 }
 const hChart = computed(() => chart('height'))
 const wChart = computed(() => chart('weight'))
+
+// 悬停读数:竖向参考线 + 任意月龄的推荐值(参考带连续插值,不只限记录点),
+// 2 个月龄内有实测则附带实测值;flip=参考线靠右时浮层右对齐防溢出。
+const hoverH = ref(null), hoverW = ref(null)
+function chartHover(metric, state, evt) {
+  const c = state === 'h' ? hChart.value : wChart.value
+  if (!c) return
+  const rect = evt.currentTarget.getBoundingClientRect()
+  const vx = (evt.clientX - rect.left) * 300 / rect.width
+  const month = Math.round(c.x0 + (vx - PL) / (300 - PL - PR) * (c.x1 - c.x0))
+  if (month < c.x0 || month > c.x1) return chartLeave(state)
+  const x = PL + (month - c.x0) / (c.x1 - c.x0) * (300 - PL - PR)
+  const ref = genderKey.value ? refAt(genderKey.value, metric, month) : null
+  let best = null
+  for (const r of records.value.filter(r => r[metric] != null))
+    if (!best || Math.abs(r.months - month) < Math.abs(best.months - month)) best = r
+  const rec = best && Math.abs(best.months - month) <= 2
+    ? { months: best.months, v: best[metric], date: best.date } : null
+  const val = { month, x, ref, rec, flip: x > 205 }
+  if (state === 'h') hoverH.value = val; else hoverW.value = val
+}
+function chartLeave(state) { if (state === 'h') hoverH.value = null; else hoverW.value = null }
 const list = computed(() => records.value.slice(-6).reverse())
 </script>
 
@@ -180,53 +202,66 @@ const list = computed(() => records.value.slice(-6).reverse())
 
     <div v-if="hChart" class="chart">
       <div class="ct">身高 cm<span v-if="genderKey" class="cb">{{ hChart.bandTxt }}</span></div>
-      <svg viewBox="0 0 300 102">
-        <path v-if="hChart.bandPath" :d="hChart.bandPath" class="band" />
-        <polyline v-if="hChart.p50Line" :points="hChart.p50Line" class="p50" />
-        <line v-for="t in hChart.yTicks" :key="'yg'+t.v" :x1="30" :x2="292" :y1="t.y" :y2="t.y" class="gridline" />
-        <polyline :points="hChart.line" class="cline" />
-        <circle v-for="(d, i) in hChart.dots" :key="i" :cx="d.x" :cy="d.y" r="2" :class="d.out ? 'cdot out' : 'cdot'">
-          <title>{{ d.date }} {{ d.v }}</title>
-        </circle>
-        <text v-for="(l, i) in hChart.labels" :key="'hl'+i" :x="l.x" :y="l.y" class="dlabel" text-anchor="middle">{{ l.t }}</text>
-        <line :x1="30" :x2="30" :y1="8" :y2="84" class="axis" />
-        <line :x1="30" :x2="292" :y1="84" :y2="84" class="axis" />
-        <line v-for="t in hChart.xTicks" :key="'xt'+t.m" :x1="t.x" :x2="t.x" :y1="84" :y2="87" class="axis" />
-        <text v-for="t in hChart.yTicks" :key="'yt'+t.v" :x="27" :y="t.y + 2" class="tick" text-anchor="end">{{ t.t }}</text>
-        <text v-for="t in hChart.xTicks" :key="'xl'+t.m" :x="t.x" :y="95" class="tick" text-anchor="middle">{{ t.m }}</text>
-        <text :x="292" :y="95" class="tick" text-anchor="end">月龄</text>
-      </svg>
+      <div class="cwrap">
+        <svg viewBox="0 0 300 102" @mousemove="chartHover('height', 'h', $event)" @mouseleave="chartLeave('h')">
+          <path v-if="hChart.bandPath" :d="hChart.bandPath" class="band" />
+          <polyline v-if="hChart.p50Line" :points="hChart.p50Line" class="p50" />
+          <line v-for="t in hChart.yTicks" :key="'yg'+t.v" :x1="30" :x2="292" :y1="t.y" :y2="t.y" class="gridline" />
+          <polyline :points="hChart.line" class="cline" />
+          <circle v-for="(d, i) in hChart.dots" :key="i" :cx="d.x" :cy="d.y" r="2" :class="d.out ? 'cdot out' : 'cdot'" />
+          <text v-for="(l, i) in hChart.labels" :key="'hl'+i" :x="l.x" :y="l.y" class="dlabel" text-anchor="middle">{{ l.t }}</text>
+          <line v-if="hoverH" :x1="hoverH.x" :x2="hoverH.x" :y1="8" :y2="84" class="hguid" />
+          <line :x1="30" :x2="30" :y1="8" :y2="84" class="axis" />
+          <line :x1="30" :x2="292" :y1="84" :y2="84" class="axis" />
+          <line v-for="t in hChart.xTicks" :key="'xt'+t.m" :x1="t.x" :x2="t.x" :y1="84" :y2="87" class="axis" />
+          <text v-for="t in hChart.yTicks" :key="'yt'+t.v" :x="27" :y="t.y + 2" class="tick" text-anchor="end">{{ t.t }}</text>
+          <text v-for="t in hChart.xTicks" :key="'xl'+t.m" :x="t.x" :y="95" class="tick" text-anchor="middle">{{ t.m }}</text>
+          <text :x="292" :y="95" class="tick" text-anchor="end">月龄</text>
+        </svg>
+        <div v-if="hoverH" class="tip" :class="{ flip: hoverH.flip }" :style="{ left: (hoverH.x / 300 * 100) + '%' }">
+          <b>{{ hoverH.month }} 月龄</b>
+          <span v-if="hoverH.ref">推荐 P3 {{ hoverH.ref.p3.toFixed(1) }} · P50 {{ hoverH.ref.p50.toFixed(1) }} · P97 {{ hoverH.ref.p97.toFixed(1) }}</span>
+          <span v-if="hoverH.rec">实测 {{ hoverH.rec.v }}({{ hoverH.rec.months }}月 {{ hoverH.rec.date }})</span>
+        </div>
+      </div>
     </div>
     <div v-if="wChart" class="chart">
       <div class="ct">体重 kg<span v-if="genderKey" class="cb">{{ wChart.bandTxt }}</span></div>
-      <svg viewBox="0 0 300 102">
-        <path v-if="wChart.bandPath" :d="wChart.bandPath" class="band" />
-        <polyline v-if="wChart.p50Line" :points="wChart.p50Line" class="p50" />
-        <line v-for="t in wChart.yTicks" :key="'yg'+t.v" :x1="30" :x2="292" :y1="t.y" :y2="t.y" class="gridline" />
-        <polyline :points="wChart.line" class="cline" />
-        <circle v-for="(d, i) in wChart.dots" :key="i" :cx="d.x" :cy="d.y" r="2" :class="d.out ? 'cdot out' : 'cdot'">
-          <title>{{ d.date }} {{ d.v }}</title>
-        </circle>
-        <text v-for="(l, i) in wChart.labels" :key="'wl'+i" :x="l.x" :y="l.y" class="dlabel" text-anchor="middle">{{ l.t }}</text>
-        <line :x1="30" :x2="30" :y1="8" :y2="84" class="axis" />
-        <line :x1="30" :x2="292" :y1="84" :y2="84" class="axis" />
-        <line v-for="t in wChart.xTicks" :key="'xt'+t.m" :x1="t.x" :x2="t.x" :y1="84" :y2="87" class="axis" />
-        <text v-for="t in wChart.yTicks" :key="'yt'+t.v" :x="27" :y="t.y + 2" class="tick" text-anchor="end">{{ t.t }}</text>
-        <text v-for="t in wChart.xTicks" :key="'xl'+t.m" :x="t.x" :y="95" class="tick" text-anchor="middle">{{ t.m }}</text>
-        <text :x="292" :y="95" class="tick" text-anchor="end">月龄</text>
-      </svg>
+      <div class="cwrap">
+        <svg viewBox="0 0 300 102" @mousemove="chartHover('weight', 'w', $event)" @mouseleave="chartLeave('w')">
+          <path v-if="wChart.bandPath" :d="wChart.bandPath" class="band" />
+          <polyline v-if="wChart.p50Line" :points="wChart.p50Line" class="p50" />
+          <line v-for="t in wChart.yTicks" :key="'yg'+t.v" :x1="30" :x2="292" :y1="t.y" :y2="t.y" class="gridline" />
+          <polyline :points="wChart.line" class="cline" />
+          <circle v-for="(d, i) in wChart.dots" :key="i" :cx="d.x" :cy="d.y" r="2" :class="d.out ? 'cdot out' : 'cdot'" />
+          <text v-for="(l, i) in wChart.labels" :key="'wl'+i" :x="l.x" :y="l.y" class="dlabel" text-anchor="middle">{{ l.t }}</text>
+          <line v-if="hoverW" :x1="hoverW.x" :x2="hoverW.x" :y1="8" :y2="84" class="hguid" />
+          <line :x1="30" :x2="30" :y1="8" :y2="84" class="axis" />
+          <line :x1="30" :x2="292" :y1="84" :y2="84" class="axis" />
+          <line v-for="t in wChart.xTicks" :key="'xt'+t.m" :x1="t.x" :x2="t.x" :y1="84" :y2="87" class="axis" />
+          <text v-for="t in wChart.yTicks" :key="'yt'+t.v" :x="27" :y="t.y + 2" class="tick" text-anchor="end">{{ t.t }}</text>
+          <text v-for="t in wChart.xTicks" :key="'xl'+t.m" :x="t.x" :y="95" class="tick" text-anchor="middle">{{ t.m }}</text>
+          <text :x="292" :y="95" class="tick" text-anchor="end">月龄</text>
+        </svg>
+        <div v-if="hoverW" class="tip" :class="{ flip: hoverW.flip }" :style="{ left: (hoverW.x / 300 * 100) + '%' }">
+          <b>{{ hoverW.month }} 月龄</b>
+          <span v-if="hoverW.ref">推荐 P3 {{ hoverW.ref.p3.toFixed(1) }} · P50 {{ hoverW.ref.p50.toFixed(1) }} · P97 {{ hoverW.ref.p97.toFixed(1) }}</span>
+          <span v-if="hoverW.rec">实测 {{ hoverW.rec.v }}({{ hoverW.rec.months }}月 {{ hoverW.rec.date }})</span>
+        </div>
+      </div>
     </div>
     <div v-if="!genderKey" class="src">档案未填性别,暂无参考区间对照——回对话补一下性别即可。</div>
 
     <div class="rlist">
-      <div class="rrow rhead"><span>日期</span><span class="rm">月龄</span><span class="rv">身高</span><span class="rv">体重</span></div>
+      <div class="rrow rhead"><span class="rd">日期</span><span class="rm">月龄</span><span class="rv">身高cm</span><span class="rv">体重kg</span></div>
       <div v-for="r in list" :key="r.date" class="rrow">
-        <span class="rd">{{ r.date }}</span><span class="rm">{{ r.months }}月</span>
-        <span class="rv">{{ r.height ? r.height + 'cm' : '—' }}</span>
-        <span class="rv">{{ r.weight ? r.weight + 'kg' : '—' }}</span>
+        <span class="rd">{{ r.date }}</span>
+        <span class="rm">{{ r.months }}月</span>
+        <span class="rv">{{ r.height ?? '—' }}</span>
+        <span class="rv">{{ r.weight ?? '—' }}</span>
       </div>
     </div>
-    <div class="src">区间:WS/T 423—2022(写入 knowledge/growth.md) · 筛查参照非诊断,出区间或跨百分位线建议儿保<template v-if="records.length < 2">;再记一笔(下月儿保/在家量)即长出曲线与参考带</template></div>
+    <div class="src">区间:WS/T 423—2022(<a class="klink" href="knowledge/growth.md" target="_blank">knowledge/growth.md</a>) · 筛查参照非诊断,出区间或跨百分位线建议儿保<template v-if="records.length < 2">;再记一笔(下月儿保/在家量)即长出曲线与参考带</template></div>
   </template>
   <div v-else class="src">还没有生长记录——儿保体检本的身高体重抄回来:对话里说「记一下身高体重」,曲线和参考区间就亮了。</div>
   </div>
@@ -264,11 +299,23 @@ svg { width: 100%; height: auto; display: block; }
 .tick { font-size: 6px; fill: var(--sub); }
 .dlabel { font-size: 6px; font-weight: 600; fill: var(--ink-blue); }
 .rlist { margin-top: 4px; }
-.rrow { display: grid; grid-template-columns: 7em 3.2em 4.6em 5em; gap: 0 6px;
-  font-size: 12.5px; padding: 3px 0;
-  border-bottom: 1px dashed var(--line); font-variant-numeric: tabular-nums; }
-.rrow:last-child { border-bottom: none; }
-.rhead { color: var(--sub); font-size: 11px; border-bottom: 1px solid var(--line); }
+.rrow { display: grid; grid-template-columns: 1fr 3.4em 3.8em 3.8em; gap: 0 14px;
+  align-items: baseline; font-size: 12.5px; padding: 4px 8px;
+  font-variant-numeric: tabular-nums; border-radius: 6px; }
+.rrow:not(.rhead):hover { background: var(--accent-soft); }
+.rhead { color: var(--sub); font-size: 11px; padding-bottom: 3px;
+  border-bottom: 1px solid var(--line); }
 .rd { color: var(--sub); }
 .rm, .rv { text-align: right; }
+.cwrap { position: relative; }
+.hguid { stroke: var(--accent); stroke-width: .75; stroke-dasharray: 2 2; opacity: .7; }
+.tip { position: absolute; top: 4px; transform: translateX(-50%); background: #fff;
+  border: 1px solid var(--line); border-radius: 8px; padding: 4px 9px;
+  font-size: 11px; line-height: 1.55; pointer-events: none; white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(90,130,180,.18); z-index: 2;
+  display: flex; flex-direction: column; }
+.tip.flip { transform: translateX(-100%); }
+.tip b { font-size: 12px; color: var(--ink-blue); }
+.tip span { color: var(--sub); }
+.klink { color: var(--ink-blue); text-decoration: underline; text-underline-offset: 2px; }
 </style>

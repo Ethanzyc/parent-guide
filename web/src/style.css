@@ -166,3 +166,7 @@ body.report .toolbar { display: none; }   /* 单文件报告=纯视图,无编辑
   .grid-stack-item, .card { break-inside: avoid; }
 }
 @page { size: A4 landscape; margin: 8mm; }
+
+/* 知识引用链接(渲染层 linkKnowledge 注入)与段落标签(v-html 内容吃不到 scoped) */
+.klink { color: var(--ink-blue); text-decoration: underline; text-underline-offset: 2px; }
+.seg-lab { color: var(--ink); font-weight: 600; }

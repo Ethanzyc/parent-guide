@@ -94,3 +94,26 @@ export function segLabel(seg) {
   const m = zhPunct(seg).match(/^([^：]{1,8})：/)
   return m ? m[1] + '：' : ''
 }
+
+// ── 知识引用自动链接 ─────────────────────────────────────────────
+// 官方库 17 文件 → 知识子站同名页(tantrum-cdc→tantrum 是唯一非同名映射);
+// 白名单与 tests/check-knowledge.sh 的清单同步维护,未知 .md 保持纯文本
+// (fail-soft:自建层 knowledge/user/ 或笔误不产生死链)。
+const KB_PAGES = new Set(['milestones', 'sleep', 'nutrition', 'emotion', 'activities',
+  'anticipatory', 'weaning', 'toilet', 'growth', 'child-mind', 'eczema', 'newborn',
+  'screen', 'toys', 'fears', 'books'])
+const KB_REMAP = { 'tantrum-cdc': 'tantrum' }
+export function escHtml(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+// 渲染层统一转链:后续数据文本里新增的知识引用(含 §节号)零改动自动生效。
+export function linkKnowledge(text) {
+  return escHtml(text).replace(/([a-z-]+\.md)( ?§\d+)?/g, (m, file, sec) => {
+    const base = file.slice(0, -3)
+    const page = KB_REMAP[base] || (KB_PAGES.has(base) ? base : null)
+    return page
+      ? `<a class="klink" href="site/${page}.html" target="_blank" rel="noopener">${file}${sec || ''}</a>`
+      : m
+  })
+}

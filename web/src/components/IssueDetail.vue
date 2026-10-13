@@ -3,7 +3,7 @@
 // 最新在最上;窄屏折叠单列)。大节点只认机械事件(opened/judged/strategy.started)
 // ——语义归一留读侧(spec issue-tracking-v1 §6.3)。只读:内容变更一律回对话。
 import { computed, ref } from 'vue'
-import { daysSince, dueKey, dueLabel, zhPunct, bodyParas, segLabel, fullDate } from '../lib/util.js'
+import { daysSince, dueKey, dueLabel, zhPunct, bodyParas, segLabel, fullDate, linkKnowledge, escHtml } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
@@ -11,6 +11,14 @@ const props = defineProps({
   issueId: { type: String, default: null },
 })
 const emit = defineEmits(['close', 'share-issue'])
+
+// 正文知识引用自动转链(与 NotesCard 同一 util);v-html 吃不到 scoped
+// 样式,seg-lab/.klink 在全局 style.css。
+const bodyHtml = (seg) => {
+  const lab = segLabel(seg)
+  return (lab ? `<b class="seg-lab">${escHtml(lab)}</b>` : '')
+    + linkKnowledge(lab ? seg.slice(lab.length) : seg)
+}
 
 // 时间轴渐进披露(NN Group/EHR collapsed-note 模式):标题行扫读+原文展开。
 // title 是 note 的可选字段(add-note --title / set-note-title),原文不动。
@@ -161,8 +169,7 @@ const briefSections = computed(() => {
                     <div v-if="!e.title || isOpen(i)" class="ev-body"
                          :class="{ clamp: !e.title && !isOpen(i) }">
                       <p v-for="(seg, j) in bodyParas(e.text).slice(0, !e.title && !isOpen(i) ? 1 : 99)"
-                         :key="j">
-                        <b v-if="segLabel(seg)" class="seg-lab">{{ segLabel(seg) }}</b>{{ segLabel(seg) ? seg.slice(segLabel(seg).length) : seg }}
+                         :key="j" v-html="bodyHtml(seg)">
                       </p>
                     </div>
                     <button v-if="e.title || e.text.length > 42" class="ev-toggle"
@@ -261,7 +268,6 @@ h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
 .ev-body p:last-child { margin-bottom: 0; }
 .ev-body p::before { content: '•'; position: absolute; left: 1px;
   color: var(--ink-blue); font-size: 11px; line-height: 1.9; }
-.seg-lab { color: var(--ink); font-weight: 600; }
 .tl-item.big { padding: 6px 0 10px; }
 .tl-item.big::before { left: -21px; top: 6px; width: 12px; height: 12px;
   background: #fff; border: 3px solid var(--ink-blue); box-shadow: 0 0 0 2px var(--accent-soft); }

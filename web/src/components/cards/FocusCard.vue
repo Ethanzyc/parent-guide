@@ -5,10 +5,18 @@
 // 日期徽章+主题词粗体+细节分段圆点,行点击开病历);在跑计数入卡头副行,
 // 原 rollup「下一节点」由在途区第一行取代。点击行=开对应病历(有挂靠时)。
 import { computed } from 'vue'
-import { bodyParas, dueKey, dueLabel, fullDate, segLabel } from '../../lib/util.js'
+import { bodyParas, dueKey, dueLabel, fullDate, segLabel, linkKnowledge, escHtml } from '../../lib/util.js'
 
 const props = defineProps({ block: Object, kid: Object })
 const emit = defineEmits(['open-issue'])
+
+// 回访细节正文知识引用自动转链(与 NotesCard/IssueDetail 同一 util);
+// v-html 吃不到 scoped 样式,seg-lab/.klink 在全局 style.css。
+const bodyHtml = (seg) => {
+  const lab = segLabel(seg)
+  return (lab ? `<b class="seg-lab">${escHtml(lab)}</b>` : '')
+    + linkKnowledge(lab ? seg.slice(lab.length) : seg)
+}
 
 // 就医待办(常驻,优先级最高):在管问题里所有 pendingCare
 const careRows = computed(() =>
@@ -91,8 +99,7 @@ const openRow = (row) => { const i = issueOf(row); if (i) emit('open-issue', i.i
         <div class="topic">
           <b>{{ splitTopic(f.topic).lead }}</b>
           <div v-if="splitTopic(f.topic).rest" class="ev-body">
-            <p v-for="(seg, j) in restParas(splitTopic(f.topic).rest)" :key="j">
-              <b v-if="segLabel(seg)" class="seg-lab">{{ segLabel(seg) }}</b>{{ segLabel(seg) ? seg.slice(segLabel(seg).length) : seg }}
+            <p v-for="(seg, j) in restParas(splitTopic(f.topic).rest)" :key="j" v-html="bodyHtml(seg)">
             </p>
           </div>
         </div>
@@ -136,6 +143,5 @@ const openRow = (row) => { const i = issueOf(row); if (i) emit('open-issue', i.i
 .ev-body p:last-child { margin-bottom: 0; }
 .ev-body p::before { content: '•'; position: absolute; left: 1px;
   color: var(--ink-blue); font-size: 11px; line-height: 1.9; }
-.seg-lab { color: var(--ink); font-weight: 600; }
 .src { font-size: 11px; color: var(--sub); margin-top: 10px; }
 </style>

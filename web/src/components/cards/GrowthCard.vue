@@ -323,5 +323,4 @@ svg { width: 100%; height: auto; display: block; }
 .tip.flip { transform: translateX(-100%); }
 .tip b { font-size: 12px; color: var(--ink-blue); }
 .tip span { color: var(--sub); }
-.klink { color: var(--ink-blue); text-decoration: underline; text-underline-offset: 2px; }
 </style>

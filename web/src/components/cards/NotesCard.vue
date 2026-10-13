@@ -3,8 +3,15 @@
 // 条目排版=IssueDetail 时间轴同款(那次打磨的成果):标题行渐进披露+
 // 正文分号切段圆点+段首 ≤8 字标签加粗+标点全角归一——读侧机械转换,原文不动。
 import { computed, ref } from 'vue'
-import { bodyParas, fullDate, segLabel, zhPunct } from '../../lib/util.js'
+import { bodyParas, fullDate, segLabel, zhPunct, linkKnowledge, escHtml } from '../../lib/util.js'
 const props = defineProps({ block: Object, kid: Object })
+// 正文经 linkKnowledge 转链(知识引用自动可跳);v-html 内容吃不到 scoped
+// 样式,seg-lab/.klink 走全局 style.css。
+const bodyHtml = (seg) => {
+  const lab = segLabel(seg)
+  return (lab ? `<b class="seg-lab">${escHtml(lab)}</b>` : '')
+    + linkKnowledge(lab ? seg.slice(lab.length) : seg)
+}
 const list = computed(() =>
   (props.kid?.notes || []).slice(-(props.block?.props?.limit || 5)).reverse())
 const dispDate = (n) => (n.precision && n.precision !== 'day' ? '≈' : '') + fullDate(n.date)
@@ -34,8 +41,7 @@ function toggle(i) {
             <div v-if="!n.title || isOpen(i)" class="ev-body"
                  :class="{ clamp: !n.title && !isOpen(i) }">
               <p v-for="(seg, j) in bodyParas(n.text).slice(0, !n.title && !isOpen(i) ? 1 : 99)"
-                 :key="j">
-                <b v-if="segLabel(seg)" class="seg-lab">{{ segLabel(seg) }}</b>{{ segLabel(seg) ? seg.slice(segLabel(seg).length) : seg }}
+                 :key="j" v-html="bodyHtml(seg)">
               </p>
             </div>
             <button v-if="n.title || (n.text || '').length > 42" class="ev-toggle"
@@ -66,5 +72,4 @@ function toggle(i) {
 .ev-body p:last-child { margin-bottom: 0; }
 .ev-body p::before { content: '•'; position: absolute; left: 1px;
   color: var(--ink-blue); font-size: 11px; line-height: 1.9; }
-.seg-lab { color: var(--ink); font-weight: 600; }
 </style>

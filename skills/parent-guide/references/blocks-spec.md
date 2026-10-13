@@ -55,16 +55,15 @@
 | type | 名称 | props | 建议宽度 |
 |---|---|---|---|
 | `profile` | 孩子档案 | 无 | w 3-4 |
-| `focus` | 今日行动(就医待办+≤48h 到期回访+在跑计划/下一节点汇总;2026-10-11 由「当前重点」重定位——关注 chips 归档案卡,问题明细归问题卡) | 无 | w 4-6 |
+| `focus` | 今日与回访(就医待办+≤48h 到期回访[过期未做也算]+「接下来的回访」区=窗口外全量+在跑计数入卡头副行;2026-10-13 合并待回访卡,原「下一节点」汇总由在途区首行取代) | 无 | w 4-6 |
 | `issue` | 问题追踪(三色计数+问题行,点击开详情覆盖层) | `status`(`active\|watching\|resolved\|all`,默认空=在管 active+watching) | w 6-12 |
 | `milestone` | 里程碑(CDC 检查表) | `months`(number,默认月龄就近档) | w 4-6 |
-| `growth` | 生长曲线(身高体重对照 P3-P97) | 无(数据 child.growth.records,`add-growth` 落档) | w 6-12 |
-| `followup` | 待回访清单 | 无 | w 4-6 |
+| `growth` | 生长曲线(身高体重对照 P3-P97,含趋势滑档检测) | 无(数据 child.growth.records,`add-growth` 落档) | w 6-12 |
 | `reminder` | 前瞻提醒(pending 按 due 排序;跨年节点存 YYYY-MM-DD,徽章显示完整日期+相对天数) | 无 | w 4-6 |
 | `anticipatory` | 前瞻节点(节点表全量时间线:进行中/接下来/已过——疫苗/儿保/口腔/视力/发育盘点/流感季/入园准备,由出生日期+日历机械推导,与 knowledge/anticipatory.md 同源;与 `reminder` 互补:那边=认领制提醒,这边=不依赖认领) | 无 | w 4-6 |
 | `note` | 成长速记(最新在最上,详情时间轴同款排版) | `limit`(number,默认 5) | w 3-4 或整行 |
 
-> 2026-10-10 产品级退役:`strategy-effect`(策略数据仍在 child.json,由问题详情层「方案」节点/待回访/当前重点聚合呈现,不再有独立卡)、`timeline`(与速记同源重复)、`sleep-week`(睡眠不单独记,无数据生产者)。老 page.json 残留 block 由渲染器加载时静默剔除。
+> 2026-10-10 产品级退役:`strategy-effect`(策略数据仍在 child.json,由问题详情层「方案」节点/待回访/当前重点聚合呈现,不再有独立卡)、`timeline`(与速记同源重复)、`sleep-week`(睡眠不单独记,无数据生产者)。**2026-10-13 增:`followup`(与「今日与回访」卡重合,全量回访并入 focus 卡「接下来的回访」区)。**老 page.json 残留 block 由渲染器加载时静默剔除。
 
 ### 自定义卡(内容自含在 props,不碰 child.json)
 

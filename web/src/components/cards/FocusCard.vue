@@ -1,11 +1,11 @@
 <script setup>
-// 今日行动卡(2026-10-11 focus 卡重定位,用户八案拍板#2):主页缺的不是
-// 「当前关注」(档案卡 chips 已有)而是「今天该管什么」——就医待办+≤48h
-// 到期回访+在跑计数,全部机械可算(pendingCare / followups.due / strategies),
-// 不造语义;点击行=开对应病历(有 issues 挂靠时)。无行动日显示最近节点,
-// 空态也是信息。
+// 今日与回访卡(2026-10-13 用户拍板合并:待回访卡退役,全量回访并入本卡):
+// 「今天」区=就医待办+≤48h 窗口回访(过期未做也算,-7..+2 天,全机械可算);
+// 「接下来的回访」区=窗口外全部 pending 回访(原 FollowupCard 排版平移:
+// 日期徽章+主题词粗体+细节分段圆点,行点击开病历);在跑计数入卡头副行,
+// 原 rollup「下一节点」由在途区第一行取代。点击行=开对应病历(有挂靠时)。
 import { computed } from 'vue'
-import { daysSince, dueKey, dueLabel, fullDate } from '../../lib/util.js'
+import { bodyParas, dueKey, dueLabel, fullDate, segLabel } from '../../lib/util.js'
 
 const props = defineProps({ block: Object, kid: Object })
 const emit = defineEmits(['open-issue'])
@@ -16,13 +16,13 @@ const careRows = computed(() =>
     .filter(i => i.status !== 'resolved' && i.pendingCare)
     .map(i => ({ issue: i, text: i.pendingCare })))
 
-// ≤48h 窗口内的回访(过期未做也算今天的事):due 距今天 -7..+2 天
 function dueDiff(due) {
   const d = new Date(fullDate(due))
   if (isNaN(d)) return null
   const today = new Date(); today.setHours(0, 0, 0, 0)
   return Math.round((d - today) / 86400000)
 }
+// ≤48h 窗口内的回访(过期未做也算今天的事):due 距今天 -7..+2 天
 const dueRows = computed(() =>
   (props.kid?.followups || [])
     .filter(f => (f.status || 'pending') === 'pending')
@@ -30,20 +30,27 @@ const dueRows = computed(() =>
     .filter(f => f.diff !== null && f.diff <= 2 && f.diff >= -7)
     .sort((a, b) => a.diff - b.diff))
 
-// 汇总行:在跑计划 + 48h 外最近的一个节点(回访/前瞻提醒)
+// 窗口外的在途回访(原待回访卡全量余量),按 due 升序
+const upcoming = computed(() =>
+  (props.kid?.followups || [])
+    .filter(f => (f.status || 'pending') === 'pending')
+    .map(f => ({ ...f, diff: dueDiff(f.due) }))
+    .filter(f => f.diff !== null && f.diff > 2)
+    .sort((a, b) => a.diff - b.diff))
+
 const running = computed(() =>
   (props.kid?.strategies || []).filter(s => ['active', 'effective', 'partial'].includes(s?.status)))
-const nearestLater = computed(() => {
-  const fus = (props.kid?.followups || [])
-    .filter(f => (f.status || 'pending') === 'pending')
-    .map(f => ({ due: f.due, topic: f.topic, diff: dueDiff(f.due) }))
-    .filter(f => f.diff !== null && f.diff > 2)
-  const rems = (props.kid?.reminders || [])
-    .filter(r => (r.status || 'pending') === 'pending')
-    .map(r => ({ due: r.due, topic: r.topic, diff: dueDiff(r.due) }))
-    .filter(r => r.diff !== null)
-  return [...fus, ...rems].sort((a, b) => a.diff - b.diff)[0] || null
-})
+
+// 「主题:细节」拆两级(冒号前是家长扫读用的主题词);细节段=时间轴同款圆点
+function splitTopic(t) {
+  const m = String(t || '').split(/[:：]/)
+  return m.length > 1 ? { lead: m[0], rest: m.slice(1).join(':').trim() } : { lead: t, rest: '' }
+}
+const restParas = (t) => bodyParas(t)
+const dueBadge = (f) => {
+  const { label, urgency } = dueLabel(f.due)
+  return { text: label || fullDate(f.due), cls: urgency || 'plain' }
+}
 const issueOf = (row) =>
   (row.issues || []).length
     ? (props.kid?.issues || []).find(i => i.id === row.issues[0] && i.status !== 'resolved') : null
@@ -51,11 +58,14 @@ const openRow = (row) => { const i = issueOf(row); if (i) emit('open-issue', i.i
 </script>
 
 <template>
-  <div class="cband"><h3>今天该管什么</h3></div>
+  <div class="cband">
+    <h3>今日与回访</h3>
+    <div v-if="running.length" class="cbsub"><span>在跑 {{ running.length }} 个计划</span></div>
+  </div>
   <div class="cbody">
     <template v-if="careRows.length || dueRows.length">
-      <div v-for="r in careRows" :key="r.issue.id" class="act care"
-           :class="{ lnk: true }" :title="`点击查看${r.issue.name}病历`"
+      <div v-for="r in careRows" :key="r.issue.id" class="act care lnk"
+           :title="`点击查看${r.issue.name}病历`"
            @click="emit('open-issue', r.issue.id)">
         <span class="alab">就医待办</span>
         <span class="atxt">{{ r.text }}</span>
@@ -71,13 +81,25 @@ const openRow = (row) => { const i = issueOf(row); if (i) emit('open-issue', i.i
     </template>
     <div v-else class="calm">今天没有到期事项 ✓</div>
 
-    <div class="rollup">
-      <template v-if="running.length">在跑 {{ running.length }} 个计划({{ running.map(s => s.id).slice(0, 3).join('/') }}{{ running.length > 3 ? '…' : '' }})</template>
-      <template v-if="nearestLater">
-        <template v-if="running.length"> · </template>
-        下一个节点 {{ nearestLater.diff <= 30 ? dueLabel(nearestLater.due).label : fullDate(nearestLater.due) }}
-      </template>
-      <template v-if="!running.length && !nearestLater">回对话说「记一下…」立追踪后,这里汇总今天该管的事</template>
+    <template v-if="upcoming.length">
+      <div class="glabel">接下来的回访</div>
+      <div v-for="f in upcoming" :key="f.due + f.topic" class="frow"
+           :class="{ lnk: issueOf(f) }" :title="issueOf(f) ? '点击查看病历' : ''"
+           @click="openRow(f)">
+        <span class="due-b" :class="dueBadge(f).cls">{{ dueBadge(f).text }}</span>
+        <span class="dorig">{{ fullDate(f.due) }}</span>
+        <div class="topic">
+          <b>{{ splitTopic(f.topic).lead }}</b>
+          <div v-if="splitTopic(f.topic).rest" class="ev-body">
+            <p v-for="(seg, j) in restParas(splitTopic(f.topic).rest)" :key="j">
+              <b v-if="segLabel(seg)" class="seg-lab">{{ segLabel(seg) }}</b>{{ segLabel(seg) ? seg.slice(segLabel(seg).length) : seg }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </template>
+    <div v-if="!careRows.length && !dueRows.length && !upcoming.length" class="src">
+      回访会随计划自动排期——聊到想改的习惯时说「帮我记一下」,到期这里见。
     </div>
   </div>
 </template>
@@ -98,6 +120,22 @@ const openRow = (row) => { const i = issueOf(row); if (i) emit('open-issue', i.i
 .act .adr { margin-left: auto; flex: none; font-size: 11px; color: var(--sub);
   font-family: Georgia, serif; font-variant-numeric: tabular-nums; }
 .calm { font-size: 13px; color: var(--ok); padding: 6px 2px; }
-.rollup { font-size: 12px; color: var(--sub); padding: 8px 2px 0;
-  border-top: 1px dashed var(--line); margin-top: 2px; }
+.glabel { font-size: 11.5px; color: var(--sub); letter-spacing: .08em; margin: 10px 0 4px;
+  padding-top: 8px; border-top: 1px dashed var(--grid-line); }
+.frow { display: flex; gap: 10px; align-items: flex-start; padding: 6px 2px;
+  border-bottom: 1px dashed var(--grid-line); font-size: 13.5px; }
+.frow:last-child { border-bottom: none; }
+.frow.lnk { cursor: pointer; }
+.frow.lnk:hover { background: var(--accent-soft); }
+.frow .dorig { flex: none; font-size: 11.5px; color: var(--sub);
+  font-variant-numeric: tabular-nums; margin-top: 2px; }
+.frow .topic { flex: 1; min-width: 0; }
+.frow .topic b { font-weight: 600; }
+.ev-body { font-size: 12.5px; color: var(--sub); margin-top: 2px; line-height: 1.55; }
+.ev-body p { margin: 0 0 4px; padding-left: 13px; position: relative; }
+.ev-body p:last-child { margin-bottom: 0; }
+.ev-body p::before { content: '•'; position: absolute; left: 1px;
+  color: var(--ink-blue); font-size: 11px; line-height: 1.9; }
+.seg-lab { color: var(--ink); font-weight: 600; }
+.src { font-size: 11px; color: var(--sub); margin-top: 10px; }
 </style>

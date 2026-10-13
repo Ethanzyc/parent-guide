@@ -29,7 +29,8 @@ function stripBootstrapped(obj) {
 
 // 2026-10-10 产品级退役卡型:老 page.json 里残留的 block 加载时静默剔除
 // (不渲染错误占位卡);服务模式在 init 尾部写回一次,完成存量清理。
-const RETIRED_TYPES = ['strategy-effect', 'timeline', 'sleep-week']
+// 2026-10-13 增:followup(与「今日与回访」卡重合,全量回访并入 focus 卡双区)。
+const RETIRED_TYPES = ['strategy-effect', 'timeline', 'sleep-week', 'followup']
 let retiredStripped = false
 function stripRetired(page) {
   if (!page || !Array.isArray(page.blocks)

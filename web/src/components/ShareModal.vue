@@ -29,8 +29,8 @@ const nodeEl = ref(null)
 const MS = { ok: '已会', watch: '观察中', todo: '还没会' }
 const TITLES = { 'profile': '孩子档案', 'milestone': '里程碑',
   'anticipatory': '前瞻节点',
-  'followup': '待回访', 'note': '成长速记',
-  'focus': '今日行动', 'reminder': '前瞻提醒',
+  'note': '成长速记',
+  'focus': '今日与回访', 'reminder': '前瞻提醒',
   'issue': '问题追踪', 'growth': '生长记录',
   'text': '便签', 'list': '清单' }
 
@@ -101,13 +101,6 @@ function rowsFor(b) {
         stRaw: i.status, domain: i.domain, text: i.text }))
     return { m, source: data?.source, rows }
   }
-  if (t === 'followup') {
-    const rows = (kid.followups || [])
-      .filter(f => (f.status || 'pending') === 'pending')
-      .sort((a, c) => dueKey(a.due).localeCompare(dueKey(c.due)))
-      .map(f => ({ kind: 'followup', label: `${f.due} ${f.topic}`.slice(0, 14), due: f.due, topic: f.topic }))
-    return { rows }
-  }
   if (t === 'note') {
     // 与 NotesCard 同源同序(最新在前):页面看到什么,长图就发什么
     const rows = (kid.notes || []).slice(-(b?.props?.limit || 5)).reverse()
@@ -117,7 +110,8 @@ function rowsFor(b) {
   }
   if (t === 'profile') return { rows: [{ kind: 'profile', label: '档案' }] }
   if (t === 'focus') {
-    // 今日行动:就医待办+≤48h 到期回访(与 FocusCard 同一机械口径)
+    // 今日与回访:就医待办+窗口回访(-7..+2 天)+在途回访全量(与卡同口径,
+    // 2026-10-13 合并待回访卡;kind 'followup' 行渲染器沿用)
     const rows = []
     for (const i of (kid.issues || []))
       if (i.status !== 'resolved' && i.pendingCare)
@@ -128,10 +122,17 @@ function rowsFor(b) {
       const today = new Date(); today.setHours(0, 0, 0, 0)
       return Math.round((d - today) / 86400000)
     }
-    for (const f of (kid.followups || [])) {
-      if ((f.status || 'pending') !== 'pending') continue
+    const pend = (kid.followups || [])
+      .filter(f => (f.status || 'pending') === 'pending')
+      .sort((a, c) => dueKey(a.due).localeCompare(dueKey(c.due)))
+    for (const f of pend) {
       const diff = dDiff(f.due)
       if (diff !== null && diff <= 2 && diff >= -7)
+        rows.push({ kind: 'followup', label: f.due, due: f.due, topic: f.topic })
+    }
+    for (const f of pend) {
+      const diff = dDiff(f.due)
+      if (diff !== null && diff > 2)
         rows.push({ kind: 'followup', label: f.due, due: f.due, topic: f.topic })
     }
     return { rows }

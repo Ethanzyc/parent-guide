@@ -66,7 +66,7 @@
 | 其他 47+ 宿主(OpenClaw / Gemini CLI / …) | 见 agentskills.io | 兼容为目标,非验证重点 |
 
 ```bash
-git clone https://github.com/Ethanzyc/parent-guide.git && cd parent-guide
+git clone https://github.com/parent-guide-lab/parent-guide.git && cd parent-guide
 
 # 1) 装 skill(以 zcode 为例,其他宿主见上表)
 cp -R skills/parent-guide ~/.zcode/skills/

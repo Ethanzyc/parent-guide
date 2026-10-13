@@ -12,6 +12,7 @@ import NotesCard from './NotesCard.vue'
 import FocusCard from './FocusCard.vue'
 import IssueCard from './IssueCard.vue'
 import ReminderCard from './ReminderCard.vue'
+import AnticipatoryCard from './AnticipatoryCard.vue'
 import TextCard from './TextCard.vue'
 import ListCard from './ListCard.vue'
 import ErrorCard from '../ErrorCard.vue'
@@ -25,6 +26,7 @@ export const REGISTRY = {
   'focus': FocusCard,
   'issue': IssueCard,
   'reminder': ReminderCard,
+  'anticipatory': AnticipatoryCard,
   'text': TextCard,
   'list': ListCard,
 }
@@ -41,6 +43,7 @@ export const CARD_META = {
   'growth':         { group: 'builtin', name: '生长曲线',   desc: '身高体重记录对照参考区间', w: 6, h: 6 },
   'followup':       { group: 'builtin', name: '待回访',     desc: '到期要看效果的事', w: 4, h: 4 },
   'reminder':       { group: 'builtin', name: '前瞻提醒',   desc: '疫苗/报名/季节节点', w: 4, h: 3 },
+  'anticipatory':   { group: 'builtin', name: '前瞻节点',   desc: '疫苗/体检/筛查/入园月龄时间线(进行中/接下来/已过)', w: 6, h: 5 },
   'note':           { group: 'builtin', name: '成长速记',   desc: '最近的事件笔记', w: 6, h: 5 },
   'text':           { group: 'custom', name: '文本卡',     desc: '标题+自由文本(奶奶须知/黑名单)', w: 4, h: 4 },
   'list':           { group: 'custom', name: '清单卡',     desc: '可勾选清单(出门清单/待办)', w: 4, h: 5 },

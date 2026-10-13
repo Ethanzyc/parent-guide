@@ -8,6 +8,7 @@
 import { ref, computed, watch } from 'vue'
 import { domToPng } from 'modern-screenshot'
 import { monthsAge, nearestMilestone, daysSince, dueKey, zhPunct, fullDate } from '../lib/util.js'
+import { anticipatoryNodes } from '../lib/anticipatory-ref.js'
 
 const props = defineProps({
   open: Boolean,
@@ -27,6 +28,7 @@ const nodeEl = ref(null)
 // 状态转人话(家人版不出现 S1/effective 这类内部口径)
 const MS = { ok: '已会', watch: '观察中', todo: '还没会' }
 const TITLES = { 'profile': '孩子档案', 'milestone': '里程碑',
+  'anticipatory': '前瞻节点',
   'followup': '待回访', 'note': '成长速记',
   'focus': '今日行动', 'reminder': '前瞻提醒',
   'issue': '问题追踪', 'growth': '生长记录',
@@ -139,6 +141,13 @@ function rowsFor(b) {
       .filter(r => (r?.status || 'pending') === 'pending')
       .sort((a, c) => dueKey(a.due).localeCompare(dueKey(c.due)))
       .map(r => ({ kind: 'followup', label: `${r.due} ${r.topic}`.slice(0, 14), due: r.due, topic: r.topic }))
+    return { rows }
+  }
+  if (t === 'anticipatory') {
+    // 与卡同口径:进行中+接下来(已过不进长图);节点注一起带走,家人看得懂
+    const rows = anticipatoryNodes(kid).filter(r => r.status !== 'past')
+      .map(r => ({ kind: 'followup', label: r.due ? r.due.slice(0, 7) : '待定',
+        due: r.due || '', topic: r.name + (r.note ? ' · ' + r.note : '') }))
     return { rows }
   }
   if (t === 'text') {

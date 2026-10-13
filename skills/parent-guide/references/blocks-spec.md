@@ -61,6 +61,7 @@
 | `growth` | 生长曲线(身高体重对照 P3-P97) | 无(数据 child.growth.records,`add-growth` 落档) | w 6-12 |
 | `followup` | 待回访清单 | 无 | w 4-6 |
 | `reminder` | 前瞻提醒(pending 按 due 排序;跨年节点存 YYYY-MM-DD,徽章显示完整日期+相对天数) | 无 | w 4-6 |
+| `anticipatory` | 前瞻节点(节点表全量时间线:进行中/接下来/已过——疫苗/儿保/口腔/视力/发育盘点/流感季/入园准备,由出生日期+日历机械推导,与 knowledge/anticipatory.md 同源;与 `reminder` 互补:那边=认领制提醒,这边=不依赖认领) | 无 | w 4-6 |
 | `note` | 成长速记(最新在最上,详情时间轴同款排版) | `limit`(number,默认 5) | w 3-4 或整行 |
 
 > 2026-10-10 产品级退役:`strategy-effect`(策略数据仍在 child.json,由问题详情层「方案」节点/待回访/当前重点聚合呈现,不再有独立卡)、`timeline`(与速记同源重复)、`sleep-week`(睡眠不单独记,无数据生产者)。老 page.json 残留 block 由渲染器加载时静默剔除。

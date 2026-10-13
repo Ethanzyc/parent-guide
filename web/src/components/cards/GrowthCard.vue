@@ -41,6 +41,36 @@ function position(metric, v, months) {
 const hPos = computed(() => latest.value?.height ? position('height', latest.value.height, latest.value.months) : null)
 const wPos = computed(() => latest.value?.weight ? position('weight', latest.value.weight, latest.value.months) : null)
 
+// 趋势滑档检测(knowledge/growth.md §2「连续跨越两条主要百分位线」的页面侧
+// 机械镜像):参考带四分=低于P3/P3-P50/P50-P97/高于P97,相邻两次记录跨
+// ≥2 带=偏离自身通道(向上=超速也查),跨 1 带=先复测(家庭测量误差常见)。
+// 三线只是标准曲线的子集,该口径偏保守(更难触发,不误报)。
+const BAND_NAMES = ['P3 下方', 'P3-P50', 'P50-P97', 'P97 上方']
+function bandIdx(metric, v, months) {
+  if (!genderKey.value) return null
+  const ref = refAt(genderKey.value, metric, months)
+  if (!ref) return null
+  if (v < ref.p3) return 0
+  if (v < ref.p50) return 1
+  return v <= ref.p97 ? 2 : 3
+}
+const trendRows = computed(() => {
+  if (!genderKey.value || records.value.length < 2) return []
+  const rows = []
+  for (const [metric, label] of [['height', '身高'], ['weight', '体重']]) {
+    const pts = records.value.filter(r => r[metric] != null)
+    if (pts.length < 2) continue
+    const a = pts[pts.length - 2], b = pts[pts.length - 1]
+    const i0 = bandIdx(metric, a[metric], a.months), i1 = bandIdx(metric, b[metric], b.months)
+    if (i0 == null || i1 == null || i0 === i1) continue
+    rows.push({ label, cross: Math.abs(i1 - i0), up: i1 > i0,
+      from: BAND_NAMES[i0], to: BAND_NAMES[i1] })
+  }
+  return rows
+})
+const trendStable = computed(() => genderKey.value && records.value.length >= 2
+  && !trendRows.value.length)
+
 // -- SVG chart ---------------------------------------------------------------
 // W=300 H=96 viewBox units; band + P50 + child's polyline.
 function chart(metric) {
@@ -107,6 +137,16 @@ const list = computed(() => records.value.slice(-6).reverse())
         <span v-if="wPos" class="pos" :class="wPos.cls">{{ wPos.label }}</span></span>
     </div>
 
+    <div v-if="trendRows.length" class="trend-wrap">
+      <div v-for="t in trendRows" :key="t.label" class="trend" :class="t.cross >= 2 ? 'alert' : 'mild'">
+        <span class="tw">{{ t.label }}较上次 {{ t.from }} → {{ t.to }}</span>
+        <span class="tt">{{ t.cross >= 2
+          ? (t.up ? '上跨两条参考线,超速生长也建议评估' : '下跨两条参考线,偏离自身通道')
+          : '跨一条参考线——先复测确认,家庭测量误差常见' }}<template v-if="t.cross >= 2">;复测仍如此,带记录看儿保</template></span>
+      </div>
+    </div>
+    <div v-if="trendStable" class="trend calm">两次记录同一参考区间,沿自身通道稳定生长</div>
+
     <div v-if="hChart" class="chart">
       <div class="ct">身高 cm<span v-if="genderKey" class="cb">阴影=P3-P97 虚线=P50</span></div>
       <svg viewBox="0 0 300 96">
@@ -148,6 +188,14 @@ const list = computed(() => records.value.slice(-6).reverse())
 .pos.in { background: var(--ok-bg); color: var(--ok); }
 .pos.out-low { background: var(--todo-bg); color: var(--todo); }
 .pos.out-high { background: var(--watch-bg); color: var(--watch); }
+.trend-wrap { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.trend { border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px;
+  font-size: 12.5px; line-height: 1.5; }
+.trend.alert { border-color: var(--todo); }
+.trend.mild { border-color: var(--watch); }
+.trend.calm { border-color: var(--line); color: var(--ok); }
+.trend .tw { font-weight: 600; }
+.trend .tt { color: var(--sub); margin-left: 6px; }
 .chart { margin-bottom: 6px; }
 .ct { font-size: 12px; color: var(--sub); margin-bottom: 2px; }
 .ct .cb { float: right; font-size: 11px; }

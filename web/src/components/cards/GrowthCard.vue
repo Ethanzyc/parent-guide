@@ -183,11 +183,15 @@ const list = computed(() => records.value.slice(-6).reverse())
   <template v-if="records.length">
 
     <div v-if="latest && (latest.height || latest.weight)" class="latest">
-      <span class="lm">{{ latest.months }} 月龄</span>
-      <span v-if="latest.height" class="lv">身高 <b>{{ latest.height }}</b> cm
-        <span v-if="hPos" class="pos" :class="hPos.cls">{{ hPos.label }}</span></span>
-      <span v-if="latest.weight" class="lv">体重 <b>{{ latest.weight }}</b> kg
-        <span v-if="wPos" class="pos" :class="wPos.cls">{{ wPos.label }}</span></span>
+      <div class="lm">{{ latest.months }} 月龄</div>
+      <div v-if="latest.height" class="lv">
+        <span class="lk">身高</span><b>{{ latest.height }}</b><span class="lu">cm</span>
+        <span v-if="hPos" class="pos" :class="hPos.cls">{{ hPos.label }}</span>
+      </div>
+      <div v-if="latest.weight" class="lv">
+        <span class="lk">体重</span><b>{{ latest.weight }}</b><span class="lu">kg</span>
+        <span v-if="wPos" class="pos" :class="wPos.cls">{{ wPos.label }}</span>
+      </div>
     </div>
 
     <div v-if="trendRows.length" class="trend-wrap">
@@ -253,12 +257,12 @@ const list = computed(() => records.value.slice(-6).reverse())
     <div v-if="!genderKey" class="src">档案未填性别,暂无参考区间对照——回对话补一下性别即可。</div>
 
     <div class="rlist">
-      <div class="rrow rhead"><span class="rd">日期</span><span class="rm">月龄</span><span class="rv">身高cm</span><span class="rv">体重kg</span></div>
+      <div class="rrow rhead"><span class="rd">日期</span><span class="rm">月龄</span><span class="rv">身高</span><span class="rv">体重</span></div>
       <div v-for="r in list" :key="r.date" class="rrow">
         <span class="rd">{{ r.date }}</span>
         <span class="rm">{{ r.months }}月</span>
-        <span class="rv">{{ r.height ?? '—' }}</span>
-        <span class="rv">{{ r.weight ?? '—' }}</span>
+        <span class="rv">{{ r.height ? r.height + 'cm' : '—' }}</span>
+        <span class="rv">{{ r.weight ? r.weight + 'kg' : '—' }}</span>
       </div>
     </div>
     <div class="src">区间:WS/T 423—2022(<a class="klink" href="knowledge/growth.md" target="_blank">knowledge/growth.md</a>) · 筛查参照非诊断,出区间或跨百分位线建议儿保<template v-if="records.length < 2">;再记一笔(下月儿保/在家量)即长出曲线与参考带</template></div>
@@ -268,12 +272,14 @@ const list = computed(() => records.value.slice(-6).reverse())
 </template>
 
 <style scoped>
-.latest { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline;
-  background: var(--accent-soft); border-radius: 10px; padding: 8px 12px;
+.latest { background: var(--accent-soft); border-radius: 10px; padding: 8px 12px;
   font-size: 13px; margin-bottom: 10px; }
-.latest .lm { color: var(--sub); font-size: 12px; }
+.latest .lm { color: var(--sub); font-size: 12px; margin-bottom: 3px; }
+.latest .lv { display: flex; align-items: baseline; gap: 6px; }
+.latest .lk { flex: none; width: 2.6em; color: var(--sub); font-size: 12px; }
+.latest .lu { flex: none; width: 1.8em; color: var(--sub); font-size: 12px; }
 .latest .lv b { font-size: 16px; }
-.pos { font-size: 11.5px; border-radius: 6px; padding: 1px 8px; margin-left: 6px; }
+.pos { font-size: 11.5px; border-radius: 6px; padding: 1px 8px; }
 .pos.in { background: var(--ok-bg); color: var(--ok); }
 .pos.out-low { background: var(--todo-bg); color: var(--todo); }
 .pos.out-high { background: var(--watch-bg); color: var(--watch); }
@@ -299,7 +305,7 @@ svg { width: 100%; height: auto; display: block; }
 .tick { font-size: 6px; fill: var(--sub); }
 .dlabel { font-size: 6px; font-weight: 600; fill: var(--ink-blue); }
 .rlist { margin-top: 4px; }
-.rrow { display: grid; grid-template-columns: 1fr 3.4em 3.8em 3.8em; gap: 0 14px;
+.rrow { display: grid; grid-template-columns: 1fr 3.4em 4.4em 4.8em; gap: 0 14px;
   align-items: baseline; font-size: 12.5px; padding: 4px 8px;
   font-variant-numeric: tabular-nums; border-radius: 6px; }
 .rrow:not(.rhead):hover { background: var(--accent-soft); }

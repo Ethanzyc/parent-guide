@@ -20,16 +20,20 @@ months = (today.year - b.year) * 12 + (today.month - b.month) - (today.day < b.d
 season = ["冬", "冬", "春", "春", "春", "夏", "夏", "夏", "秋", "秋", "秋", "冬"][today.month - 1]
 
 p = c.get("profile", {})
-ph = {"安抚物(如有)", "孩子小名", "主要照顾人与分工"}
+ph = {"安抚物(如有)", "孩子小名", "主要照顾人与分工", "过敏史(食物/药物/湿疹;没有写无)"}
 caregivers = p.get("caregivers", "-")
 comfort = p.get("comfortObject", "-")
+allergies = p.get("allergies", "")
 if caregivers in ph or not str(caregivers).strip():
     caregivers = "未填"
 if comfort in ph or not str(comfort).strip():
     comfort = "未填"
+allergies = "" if allergies in ph else str(allergies).strip()
 print(f"== {c['name']} 热区 | {today} ==")
 print(f"月龄:{months} 个月(生日 {c['birthdate']})| 今日季节:{season}")
 print(f"照顾:{caregivers} | 安抚物:{comfort}")
+if allergies:
+    print(f"过敏史:{allergies}(用药/新食物引入前先对照)")
 print(f"当前重点:{'、'.join(c.get('currentFocus', []))}")
 
 # milestone status: latest assessed month-age at/below current age (gap visibility)

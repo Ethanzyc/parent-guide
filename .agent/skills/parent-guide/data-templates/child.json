@@ -13,6 +13,7 @@
       "temperament": "气质特点一句话",
       "comfortObject": "安抚物(如有)",
       "familyNotes": "家庭管教口径、长辈观点等背景",
+      "allergies": "过敏史(食物/药物/湿疹;没有写无)",
       "preferences": {
         "books": "绘本偏好",
         "activities": "活动偏好"

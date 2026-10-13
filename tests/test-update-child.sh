@@ -158,6 +158,17 @@ class T(unittest.TestCase):
         self.assertEqual(code, 0, msg)
         self.assertEqual(self.child()["profile"]["preferences"]["books"], "小金鱼逃走了")
 
+    def test_14b_set_profile_allergies_free_text(self):
+        # 过敏史字段(2026-10-13):自由文本,确诊/疑似语义留在原话不做结构区分
+        code, msg = run(self.tmp, "set-profile", "--field", "allergies",
+                        "--value", "医生确诊鸡蛋过敏;虾疑似(吃过起疹子)")
+        self.assertEqual(code, 0, msg)
+        self.assertIn("确诊", self.child()["profile"]["allergies"])
+        code, msg = run(self.tmp, "set-profile", "--field", "allergies",
+                        "--value", "无")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["profile"]["allergies"], "无")
+
     def test_15_set_profile_rejects_unknown_field(self):
         code, msg = run(self.tmp, "set-profile", "--field", "name", "--value", "X")
         self.assertNotEqual(code, 0, "name is not a profile field; must be rejected")

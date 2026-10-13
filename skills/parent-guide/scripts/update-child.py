@@ -64,7 +64,8 @@ DATE_SHORT = re.compile(r"^\d{2}-\d{2}$")        # MM-DD everywhere else
 PLACEHOLDERS = {"MM-DD", "YYYY-MM-DD", "HH:MM", "女|男",
                 "effective|partial|ineffective", "孩子小名",
                 "绘本偏好", "活动偏好", "气质特点一句话", "语言发展一句话",
-                "家庭管教口径、长辈观点等背景"}
+                "家庭管教口径、长辈观点等背景",
+                "过敏史(食物/药物/湿疹;没有写无)"}
 # ═══ end STRUCT ═══
 
 
@@ -322,7 +323,7 @@ def execute(argv=None):
     p.add_argument("--field", required=True,
                    choices=["gender", "language", "temperament", "comfortObject",
                             "familyNotes", "preferences.books", "preferences.activities",
-                            "sleep.note", "childcarePlan"])
+                            "sleep.note", "childcarePlan", "allergies"])
     p.add_argument("--value", required=True)
 
     args = ap.parse_args(argv)
@@ -792,7 +793,8 @@ def _check(child):
 
     # profile free-text fields: placeholder originals count as "not filled yet"
     prof = child.get("profile", {})
-    for f in ("gender", "language", "temperament", "comfortObject", "familyNotes"):
+    for f in ("gender", "language", "temperament", "comfortObject", "familyNotes",
+              "allergies"):
         is_ph(f"profile.{f}", prof.get(f))
     for f in ("books", "activities"):
         is_ph(f"profile.preferences.{f}", (prof.get("preferences") or {}).get(f))

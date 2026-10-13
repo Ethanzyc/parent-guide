@@ -26,7 +26,8 @@ const issueByName = computed(() => {
 
 // 画像字段:模板占位原文=未填,跳过不渲染(与 check 的占位感知同口径)
 const P = new Set(['语言发展一句话', '气质特点一句话', '安抚物(如有)',
-  '家庭管教口径、长辈观点等背景', '绘本偏好', '活动偏好', '主要照顾人与分工'])
+  '家庭管教口径、长辈观点等背景', '过敏史(食物/药物/湿疹;没有写无)',
+  '绘本偏好', '活动偏好', '主要照顾人与分工'])
 const clean = (v) => (v && !P.has(String(v).trim())) ? String(v).trim() : ''
 const prof = computed(() => props.kid?.profile || {})
 const caregivers = computed(() => clean(prof.value.caregivers))
@@ -34,6 +35,7 @@ const temperament = computed(() => clean(prof.value.temperament))
 const language = computed(() => clean(prof.value.language))
 const comfort = computed(() => clean(prof.value.comfortObject))
 const familyNotes = computed(() => clean(prof.value.familyNotes))
+const allergies = computed(() => clean(prof.value.allergies))
 const books = computed(() => clean(prof.value.preferences?.books))
 const activities = computed(() => clean(prof.value.preferences?.activities))
 const hasPref = computed(() => !!(books.value || activities.value || comfort.value))
@@ -63,7 +65,7 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
         @click="issueByName[f] && emit('open-issue', issueByName[f].id)">{{ f }}<template v-if="issueByName[f]"><b class="p">{{ issueByName[f].id }}</b></template></span></div>
     </div>
 
-    <div v-if="hasPref || temperament || language" class="psec">
+    <div v-if="hasPref || temperament || language || allergies" class="psec">
       <div class="plabel">孩子画像</div>
       <div v-if="temperament" class="kv"><b>气质</b><span>{{ temperament }}</span></div>
       <div v-if="language" class="kv"><b>语言</b><span>{{ language }}</span></div>
@@ -72,10 +74,11 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
         <span v-if="activities" class="chip">🏃 {{ activities }}</span>
         <span v-if="books" class="chip">📖 {{ books }}</span>
       </span></div>
+      <div v-if="allergies" class="kv"><b>过敏</b><span>{{ allergies }}</span></div>
       <div v-if="familyNotes" class="kv"><b>家庭口径</b><span class="muted">{{ familyNotes }}</span></div>
     </div>
 
-    <div v-if="!hasPref && !temperament && !language" class="src">
+    <div v-if="!hasPref && !temperament && !language && !allergies" class="src">
       画像(气质/语言/偏好)还没填——聊到这些话题时 AI 会顺带记录,这里会慢慢丰满。
     </div>
   </div>

@@ -102,9 +102,19 @@ function chart(metric) {
     }
     bandPath = 'M' + up.join(' L') + ' L' + down.reverse().join(' L') + ' Z'
   }
-  const line = recs.map(r => `${X(r.months)},${Y(r[metric])}`).join(' L')
+  // polyline points 只认坐标列表,不能带路径命令 L(带了整条线不渲染)
+  const line = recs.map(r => `${X(r.months)},${Y(r[metric])}`).join(' ')
+  let p50Line = ''
+  if (band) {
+    const pts = []
+    for (const a of band.ages) {
+      if (a < x0 || a > x1) continue
+      pts.push(`${X(a)},${Y(band.p50[band.ages.indexOf(a)])}`)
+    }
+    p50Line = pts.join(' ')
+  }
   return {
-    bandPath, line,
+    bandPath, line, p50Line,
     dots: recs.map(r => ({ x: X(r.months), y: Y(r[metric]), r: r[metric],
                            out: genderKey.value && (r[metric] < refAt(genderKey.value, metric, r.months)?.p3
                              || r[metric] > refAt(genderKey.value, metric, r.months)?.p97) })),
@@ -151,6 +161,7 @@ const list = computed(() => records.value.slice(-6).reverse())
       <div class="ct">身高 cm<span v-if="genderKey" class="cb">阴影=P3-P97 虚线=P50</span></div>
       <svg viewBox="0 0 300 96">
         <path v-if="hChart.bandPath" :d="hChart.bandPath" class="band" />
+        <polyline v-if="hChart.p50Line" :points="hChart.p50Line" class="p50" />
         <polyline :points="hChart.line" class="cline" />
         <circle v-for="(d, i) in hChart.dots" :key="i" :cx="d.x" :cy="d.y" r="3" :class="d.out ? 'cdot out' : 'cdot'" />
       </svg>
@@ -159,6 +170,7 @@ const list = computed(() => records.value.slice(-6).reverse())
       <div class="ct">体重 kg</div>
       <svg viewBox="0 0 300 96">
         <path v-if="wChart.bandPath" :d="wChart.bandPath" class="band" />
+        <polyline v-if="wChart.p50Line" :points="wChart.p50Line" class="p50" />
         <polyline :points="wChart.line" class="cline" />
         <circle v-for="(d, i) in wChart.dots" :key="i" :cx="d.x" :cy="d.y" r="3" :class="d.out ? 'cdot out' : 'cdot'" />
       </svg>
@@ -201,6 +213,7 @@ const list = computed(() => records.value.slice(-6).reverse())
 .ct .cb { float: right; font-size: 11px; }
 svg { width: 100%; height: auto; display: block; }
 .band { fill: rgba(90,130,180,.10); stroke: none; }
+.p50 { fill: none; stroke: var(--sub); stroke-width: 1; stroke-dasharray: 4 3; }
 .cline { fill: none; stroke: var(--ink-blue); stroke-width: 2; }
 .cdot { fill: #fff; stroke: var(--ink-blue); stroke-width: 2; }
 .cdot.out { fill: var(--todo); stroke: var(--todo); }

@@ -41,6 +41,7 @@ OFFICIAL = {"milestones.md", "sleep.md", "nutrition.md", "emotion.md", "activiti
             "child-mind.md", "eczema.md", "newborn.md", "screen.md", "toys.md", "fears.md", "books.md",
             "quickref.md"}  # quickref lives in site-src/, not knowledge/
 REMAP = {"tantrum-cdc": "tantrum"}  # only non-same-name site page
+GROUPS = {"健康与身体", "喂养与睡眠", "习惯与界限", "情绪与行为", "发育与玩耍", "参考", "速查"}
 topics = json.loads((root / "site/knowledge.json").read_text("utf-8"))
 files = {t["file"] for t in topics}
 if files != OFFICIAL:
@@ -49,6 +50,20 @@ slugs = {t["slug"] for t in topics}
 want_slugs = {REMAP.get(f[:-3], f[:-3]) for f in OFFICIAL if f != "quickref.md"} | {"quick-ref"}
 if slugs != want_slugs:
     sys.exit(f"FAIL: knowledge.json slug set drifted: {sorted(slugs)}")
+for t in topics:
+    if t.get("group") not in GROUPS:
+        sys.exit(f"FAIL: knowledge.json topic has unknown/missing group: {t.get('file')} -> {t.get('group')}")
+qr = next(t for t in topics if t["file"] == "quickref.md")
+if qr["group"] != "速查":
+    sys.exit(f"FAIL: quickref must be pinned group 速查, got {qr['group']}")
+# groups must be contiguous (TOPICS rows cluster by design; sidebar order derives)
+seen, prev = set(), None
+for t in topics:
+    g = t["group"]
+    if g != prev:
+        if g in seen:
+            sys.exit(f"FAIL: knowledge.json group '{g}' not contiguous (TOPICS rows must cluster by group)")
+        seen.add(g); prev = g
 for t in topics:
     if not (t.get("title") and t.get("hook") and t.get("src")):
         sys.exit(f"FAIL: knowledge.json entry incomplete: {t.get('file')}")

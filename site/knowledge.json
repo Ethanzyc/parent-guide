@@ -1,128 +1,146 @@
 [
   {
-    "file": "sleep.md",
-    "slug": "sleep",
-    "title": "睡眠",
-    "hook": "各年龄睡眠总量、就寝底线与夜醒分级应对",
-    "src": "整理自 WS/T 579-2017 / AAP / AASM 公开口径"
-  },
-  {
-    "file": "nutrition.md",
-    "slug": "nutrition",
-    "title": "营养与喂养",
-    "hook": "加盐底线、挑食分工(sDOR)与辅食进程",
-    "src": "整理自中国居民膳食指南 / WHO / Ellyn Satter Institute 公开口径"
-  },
-  {
-    "file": "emotion.md",
-    "slug": "emotion",
-    "title": "情绪与管教",
-    "hook": "发脾气的发育基础、现场三级响应与管教谱系",
-    "src": "整理自 AAP / CDC 家长材料与公开发展心理学共识"
-  },
-  {
-    "file": "tantrum-cdc.md",
-    "slug": "tantrum",
-    "title": "发脾气现场",
-    "hook": "CDC 家长课程的现场应对策略与边界",
-    "src": "整理自 CDC「Essentials for Parenting」(公有领域)中文化"
-  },
-  {
-    "file": "child-mind.md",
-    "slug": "child-mind",
-    "title": "孩子的逻辑",
-    "hook": "行为→内心假设菜单、发展常模与验证方法",
-    "src": "自写综述,基于公开发展心理学共识(心智化/归因研究)整理"
-  },
-  {
-    "file": "milestones.md",
-    "slug": "milestones",
-    "title": "发育里程碑",
-    "hook": "2 月龄到 5 岁,CDC 检查表中文化",
-    "src": "CDC「Learn the Signs. Act Early.」(公有领域)中文化"
-  },
-  {
-    "file": "activities.md",
-    "slug": "activities",
-    "title": "活动与绘本",
-    "hook": "分龄活动设计原则与低成本活动菜单",
-    "src": "自写综述,基于 CDC 里程碑能力项与公开指南口径"
-  },
-  {
-    "file": "weaning.md",
-    "slug": "weaning",
-    "title": "戒安抚物",
-    "hook": "戒奶嘴的时机、步骤与中耳炎/咬合口径",
-    "src": "整理自 AAP / ADA 公开口径"
-  },
-  {
-    "file": "toilet.md",
-    "slug": "toilet",
-    "title": "如厕训练",
-    "hook": "准备信号优先于月龄的分步训练法",
-    "src": "整理自 AAP 公开口径"
-  },
-  {
     "file": "growth.md",
     "slug": "growth",
     "title": "生长监测",
     "hook": "身高体重对照 WS/T 423-2022 参考区间",
-    "src": "整理自 WS/T 423—2022《7岁以下儿童生长标准》公开口径"
+    "src": "整理自 WS/T 423—2022《7岁以下儿童生长标准》公开口径",
+    "group": "健康与身体"
   },
   {
     "file": "eczema.md",
     "slug": "eczema",
     "title": "湿疹护理",
     "hook": "洗浴与保湿的正确口径、就医线与常见误传",
-    "src": "整理自中华医学会 / AAFP / AAD 公开口径"
+    "src": "整理自中华医学会 / AAFP / AAD 公开口径",
+    "group": "健康与身体"
   },
   {
     "file": "newborn.md",
     "slug": "newborn",
     "title": "新生儿两题",
     "hook": "黄疸的就医信号与肠绞痛的时间线",
-    "src": "整理自中华医学会 / Rome IV / AAP 公开口径"
-  },
-  {
-    "file": "screen.md",
-    "slug": "screen",
-    "title": "屏幕执行层",
-    "hook": "共同观看、睡前屏幕与背景电视的证据",
-    "src": "整理自 AAP / WHO 及同行评审研究公开结论"
-  },
-  {
-    "file": "toys.md",
-    "slug": "toys",
-    "title": "玩具与环境",
-    "hook": "少而开放、电子玩具与安全边界",
-    "src": "整理自同行评审研究与 CPSC 公开口径"
-  },
-  {
-    "file": "fears.md",
-    "slug": "fears",
-    "title": "恐惧与脱敏",
-    "hook": "发展性恐惧的月龄谱与陪伴面对",
-    "src": "整理自 AAP / AACAP 公开口径"
-  },
-  {
-    "file": "books.md",
-    "slug": "books",
-    "title": "育儿书地图",
-    "hook": "流派谱系与证据成色,只做地图不摘内容",
-    "src": "基于公开书评与综述的自写谱系"
+    "src": "整理自中华医学会 / Rome IV / AAP 公开口径",
+    "group": "健康与身体"
   },
   {
     "file": "anticipatory.md",
     "slug": "anticipatory",
     "title": "前瞻节点",
     "hook": "疫苗、体检、入园:按月龄提前想到的安排",
-    "src": "整理自国家免疫规划(2021 年版)与公开指南口径"
+    "src": "整理自国家免疫规划(2021 年版)与公开指南口径",
+    "group": "健康与身体"
+  },
+  {
+    "file": "sleep.md",
+    "slug": "sleep",
+    "title": "睡眠",
+    "hook": "各年龄睡眠总量、就寝底线与夜醒分级应对",
+    "src": "整理自 WS/T 579-2017 / AAP / AASM 公开口径",
+    "group": "喂养与睡眠"
+  },
+  {
+    "file": "nutrition.md",
+    "slug": "nutrition",
+    "title": "营养与喂养",
+    "hook": "加盐底线、挑食分工(sDOR)与辅食进程",
+    "src": "整理自中国居民膳食指南 / WHO / Ellyn Satter Institute 公开口径",
+    "group": "喂养与睡眠"
+  },
+  {
+    "file": "toilet.md",
+    "slug": "toilet",
+    "title": "如厕训练",
+    "hook": "准备信号优先于月龄的分步训练法",
+    "src": "整理自 AAP 公开口径",
+    "group": "习惯与界限"
+  },
+  {
+    "file": "weaning.md",
+    "slug": "weaning",
+    "title": "戒安抚物",
+    "hook": "戒奶嘴的时机、步骤与中耳炎/咬合口径",
+    "src": "整理自 AAP / ADA 公开口径",
+    "group": "习惯与界限"
+  },
+  {
+    "file": "screen.md",
+    "slug": "screen",
+    "title": "屏幕执行层",
+    "hook": "共同观看、睡前屏幕与背景电视的证据",
+    "src": "整理自 AAP / WHO 及同行评审研究公开结论",
+    "group": "习惯与界限"
+  },
+  {
+    "file": "emotion.md",
+    "slug": "emotion",
+    "title": "情绪与管教",
+    "hook": "发脾气的发育基础、现场三级响应与管教谱系",
+    "src": "整理自 AAP / CDC 家长材料与公开发展心理学共识",
+    "group": "情绪与行为"
+  },
+  {
+    "file": "tantrum-cdc.md",
+    "slug": "tantrum",
+    "title": "发脾气现场",
+    "hook": "CDC 家长课程的现场应对策略与边界",
+    "src": "整理自 CDC「Essentials for Parenting」(公有领域)中文化",
+    "group": "情绪与行为"
+  },
+  {
+    "file": "child-mind.md",
+    "slug": "child-mind",
+    "title": "孩子的逻辑",
+    "hook": "行为→内心假设菜单、发展常模与验证方法",
+    "src": "自写综述,基于公开发展心理学共识(心智化/归因研究)整理",
+    "group": "情绪与行为"
+  },
+  {
+    "file": "fears.md",
+    "slug": "fears",
+    "title": "恐惧与脱敏",
+    "hook": "发展性恐惧的月龄谱与陪伴面对",
+    "src": "整理自 AAP / AACAP 公开口径",
+    "group": "情绪与行为"
+  },
+  {
+    "file": "milestones.md",
+    "slug": "milestones",
+    "title": "发育里程碑",
+    "hook": "2 月龄到 5 岁,CDC 检查表中文化",
+    "src": "CDC「Learn the Signs. Act Early.」(公有领域)中文化",
+    "group": "发育与玩耍"
+  },
+  {
+    "file": "activities.md",
+    "slug": "activities",
+    "title": "活动与绘本",
+    "hook": "分龄活动设计原则与低成本活动菜单",
+    "src": "自写综述,基于 CDC 里程碑能力项与公开指南口径",
+    "group": "发育与玩耍"
+  },
+  {
+    "file": "toys.md",
+    "slug": "toys",
+    "title": "玩具与环境",
+    "hook": "少而开放、电子玩具与安全边界",
+    "src": "整理自同行评审研究与 CPSC 公开口径",
+    "group": "发育与玩耍"
+  },
+  {
+    "file": "books.md",
+    "slug": "books",
+    "title": "育儿书地图",
+    "hook": "流派谱系与证据成色,只做地图不摘内容",
+    "src": "基于公开书评与综述的自写谱系",
+    "group": "参考"
   },
   {
     "file": "quickref.md",
     "slug": "quick-ref",
     "title": "速查",
     "hook": "睡眠总量、加盐、屏幕、如厕、发脾气——最常查的底线口径一页速查",
-    "src": "与 skill 知识核速查表同源维护(双侧行级同步)"
+    "src": "与 skill 知识核速查表同源维护(双侧行级同步)",
+    "group": "速查"
   }
 ]

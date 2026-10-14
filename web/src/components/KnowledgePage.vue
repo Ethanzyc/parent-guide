@@ -65,7 +65,20 @@ const docMeta = computed(() => {
   if (!doc.value) return {}
   if (doc.value.file.startsWith('user/')) return { isUser: true }
   const t = official.value.find(o => o.file === doc.value.file)
-  return { src: t?.src }
+  return { src: t?.src, group: t?.group }
+})
+
+// 左栏分组:速查置顶(无组头),其余按 knowledge.json 带出的组连续分段
+const sidebar = computed(() => {
+  const pinned = official.value.filter(t => t.slug === 'quick-ref')
+  const groups = []
+  for (const t of official.value) {
+    if (t.slug === 'quick-ref') continue
+    const g = t.group || '其他'
+    if (!groups.length || groups[groups.length - 1].name !== g) groups.push({ name: g, items: [] })
+    groups[groups.length - 1].items.push(t)
+  }
+  return { pinned, groups }
 })
 
 function onKey(e) { if (e.key === 'Escape') emit('close') }
@@ -93,8 +106,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
           <div v-if="loading" class="kbp-hint">加载中…</div>
           <div v-else-if="listError" class="kbp-hint err">{{ listError }}</div>
           <template v-else-if="tab === 'official'">
-            <button v-for="t in official" :key="t.slug" class="kbp-item"
+            <button v-for="t in sidebar.pinned" :key="t.slug" class="kbp-item pin"
                     :class="{ on: sel.official === t.file }" @click="pick(t.file)">{{ t.title }}</button>
+            <template v-for="g in sidebar.groups" :key="g.name">
+              <div class="kbp-group">{{ g.name }}</div>
+              <button v-for="t in g.items" :key="t.slug" class="kbp-item"
+                      :class="{ on: sel.official === t.file }" @click="pick(t.file)">{{ t.title }}</button>
+            </template>
           </template>
           <template v-else>
             <div v-if="!user.length" class="kbp-hint">还没有自建文件</div>
@@ -120,7 +138,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                   <span v-if="doc.meta?.source">来源:{{ doc.meta.source }}</span>
                   <span class="kbp-badge local">家庭自建 · 仅本地</span>
                 </template>
-                <template v-else-if="docMeta.src">{{ docMeta.src }}</template>
+                <template v-else-if="docMeta.src">
+                  <span v-if="docMeta.group && docMeta.group !== '速查'" class="kbp-badge">{{ docMeta.group }}</span>
+                  {{ docMeta.src }}
+                </template>
               </div>
             </div>
             <!-- eslint-disable-next-line vue/no-v-html —— server 渲染的白名单 markdown -->
@@ -168,6 +189,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 .kbp-item.on { background: var(--accent-soft); color: var(--ink-blue); font-weight: 600;
   border-left-color: var(--ink-blue); }
 .kbp-item .sub { display: block; font-size: 11px; color: var(--sub); font-weight: 400; margin-top: 1px; }
+.kbp-item.pin { color: var(--ink-blue); font-weight: 600; }
+.kbp-group { font-size: 11px; letter-spacing: .18em; color: var(--sub);
+  padding: 12px 16px 4px; user-select: none; }
+.kbp-group:first-child { padding-top: 4px; }
 .kbp-main { flex: 1; overflow: auto; padding: 26px 34px 48px; }
 .kbp-main > div { max-width: 800px; margin: 0 auto; }
 .kbp-hint { padding: 32px 0; text-align: center; color: var(--sub); font-size: 13.5px; }

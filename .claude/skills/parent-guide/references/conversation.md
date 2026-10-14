@@ -163,7 +163,14 @@
   划掉:`set-focus`(整组覆盖)或问题侧 `set-issue-status --status resolved`
   (**须用户拍板**);**决定权留家长**,提议不带催促。
 - 聊到绘本/活动 → 顺带核 preferences;聊到作息 → 顺带刷 sleep.note;
-  画像字段(气质/安抚物/照料者)出现在话题里时,先对档案现值,变了就 set-profile。
+  **画像更新按语义相关触发,不等字段名字面出现**(2026-10-14:字面触发太窄,
+  「主动加入同伴玩」是气质证据但不提「气质」二字):对话中出现画像相关证据——
+  气质/社交风格/活动量/专注力(temperament)、语言表达水平(language)、
+  安抚物(comfortObject)、照料安排(caregivers)、偏好(preferences)——就先对
+  档案现值:变了 `set-profile --field ... --value ...`(旧值自动留档
+  profileHistory,演变可回看);对过未变 `set-profile --field ... --verify`
+  (只刷核实时间,不追加历史)。各字段核实时间存 `profile._asOf`,
+  超 6 月未核实热区给一行机械提示(清提示路径=对话核实或大体检刷新)。
 - active 策略长期没有回访动作 → 收尾可给「清点一下在跑的策略」选项
   (effective 且回访≥2 → 建议吸收为日常 set-status absorbed;suspended → 问还挂吗)。
 - **原则**:档案在对话中自然保鲜;没有任何证据时不动字段——静默 ≠ 过期。

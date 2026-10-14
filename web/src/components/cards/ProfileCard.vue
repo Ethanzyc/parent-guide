@@ -39,6 +39,43 @@ const allergies = computed(() => clean(prof.value.allergies))
 const books = computed(() => clean(prof.value.preferences?.books))
 const activities = computed(() => clean(prof.value.preferences?.activities))
 const hasPref = computed(() => !!(books.value || activities.value || comfort.value))
+
+// 画像快照的核实时间(_asOf 由 update-child.py 维护):孩子画像区取已展示字段的
+// 最晚核实日,超 6 月(183 天)未核对给提示——机械信号,清提示的路径仍是
+// 「对话中对过现值」(set-profile --verify / 改值),页面不提供编辑入口
+const FIELD_LABELS = { temperament: '气质', language: '语言', comfortObject: '安抚物',
+  caregivers: '照料', familyNotes: '家庭口径', allergies: '过敏',
+  'preferences.books': '绘本偏好', 'preferences.activities': '活动偏好',
+  'sleep.note': '睡眠', gender: '性别', childcarePlan: '托育安排' }
+const asofMap = computed(() => prof.value._asOf || {})
+const shownFields = computed(() => {
+  const pairs = [['temperament', temperament.value], ['language', language.value],
+    ['comfortObject', comfort.value], ['allergies', allergies.value],
+    ['familyNotes', familyNotes.value]]
+  return pairs.filter(([, v]) => v).map(([f]) => f)
+})
+const secAsOf = computed(() => {
+  const ds = shownFields.value.map(f => asofMap.value[f]).filter(Boolean).sort()
+  return ds[ds.length - 1] || ''
+})
+const staleFields = computed(() => {
+  const out = []
+  for (const f of shownFields.value) {
+    const d = asofMap.value[f]
+    if (!d) continue
+    const days = (Date.now() - new Date(d).getTime()) / 86400000
+    if (days > 183) out.push({ label: FIELD_LABELS[f] || f, months: Math.max(1, Math.round(days / 30.44)) })
+  }
+  return out
+})
+const staleHint = computed(() => {
+  if (!staleFields.value.length) return ''
+  const worst = Math.max(...staleFields.value.map(s => s.months))
+  return `${staleFields.value.map(s => s.label).join('/')}超 ${worst} 个月未核对`
+})
+
+// 画像变迁(2026-10-14):set-profile 改值自动留档 profileHistory,最新在上
+const hist = computed(() => (props.kid?.profileHistory || []).slice().reverse())
 </script>
 
 <template>
@@ -66,7 +103,7 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
     </div>
 
     <div v-if="hasPref || temperament || language || allergies" class="psec">
-      <div class="plabel">孩子画像</div>
+      <div class="plabel">孩子画像<template v-if="secAsOf"><span class="asof">截至 {{ secAsOf }}</span><span v-if="staleHint" class="asof stale">{{ staleHint }}</span></template></div>
       <div v-if="temperament" class="kv"><b>气质</b><span>{{ temperament }}</span></div>
       <div v-if="language" class="kv"><b>语言</b><span>{{ language }}</span></div>
       <div v-if="hasPref" class="kv"><b>偏好</b><span>
@@ -76,6 +113,14 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
       </span></div>
       <div v-if="allergies" class="kv"><b>过敏</b><span>{{ allergies }}</span></div>
       <div v-if="familyNotes" class="kv"><b>家庭口径</b><span class="muted">{{ familyNotes }}</span></div>
+    </div>
+
+    <div v-if="hist.length" class="psec">
+      <div class="plabel">画像变迁</div>
+      <div v-for="(h, i) in hist" :key="i" class="phist">
+        <div class="phd">{{ h.date }} · {{ FIELD_LABELS[h.field] || h.field }}</div>
+        <div class="pvals"><span class="pv old">{{ h.from || '(未填)' }}</span><span class="parr">→</span><span class="pv">{{ h.to }}</span></div>
+      </div>
     </div>
 
     <div v-if="!hasPref && !temperament && !language && !allergies" class="src">
@@ -98,7 +143,21 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
   display: flex; align-items: center; justify-content: center;
   font-size: 20px; font-weight: 700; color: var(--ink-blue); }
 .psec { margin-top: 12px; }
-.plabel { font-size: 11.5px; color: var(--sub); margin-bottom: 5px; letter-spacing: .08em; }
+.plabel { display: flex; align-items: baseline; gap: 8px; font-size: 11.5px;
+  color: var(--sub); margin-bottom: 5px; letter-spacing: .08em; }
+.plabel .asof { margin-left: auto; letter-spacing: 0; font-size: 11px;
+  font-variant-numeric: tabular-nums; }
+.plabel .asof.stale { color: var(--watch); }
+.phist { padding: 6px 0; border-bottom: 1px dashed var(--grid-line); }
+.phist:last-child { border-bottom: none; }
+.phd { font-size: 11px; color: var(--sub); margin-bottom: 3px;
+  font-variant-numeric: tabular-nums; }
+.pvals { display: flex; gap: 6px; align-items: flex-start; font-size: 12.5px;
+  line-height: 1.5; }
+.pv { flex: 1; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; }
+.pv.old { color: var(--sub); }
+.parr { flex: none; color: var(--ink-blue); }
 .chip.lnk { border-style: solid; border-color: var(--ink-blue); cursor: pointer; }
 .chip.lnk:hover { background: var(--accent-soft); }
 .chip .p { font-size: 10px; font-weight: 700; margin-left: 4px;

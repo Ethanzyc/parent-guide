@@ -137,7 +137,9 @@ WHO/AAP 对 2-5 岁的口径是每天 ≤1 小时**且陪同观看**(T3)——�
    (旧结果作对照参考),不拿旧基线直接下结论。
 6. **半年大体检(盘点时顺带,不另开仪式)**:发育盘点天然半年一次,聊的
    就是变化,顺带四件——
-   - **画像刷新**:气质/安抚物/偏好/照料者变没变,变了 `set-profile`;
+   - **画像刷新**:气质/安抚物/偏好/照料者变没变——变了 `set-profile --value`
+     (旧值自动留档 profileHistory,页面「画像变迁」可回看);没变
+     `set-profile --verify` 刷核实时间(清掉 _asOf 超 6 月的机械提示);
    - **策略清点**:active 还在跑吗;effective 且回访≥2 → 建议吸收为日常
      (`set-status absorbed`);suspended 还挂吗;followups 有没有烂尾;
    - **当前重点清理**:哪些 focus/concern 已解决 → `set-focus` 划掉 /

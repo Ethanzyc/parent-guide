@@ -25,11 +25,17 @@ caller passing full dates still produces a check-clean archive.
 Every action prints an evidence summary -- the agent quotes it as proof the
 record was written (evidence before claims).
 
+Profile snapshot versioning (2026-10-14): set-profile appends the old value to
+child.profileHistory (append-only, {date,field,from,to}) and stamps
+profile._asOf[field] = today; --verify stamps _asOf without changing the value
+(compared-and-unchanged also refreshes it, closing the freshness loop --
+hot-context surfaces fields not verified for >PROFILE_STALE_DAYS).
+
 Structure-change SOP (child.json has four mirrors; keep them in sync):
   1. skills/parent-guide/data-templates/child.json  -- the template users copy
   2. skills/parent-guide/scripts/hot-context.sh     -- reader (contract in header)
   3. THIS FILE: STRUCT constants + _check rules      -- writer + validator
-  4. web/src/components/cards/                      -- renderer (defensive reads,
+  4. web/src/components/cards/                       -- renderer (defensive reads,
      NO red light there -- eyeball after changes)
   Then run: bash tests/test-hot-context.sh && bash tests/test-update-child.sh
   (the red lights for renames/removals live in these two suites + the
@@ -66,6 +72,14 @@ PLACEHOLDERS = {"MM-DD", "YYYY-MM-DD", "HH:MM", "女|男",
                 "绘本偏好", "活动偏好", "气质特点一句话", "语言发展一句话",
                 "家庭管教口径、长辈观点等背景",
                 "过敏史(食物/药物/湿疹;没有写无)"}
+# profile snapshot contract: what set-profile may touch, and which of those
+# fields hot-context watches for staleness (gender/childcarePlan are excluded
+# from the watch -- static fact / has its own anticipatory nudges)
+PROFILE_FIELDS = ("gender", "caregivers", "language", "temperament", "comfortObject",
+                  "familyNotes", "childcarePlan", "allergies",
+                  "preferences.books", "preferences.activities", "sleep.note")
+PROFILE_STALE_DAYS = 183   # 半年大体检节奏:超 6 月未核实给机械提示
+SLEEP_NOTE_PH = "睡眠目标与趋势一句话"
 # ═══ end STRUCT ═══
 
 
@@ -93,6 +107,45 @@ def _norm_reminder_due(v):
 def _days_ago(n):
     from datetime import timedelta
     return (date.today() - timedelta(days=n)).isoformat()
+
+
+def _profile_get(child, field):
+    if field == "sleep.note":
+        return child.get("sleep", {}).get("note")
+    if field.startswith("preferences."):
+        return (child.get("profile", {}).get("preferences") or {}).get(field.split(".", 1)[1])
+    return child.get("profile", {}).get(field)
+
+
+def _profile_set(child, field, value):
+    if field == "sleep.note":
+        child.setdefault("sleep", {})["note"] = value
+    elif field.startswith("preferences."):
+        child.setdefault("profile", {}).setdefault("preferences", {})[field.split(".", 1)[1]] = value
+    else:
+        child.setdefault("profile", {})[field] = value
+
+
+def _profile_is_real(value):
+    v = str(value or "").strip()
+    return bool(v) and v not in PLACEHOLDERS and v != SLEEP_NOTE_PH
+
+
+def _stamp_asof(child, field):
+    child.setdefault("profile", {}).setdefault("_asOf", {})[field] = date.today().isoformat()
+
+
+def _ensure_profile_asof(child):
+    """Backfill profile._asOf for real values written before the field existed
+    (2026-10-14 schema). Baseline = today: real write dates are unknowable, so
+    staleness counting starts at migration -- never invented. Add-only; an
+    existing entry is never overwritten. Runs before every save, which makes
+    any write action migrate an old archive transparently."""
+    prof = child.setdefault("profile", {})
+    asof = prof.setdefault("_asOf", {})
+    for f in PROFILE_FIELDS:
+        if f not in asof and _profile_is_real(_profile_get(child, f)):
+            asof[f] = date.today().isoformat()
 
 
 def _months_at(birthdate, on_date):
@@ -319,12 +372,15 @@ def execute(argv=None):
     p.add_argument("--focus", default=None, help="comma-separated currentFocus items")
 
     p = sub.add_parser("set-profile", help="update one whitelisted profile field "
-                  "(guided onboarding follow-up; replaces manual JSON edits)")
+                      "(guided onboarding follow-up; replaces manual JSON edits). "
+                      "Value changes append the old value to profileHistory; "
+                      "--verify only stamps the checked-at date")
     p.add_argument("--field", required=True,
-                   choices=["gender", "language", "temperament", "comfortObject",
-                            "familyNotes", "preferences.books", "preferences.activities",
-                            "sleep.note", "childcarePlan", "allergies"])
-    p.add_argument("--value", required=True)
+                   choices=sorted(PROFILE_FIELDS))
+    p.add_argument("--value", default=None,
+                   help="new value (omitted only with --verify)")
+    p.add_argument("--verify", action="store_true",
+                   help="对过现值未变:只刷 profile._asOf,不动值不追加历史")
 
     args = ap.parse_args(argv)
     path = Path(args.data) / "child.json"
@@ -361,6 +417,7 @@ def execute(argv=None):
         child.pop("activeConcerns", None)   # 已废弃(issues 取代)
         child["milestones"] = {}
         child["sleep"] = {"days": [], "note": ""}
+        _ensure_profile_asof(child)
         problems, _ph = _check(child)
         if problems:
             return 1, "ERROR: init produced an invalid archive:\n" + "\n".join(problems)
@@ -496,14 +553,28 @@ def execute(argv=None):
         msg = f"strategy {args.id} status -> {args.status}" + (f" ({args.note})" if args.note else "")
 
     elif args.action == "set-profile":
-        child.setdefault("profile", {}).setdefault("preferences", {})
-        if args.field == "sleep.note":
-            child.setdefault("sleep", {})["note"] = args.value
-        elif args.field.startswith("preferences."):
-            child["profile"]["preferences"][args.field.split(".", 1)[1]] = args.value
+        if args.verify and args.value is not None:
+            return 1, "ERROR: --verify 与 --value 互斥(改值用 --value,对过未变用 --verify)"
+        old = _profile_get(child, args.field)
+        if args.value is None:
+            if not _profile_is_real(old):
+                return 1, (f"ERROR: --verify 须字段已有真实值({args.field} 现为空/占位,"
+                           "先 --value 填写)")
+            _stamp_asof(child, args.field)
+            msg = (f"verified {args.field}(现值未变,核实时间 -> "
+                   f"{child['profile']['_asOf'][args.field]})")
         else:
-            child["profile"][args.field] = args.value
-        msg = f"recorded {args.field} = {args.value[:40]}"
+            _profile_set(child, args.field, args.value)
+            _stamp_asof(child, args.field)
+            if _profile_is_real(old) and str(old).strip() == args.value.strip():
+                msg = f"verified {args.field}(值未变,按核实处理;不追加 profileHistory)"
+            else:
+                hist = child.setdefault("profileHistory", [])
+                hist.append({"date": date.today().isoformat(), "field": args.field,
+                             "from": str(old) if _profile_is_real(old) else "",
+                             "to": args.value})
+                msg = (f"recorded {args.field} = {args.value[:40]}"
+                       f"(旧值留档 profileHistory 共 {len(hist)} 条)")
 
     elif args.action == "add-reminder":
         due = _norm_reminder_due(args.due)
@@ -715,6 +786,7 @@ def execute(argv=None):
     else:  # pragma: no cover
         return 1, "ERROR: unknown action"
 
+    _ensure_profile_asof(child)
     _save(path, doc)
     return 0, msg + f" | saved {path.name} (backup: child.json.bak)"
 
@@ -798,6 +870,32 @@ def _check(child):
         is_ph(f"profile.{f}", prof.get(f))
     for f in ("books", "activities"):
         is_ph(f"profile.preferences.{f}", (prof.get("preferences") or {}).get(f))
+
+    # profile snapshot versioning (2026-10-14): _asOf + append-only history
+    asof = prof.get("_asOf", {})
+    if not isinstance(asof, dict):
+        problems.append("profile._asOf: 须为 字段->YYYY-MM-DD 映射")
+    else:
+        for f, d in asof.items():
+            if f not in PROFILE_FIELDS:
+                problems.append(f"profile._asOf[{f!r}]: 不是画像字段")
+            elif not DATE_FULL.match(str(d)):
+                problems.append(f"profile._asOf[{f!r}]: 须为 YYYY-MM-DD(现在是 {d!r})")
+    hist = child.get("profileHistory", [])
+    if not isinstance(hist, list):
+        problems.append("profileHistory: 须为数组(追加式 {date,field,from,to})")
+    else:
+        for i, h in enumerate(hist):
+            if not isinstance(h, dict):
+                problems.append(f"profileHistory[{i}]: 须为对象")
+                continue
+            if h.get("field") not in PROFILE_FIELDS:
+                problems.append(f"profileHistory[{i}].field: 不是画像字段(现在是 {h.get('field')!r})")
+            if not DATE_FULL.match(str(h.get("date", ""))):
+                problems.append(f"profileHistory[{i}].date: 须为 YYYY-MM-DD(现在是 {h.get('date')!r})")
+            for k in ("from", "to"):
+                if not isinstance(h.get(k), str):
+                    problems.append(f"profileHistory[{i}].{k}: 须为字符串")
 
     for i, d in enumerate(child.get("sleep", {}).get("days", [])):
         for field in ("wakings", "totalHours"):

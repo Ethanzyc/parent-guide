@@ -606,5 +606,96 @@ class T(unittest.TestCase):
         it = next(i for i in self.child()["issues"] if i["id"] == it["id"])
         self.assertNotIn("sources", it["brief"])            # 空串=清空
 
+    def test_52_set_profile_versions_and_asof(self):
+        # 2026-10-14 画像快照版本化:改值=写值+旧值留档 profileHistory+核实时间
+        code, msg = run(self.tmp, "set-profile", "--field", "temperament",
+                        "--value", "慢热缓解,陌生场合观察几分钟后能加入")
+        self.assertEqual(code, 0, msg)
+        c = self.child()
+        h = c["profileHistory"][-1]
+        self.assertEqual(h["field"], "temperament")
+        self.assertEqual(h["to"], "慢热缓解,陌生场合观察几分钟后能加入")
+        self.assertIn("秩序敏感期", h["from"])                # 旧值原文留档
+        self.assertRegex(h["date"], r"^\d{4}-\d{2}-\d{2}$")
+        self.assertEqual(c["profile"]["_asOf"]["temperament"], h["date"])
+        # 同值重写=核实,不追加历史
+        n = len(c["profileHistory"])
+        code, msg = run(self.tmp, "set-profile", "--field", "temperament",
+                        "--value", "慢热缓解,陌生场合观察几分钟后能加入")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(len(self.child()["profileHistory"]), n)
+        # --verify:只刷核实时间,不动值不追加历史
+        code, msg = run(self.tmp, "set-profile", "--field", "comfortObject", "--verify")
+        self.assertEqual(code, 0, msg)
+        c = self.child()
+        self.assertEqual(c["profile"]["comfortObject"], "奶嘴(睡前+情绪崩溃时依赖明显)")
+        self.assertRegex(c["profile"]["_asOf"]["comfortObject"], r"^\d{4}-\d{2}-\d{2}$")
+        self.assertEqual(len(c["profileHistory"]), n)
+        # fail fast:--verify 与 --value 互斥;空字段不可 verify
+        code, _ = run(self.tmp, "set-profile", "--field", "language",
+                      "--verify", "--value", "x")
+        self.assertNotEqual(code, 0)
+        c = self.child()
+        c["profile"]["language"] = ""
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), "utf-8")
+        code, _ = run(self.tmp, "set-profile", "--field", "language", "--verify")
+        self.assertNotEqual(code, 0)
+
+    def test_53_set_profile_caregivers_whitelisted(self):
+        # §2.7 一直假设照料者可 set-profile,2026-10-14 白名单补齐
+        code, msg = run(self.tmp, "set-profile", "--field", "caregivers",
+                        "--value", "白天:妈妈+外婆;晚上:爸爸+妈妈")
+        self.assertEqual(code, 0, msg)
+        self.assertEqual(self.child()["profile"]["caregivers"],
+                         "白天:妈妈+外婆;晚上:爸爸+妈妈")
+
+    def test_54_asof_auto_baseline_on_any_write(self):
+        # 旧档案无 _asOf:任意写入动作顺带补基线(迁移日起算);已有条目不覆盖
+        run(self.tmp, "add-note", "--date", "2026-10-14", "--text", "x")
+        c = self.child()
+        for f in ("temperament", "language", "comfortObject", "caregivers",
+                  "familyNotes", "preferences.books", "preferences.activities"):
+            self.assertRegex(c["profile"]["_asOf"].get(f, ""),
+                             r"^\d{4}-\d{2}-\d{2}$", f"{f} 应有基线核实时间")
+        c["profile"]["_asOf"]["temperament"] = "2026-01-01"
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), "utf-8")
+        run(self.tmp, "set-profile", "--field", "language", "--verify")
+        self.assertEqual(self.child()["profile"]["_asOf"]["temperament"], "2026-01-01")
+
+    def test_55_check_validates_profile_versioning(self):
+        c = self.child()
+        c["profileHistory"] = [{"date": "10-14", "field": "temperament",
+                                "from": "a", "to": "b"}]
+        c["profile"]["_asOf"] = {"temperament": "10-14"}
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), "utf-8")
+        code, msg = run(self.tmp, "check")
+        self.assertNotEqual(code, 0)
+        self.assertIn("profileHistory[0].date", msg)
+        self.assertIn("profile._asOf", msg)
+        c["profileHistory"] = [{"date": "2026-10-14", "field": "not-a-field",
+                                "from": "a", "to": "b"}]
+        raw = json.loads((self.tmp / "child.json").read_text("utf-8"))
+        raw[next(k for k in raw if not k.startswith("_"))] = c
+        (self.tmp / "child.json").write_text(json.dumps(raw, ensure_ascii=False), "utf-8")
+        code, msg = run(self.tmp, "check")
+        self.assertNotEqual(code, 0)
+        self.assertIn("field", msg)
+
+    def test_56_init_seeds_asof(self):
+        (self.tmp / "child.json").unlink()
+        code, msg = run(self.tmp, "init", "--name", "小明", "--birthdate", "2023-06-15",
+                        "--caregivers", "妈妈为主", "--temperament", "慢热")
+        self.assertEqual(code, 0, msg)
+        c = self.child()
+        self.assertRegex(c["profile"]["_asOf"]["caregivers"], r"^\d{4}-\d{2}-\d{2}$")
+        self.assertIn("temperament", c["profile"]["_asOf"])
+        self.assertEqual(c.get("profileHistory", []), [])
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

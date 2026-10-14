@@ -50,6 +50,30 @@ else:
     ap = f",盘于{pack['assessed']}" if pack.get("assessed") else ""
     print(f"里程碑:{mk}月已盘{ap} 已会{cnt['ok']}/观察{cnt['watch']}/未现{cnt['todo']}"
           f"(L3 对照变化;重盘整组覆盖)")
+
+# profile snapshot staleness (mechanical, 2026-10-14): watch fields whose
+# _asOf (last checked-at date, stamped by update-child.py) is >6 months old.
+# gender/childcarePlan are excluded -- static fact / own anticipatory nudges.
+# No _asOf entry = never migrated or never filled: nothing to judge, stay silent.
+WATCH = (("temperament", "气质"), ("language", "语言"), ("comfortObject", "安抚物"),
+         ("caregivers", "照料"), ("familyNotes", "家庭口径"), ("allergies", "过敏"),
+         ("preferences.books", "绘本"), ("preferences.activities", "活动"),
+         ("sleep.note", "睡眠"))
+asof = p.get("_asOf") or {}
+stale = []
+for f, lab in WATCH:
+    d = str(asof.get(f) or "")
+    if not d:
+        continue
+    try:
+        age = (today - date.fromisoformat(d)).days
+    except ValueError:
+        continue
+    if age > 183:
+        stale.append(lab)
+if stale:
+    print(f"画像:{'/'.join(stale)}超 6 月未核实——大体检顺带刷新;"
+          f"对话中对过现值未变则 set-profile --verify 刷核实时间")
 print()
 # strategy-patterns layer (distilled at half-year checkups): only surfaces
 # when the file exists -- no file, no line (hot zone stays minimal for L1).

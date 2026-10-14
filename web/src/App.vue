@@ -6,7 +6,7 @@ import GridBoard from './components/GridBoard.vue'
 import ShareModal from './components/ShareModal.vue'
 import CardManager from './components/CardManager.vue'
 import IssueDetail from './components/IssueDetail.vue'
-import KnowledgePanel from './components/KnowledgePanel.vue'
+import KnowledgePage from './components/KnowledgePage.vue'
 import { CARD_META } from './components/cards/index.js'
 
 onMounted(async () => {
@@ -183,6 +183,6 @@ function exportReport() {
                  @close="issueOpen = null"
                  @share-issue="i => shareState = { level: 'issue', block: null, issue: i }" />
 
-    <KnowledgePanel :open="kbOpen" @close="kbOpen = false" />
+    <KnowledgePage v-if="kbOpen" @close="kbOpen = false" />
   </template>
 </template>

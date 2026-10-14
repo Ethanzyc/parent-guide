@@ -62,15 +62,34 @@ def _user_knowledge():
     return items
 
 
-def _read_user_knowledge(name):
-    """Render one self-built doc to HTML. Accepts a bare file name only --
-    knowledge/user/ holds family-private notes, so nothing outside it (and
-    nothing but a single .md name) is reachable through this endpoint."""
-    if not name or "/" in name or "\\" in name or not name.endswith(".md"):
-        raise ValueError("只允许 knowledge/user/ 下的单个 .md 文件名")
-    if name == "README.md":
-        raise ValueError("README.md 是自建层约定文档,不是自建知识")
-    path = ROOT / "knowledge/user" / name
+def _read_knowledge(name):
+    """Render one knowledge doc to HTML for the in-app knowledge page.
+
+    Three reachable layers, each a strict allowlist:
+      quickref.md    -> site-src/quickref.md (the site quick-ref page's twin)
+      user/<name>.md -> knowledge/user/ (family-private layer, bare name only)
+      <file>.md      -> knowledge/ official closed set (files knowledge.json lists)
+    Meta files (README/LICENSE/BACKLOG), traversal and subdirs are rejected.
+    """
+    if not name or not name.endswith(".md") or "\\" in name or name.startswith("/"):
+        raise ValueError("非法文件名")
+    if name == "quickref.md":
+        path = ROOT / "site-src" / "quickref.md"
+    elif name.startswith("user/"):
+        rest = name[len("user/"):]
+        if "/" in rest or not rest.endswith(".md"):
+            raise ValueError("自建层只允许 user/ 下的单个 .md 文件名")
+        if rest == "README.md":
+            raise ValueError("README.md 是自建层约定文档,不是自建知识")
+        path = ROOT / "knowledge/user" / rest
+    else:
+        if "/" in name:
+            raise ValueError("官方层只允许单个 .md 文件名")
+        official = {t["file"] for t in _official_topics()}
+        official.discard("quickref.md")  # handled above (lives in site-src/)
+        if name in _KB_META_FILES or name not in official:
+            raise ValueError(f"未知官方专题文件:{name}")
+        path = ROOT / "knowledge" / name
     if not path.is_file():
         raise FileNotFoundError(name)
     title, meta, body = parse_provenance(path.read_text("utf-8"))
@@ -166,7 +185,7 @@ def make_server(port, data_dir, web_dir):
                     if not names:
                         return self._send_json(400, {"error": "缺少 file 参数"})
                     try:
-                        return self._send_json(200, _read_user_knowledge(names[0]))
+                        return self._send_json(200, _read_knowledge(names[0]))
                     except ValueError as e:
                         return self._send_json(400, {"error": str(e)})
                     except OSError as e:

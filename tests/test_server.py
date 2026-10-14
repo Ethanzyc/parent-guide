@@ -166,20 +166,32 @@ class ServerTest(unittest.TestCase):
             "## 口径\n\n- 参考 sleep.md §2 的分阶思路\n",
             encoding="utf-8")
         self.addCleanup(fixture.unlink)
-        code, body = call("GET", "/api/knowledge/read?file=_test-fixture.md")
+        code, body = call("GET", "/api/knowledge/read?file=user/_test-fixture.md")
         self.assertEqual(code, 200)
         self.assertEqual(body["title"], "测试专题")
         self.assertEqual(body["meta"]["type"], "调研转述")
         self.assertIn("<h2>", body["html"])
-        # in-app doc keeps its knowledge refs plain; the panel linkifies client-side
+        # in-app doc keeps its knowledge refs plain; the page linkifies client-side
         self.assertIn("sleep.md §2", body["html"])
 
+    def test_13b_knowledge_read_renders_official_and_quickref(self):
+        code, body = call("GET", "/api/knowledge/read?file=sleep.md")
+        self.assertEqual(code, 200)
+        self.assertTrue(body["title"] and "<h2>" in body["html"])
+        code, body = call("GET", "/api/knowledge/read?file=quickref.md")
+        self.assertEqual(code, 200)
+        self.assertIn("速查", body["title"])
+
     def test_14_knowledge_read_rejects_bad_names(self):
-        for path in ("/api/knowledge/read?file=../growth.md",   # traversal
-                     "/api/knowledge/read?file=sub/x.md",       # subdirectory
-                     "/api/knowledge/read?file=README.md",      # convention doc
-                     "/api/knowledge/read?file=nope.md",        # missing
-                     "/api/knowledge/read"):                    # no param
+        for path in ("/api/knowledge/read?file=../growth.md",       # traversal
+                     "/api/knowledge/read?file=sub/x.md",           # subdirectory
+                     "/api/knowledge/read?file=user/sub/x.md",      # user subdirectory
+                     "/api/knowledge/read?file=user/README.md",     # convention doc
+                     "/api/knowledge/read?file=README.md",          # meta file
+                     "/api/knowledge/read?file=BACKLOG.md",         # meta file
+                     "/api/knowledge/read?file=nope.md",            # unregistered
+                     "/api/knowledge/read?file=user/nope.md",       # missing user doc
+                     "/api/knowledge/read"):                        # no param
             code, body = call("GET", path)
             self.assertIn(code, (400, 404), path)
 

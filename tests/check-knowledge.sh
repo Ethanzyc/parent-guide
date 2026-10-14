@@ -38,14 +38,16 @@ import json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 OFFICIAL = {"milestones.md", "sleep.md", "nutrition.md", "emotion.md", "activities.md",
             "tantrum-cdc.md", "anticipatory.md", "weaning.md", "toilet.md", "growth.md",
-            "child-mind.md", "eczema.md", "newborn.md", "screen.md", "toys.md", "fears.md", "books.md"}
+            "child-mind.md", "eczema.md", "newborn.md", "screen.md", "toys.md", "fears.md", "books.md",
+            "quickref.md"}  # quickref lives in site-src/, not knowledge/
 REMAP = {"tantrum-cdc": "tantrum"}  # only non-same-name site page
 topics = json.loads((root / "site/knowledge.json").read_text("utf-8"))
 files = {t["file"] for t in topics}
 if files != OFFICIAL:
     sys.exit(f"FAIL: knowledge.json file set drifted: +{sorted(files - OFFICIAL)} -{sorted(OFFICIAL - files)}")
 slugs = {t["slug"] for t in topics}
-if slugs != {REMAP.get(f[:-3], f[:-3]) for f in OFFICIAL}:
+want_slugs = {REMAP.get(f[:-3], f[:-3]) for f in OFFICIAL if f != "quickref.md"} | {"quick-ref"}
+if slugs != want_slugs:
     sys.exit(f"FAIL: knowledge.json slug set drifted: {sorted(slugs)}")
 for t in topics:
     if not (t.get("title") and t.get("hook") and t.get("src")):

@@ -110,7 +110,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
                     :class="{ on: sel.official === t.file }" @click="pick(t.file)">{{ t.title }}</button>
             <template v-for="g in sidebar.groups" :key="g.name">
               <div class="kbp-group">{{ g.name }}</div>
-              <button v-for="t in g.items" :key="t.slug" class="kbp-item"
+              <button v-for="t in g.items" :key="t.slug" class="kbp-item ind"
                       :class="{ on: sel.official === t.file }" @click="pick(t.file)">{{ t.title }}</button>
             </template>
           </template>
@@ -183,15 +183,16 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 .kbp-side { width: 232px; flex: none; overflow: auto; background: var(--card);
   border-right: 1px solid var(--line); padding: 8px 0; }
 .kbp-item { display: block; width: 100%; text-align: left; padding: 9px 16px;
-  font: inherit; font-size: 13.5px; line-height: 1.45; color: var(--ink); background: none;
+  font: inherit; font-size: 12.5px; line-height: 1.45; color: var(--ink); background: none;
   border: 0; border-left: 2px solid transparent; cursor: pointer; }
+.kbp-item.ind { padding-left: 30px; }
 .kbp-item:hover { background: var(--accent-soft); }
 .kbp-item.on { background: var(--accent-soft); color: var(--ink-blue); font-weight: 600;
   border-left-color: var(--ink-blue); }
-.kbp-item .sub { display: block; font-size: 11px; color: var(--sub); font-weight: 400; margin-top: 1px; }
+.kbp-item .sub { display: block; font-size: 10.5px; color: var(--sub); font-weight: 400; margin-top: 1px; }
 .kbp-item.pin { color: var(--ink-blue); font-weight: 600; }
-.kbp-group { font-size: 11px; letter-spacing: .18em; color: var(--sub);
-  padding: 12px 16px 4px; user-select: none; }
+.kbp-group { font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--ink-blue);
+  padding: 14px 16px 5px; user-select: none; }
 .kbp-group:first-child { padding-top: 4px; }
 .kbp-main { flex: 1; overflow: auto; padding: 26px 34px 48px; }
 .kbp-main > div { max-width: 800px; margin: 0 auto; }
@@ -214,6 +215,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
     display: flex; gap: 4px; padding: 8px 10px; }
   .kbp-item { flex: none; width: auto; border: 1px solid var(--line); border-radius: 8px;
     padding: 6px 12px; }
+  .kbp-item.ind { padding-left: 12px; }
   .kbp-item.on { border-color: var(--ink-blue); }
   .kbp-item .sub { display: none; }
   .kbp-main { padding: 18px 16px 40px; }

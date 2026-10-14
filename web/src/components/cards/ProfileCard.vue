@@ -27,15 +27,19 @@ const issueByName = computed(() => {
 // 画像字段:模板占位原文=未填,跳过不渲染(与 check 的占位感知同口径)
 const P = new Set(['语言发展一句话', '气质特点一句话', '安抚物(如有)',
   '家庭管教口径、长辈观点等背景', '过敏史(食物/药物/湿疹;没有写无)',
+  '兄弟姐妹(没有写无)',
+  '长期健康背景(湿疹体质/哮喘/反复中耳炎/手术史;没有写无)',
   '绘本偏好', '活动偏好', '主要照顾人与分工'])
 const clean = (v) => (v && !P.has(String(v).trim())) ? String(v).trim() : ''
 const prof = computed(() => props.kid?.profile || {})
 const caregivers = computed(() => clean(prof.value.caregivers))
+const siblings = computed(() => clean(prof.value.siblings))
 const temperament = computed(() => clean(prof.value.temperament))
 const language = computed(() => clean(prof.value.language))
 const comfort = computed(() => clean(prof.value.comfortObject))
 const familyNotes = computed(() => clean(prof.value.familyNotes))
 const allergies = computed(() => clean(prof.value.allergies))
+const healthNotes = computed(() => clean(prof.value.healthNotes))
 const books = computed(() => clean(prof.value.preferences?.books))
 const activities = computed(() => clean(prof.value.preferences?.activities))
 const hasPref = computed(() => !!(books.value || activities.value || comfort.value))
@@ -45,13 +49,14 @@ const hasPref = computed(() => !!(books.value || activities.value || comfort.val
 // 「对话中对过现值」(set-profile --verify / 改值),页面不提供编辑入口
 const FIELD_LABELS = { temperament: '气质', language: '语言', comfortObject: '安抚物',
   caregivers: '照料', familyNotes: '家庭口径', allergies: '过敏',
+  healthNotes: '健康', siblings: '兄弟姐妹',
   'preferences.books': '绘本偏好', 'preferences.activities': '活动偏好',
   'sleep.note': '睡眠', gender: '性别', childcarePlan: '托育安排' }
 const asofMap = computed(() => prof.value._asOf || {})
 const shownFields = computed(() => {
   const pairs = [['temperament', temperament.value], ['language', language.value],
     ['comfortObject', comfort.value], ['allergies', allergies.value],
-    ['familyNotes', familyNotes.value]]
+    ['healthNotes', healthNotes.value], ['familyNotes', familyNotes.value]]
   return pairs.filter(([, v]) => v).map(([f]) => f)
 })
 const secAsOf = computed(() => {
@@ -89,6 +94,7 @@ const hist = computed(() => (props.kid?.profileHistory || []).slice().reverse())
         <div class="meta">
           <template v-if="kid.birthdate">{{ fullDate(kid.birthdate) }} 出生</template>
           <template v-else>生日未填写</template>
+          <template v-if="siblings"> · {{ siblings }}</template>
           <template v-if="caregivers"> · {{ caregivers }}</template>
         </div>
       </div>
@@ -112,6 +118,7 @@ const hist = computed(() => (props.kid?.profileHistory || []).slice().reverse())
         <span v-if="books" class="chip">📖 {{ books }}</span>
       </span></div>
       <div v-if="allergies" class="kv"><b>过敏</b><span>{{ allergies }}</span></div>
+      <div v-if="healthNotes" class="kv"><b>健康</b><span>{{ healthNotes }}</span></div>
       <div v-if="familyNotes" class="kv"><b>家庭口径</b><span class="muted">{{ familyNotes }}</span></div>
     </div>
 

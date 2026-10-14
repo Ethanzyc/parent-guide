@@ -28,6 +28,8 @@
    湿疹史都可以说,没有也确认一句『无』」——原话入 `set-profile --field
    allergies`(确诊/疑似不区分结构,原话自带语义);不答不追问。消费点:
    用药前筛查(knowledge-index §1 用药剂量应答纪律)、新食物引入、湿疹话题。
+   同一句顺带可问长期健康背景(湿疹体质/哮喘/反复中耳炎/手术史,与过敏分栏
+   ——2026-10-14 新增 healthNotes),有就说没有不追问。
 3b. **前瞻节点认领(收尾前)**:按 anticipatory.md 比对孩子月龄+今天日期,
    亮「未来半年值得留意的 2-3 件事」(如流感季/下一剂疫苗/入园准备窗口),
    家长说「记着」→ `Run update-child.py add-reminder`;不感兴趣不落、不追问。
@@ -165,12 +167,15 @@
 - 聊到绘本/活动 → 顺带核 preferences;聊到作息 → 顺带刷 sleep.note;
   **画像更新按语义相关触发,不等字段名字面出现**(2026-10-14:字面触发太窄,
   「主动加入同伴玩」是气质证据但不提「气质」二字):对话中出现画像相关证据——
-  气质/社交风格/活动量/专注力(temperament)、语言表达水平(language)、
-  安抚物(comfortObject)、照料安排(caregivers)、偏好(preferences)——就先对
-  档案现值:变了 `set-profile --field ... --value ...`(旧值自动留档
-  profileHistory,演变可回看);对过未变 `set-profile --field ... --verify`
-  (只刷核实时间,不追加历史)。各字段核实时间存 `profile._asOf`,
-  超 6 月未核实热区给一行机械提示(清提示路径=对话核实或大体检刷新)。
+  气质/社交风格/活动量/专注力(temperament)、语言表达水平与语言环境
+  (language,可含方言/双语背景)、安抚物(comfortObject)、照料安排
+  (caregivers)、偏好(preferences)、家庭结构变化如二宝出生(siblings,
+  2026-10-14 新增)、长期健康背景如湿疹体质/哮喘/手术(healthNotes,
+  2026-10-14 新增,与过敏分栏)——就先对档案现值:变了 `set-profile --field
+  ... --value ...`(旧值自动留档 profileHistory,演变可回看);对过未变
+  `set-profile --field ... --verify`(只刷核实时间,不追加历史)。各字段
+  核实时间存 `profile._asOf`,超 6 月未核实热区给一行机械提示(清提示路径=
+  对话核实或大体检刷新;siblings 不监看,结构性事实)。
 - active 策略长期没有回访动作 → 收尾可给「清点一下在跑的策略」选项
   (effective 且回访≥2 → 建议吸收为日常 set-status absorbed;suspended → 问还挂吗)。
 - **原则**:档案在对话中自然保鲜;没有任何证据时不动字段——静默 ≠ 过期。

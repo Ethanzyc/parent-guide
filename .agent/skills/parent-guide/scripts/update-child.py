@@ -71,12 +71,16 @@ PLACEHOLDERS = {"MM-DD", "YYYY-MM-DD", "HH:MM", "女|男",
                 "effective|partial|ineffective", "孩子小名",
                 "绘本偏好", "活动偏好", "气质特点一句话", "语言发展一句话",
                 "家庭管教口径、长辈观点等背景",
-                "过敏史(食物/药物/湿疹;没有写无)"}
+                "过敏史(食物/药物/湿疹;没有写无)",
+                "兄弟姐妹(没有写无)",
+                "长期健康背景(湿疹体质/哮喘/反复中耳炎/手术史;没有写无)"}
 # profile snapshot contract: what set-profile may touch, and which of those
-# fields hot-context watches for staleness (gender/childcarePlan are excluded
-# from the watch -- static fact / has its own anticipatory nudges)
+# fields hot-context watches for staleness (gender/childcarePlan/siblings are
+# excluded from the watch -- static facts / own anticipatory nudges /
+# structural fact; siblings joined 2026-10-14, healthNotes same day --
+# long-term health backdrop beside allergies, see docs/profile-fields-research)
 PROFILE_FIELDS = ("gender", "caregivers", "language", "temperament", "comfortObject",
-                  "familyNotes", "childcarePlan", "allergies",
+                  "familyNotes", "childcarePlan", "allergies", "siblings", "healthNotes",
                   "preferences.books", "preferences.activities", "sleep.note")
 PROFILE_STALE_DAYS = 183   # 半年大体检节奏:超 6 月未核实给机械提示
 SLEEP_NOTE_PH = "睡眠目标与趋势一句话"
@@ -866,7 +870,7 @@ def _check(child):
     # profile free-text fields: placeholder originals count as "not filled yet"
     prof = child.get("profile", {})
     for f in ("gender", "language", "temperament", "comfortObject", "familyNotes",
-              "allergies"):
+              "allergies", "siblings", "healthNotes"):
         is_ph(f"profile.{f}", prof.get(f))
     for f in ("books", "activities"):
         is_ph(f"profile.preferences.{f}", (prof.get("preferences") or {}).get(f))

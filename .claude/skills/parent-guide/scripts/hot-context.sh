@@ -53,10 +53,12 @@ else:
 
 # profile snapshot staleness (mechanical, 2026-10-14): watch fields whose
 # _asOf (last checked-at date, stamped by update-child.py) is >6 months old.
-# gender/childcarePlan are excluded -- static fact / own anticipatory nudges.
-# No _asOf entry = never migrated or never filled: nothing to judge, stay silent.
+# gender/childcarePlan/siblings are excluded -- static fact / own anticipatory
+# nudges / structural fact. No _asOf entry = never migrated or never filled:
+# nothing to judge, stay silent.
 WATCH = (("temperament", "气质"), ("language", "语言"), ("comfortObject", "安抚物"),
          ("caregivers", "照料"), ("familyNotes", "家庭口径"), ("allergies", "过敏"),
+         ("healthNotes", "健康"),
          ("preferences.books", "绘本"), ("preferences.activities", "活动"),
          ("sleep.note", "睡眠"))
 asof = p.get("_asOf") or {}

@@ -697,5 +697,23 @@ class T(unittest.TestCase):
         self.assertIn("temperament", c["profile"]["_asOf"])
         self.assertEqual(c.get("profileHistory", []), [])
 
+    def test_57_new_profile_fields_2026_10_14(self):
+        # 画像字段集调研落地(2026-10-14 拍板):siblings(结构性事实,不监看)+
+        # healthNotes(长期健康背景,与过敏分栏,入监看)
+        code, msg = run(self.tmp, "set-profile", "--field", "siblings",
+                        "--value", "妹妹 2026-06 出生")
+        self.assertEqual(code, 0, msg)
+        c = self.child()
+        self.assertEqual(c["profile"]["siblings"], "妹妹 2026-06 出生")
+        self.assertEqual(c["profileHistory"][-1]["field"], "siblings")
+        self.assertEqual(c["profileHistory"][-1]["from"], "")   # 首次填写 from 为空
+        code, msg = run(self.tmp, "set-profile", "--field", "healthNotes",
+                        "--value", "湿疹体质,秋冬反复;无哮喘/手术史")
+        self.assertEqual(code, 0, msg)
+        c = self.child()
+        self.assertEqual(c["profile"]["healthNotes"], "湿疹体质,秋冬反复;无哮喘/手术史")
+        self.assertIn("siblings", c["profile"]["_asOf"])
+        self.assertIn("healthNotes", c["profile"]["_asOf"])
+
 unittest.main(verbosity=2, argv=["test-update-child"])
 PY

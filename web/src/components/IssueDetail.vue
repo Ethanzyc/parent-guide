@@ -3,7 +3,7 @@
 // 最新在最上;窄屏折叠单列)。大节点只认机械事件(opened/judged/strategy.started)
 // ——语义归一留读侧(spec issue-tracking-v1 §6.3)。只读:内容变更一律回对话。
 import { computed, ref } from 'vue'
-import { daysSince, dueKey, dueLabel, zhPunct, bodyParas, segLabel, fullDate, linkKnowledge, escHtml } from '../lib/util.js'
+import { dueKey, dueLabel, zhPunct, bodyParas, segLabel, fullDate, issueDayNo, linkKnowledge, escHtml } from '../lib/util.js'
 
 const props = defineProps({
   open: Boolean,
@@ -36,11 +36,7 @@ const ST_CLASS = { active: 'watch', watching: 'plain', resolved: 'ok' }
 const issue = computed(() =>
   (props.kid?.issues || []).find(i => i.id === props.issueId) || null)
 
-const dayNo = computed(() => {
-  if (!issue.value) return ''
-  const d = daysSince(issue.value.opened)
-  return d !== null ? `第 ${d + 1} 天` : `自 ${issue.value.opened}`
-})
+const dayNo = computed(() => issue.value ? issueDayNo(issue.value) : '')
 const linked = computed(() => {
   const id = props.issueId, k = props.kid || {}
   return {
@@ -67,6 +63,9 @@ const events = computed(() => {
   const ev = [{ date: i.opened, dstr: fullDate(i.opened), big: '立案',
                 text: `${i.name} 开题${i.status === 'watching' ? '(观察)' : ''}` }]
   if (i.judged && i.brief?.what) ev.push({ date: i.judged, dstr: fullDate(i.judged), big: '判定', text: i.brief.what })
+  if (i.status === 'resolved' && i.closed)
+    ev.push({ date: i.closed, dstr: fullDate(i.closed), big: '结案', closed: true,
+              text: `${i.name} 已解决 · ${issueDayNo(i)}` })
   for (const s of props.kid?.strategies || [])
     if ((s.issues || []).includes(i.id))
       ev.push({ date: s.started, dstr: fullDate(s.started), big: '方案', text: `${s.id} ${s.name}` })
@@ -99,7 +98,8 @@ const briefSections = computed(() => {
         <div class="is-head">
           <span class="t">{{ issue.name }}</span>
           <span class="st" :class="ST_CLASS[issue.status]">{{ ST_LABEL[issue.status] }}</span>
-          <span class="meta">{{ dayNo }} · 立案 {{ issue.opened }}
+          <span class="meta">{{ dayNo }} · 立案 {{ issue.opened }}<template
+              v-if="issue.status === 'resolved' && issue.closed"> · 结案 {{ issue.closed }}</template>
             · 策略{{ linked.s }} 记录{{ linked.n }} 回访{{ linked.f }}</span>
           <button class="share-btn" @click="emit('share-issue', issue)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M4 14v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/></svg>分享问题卡给家人</button>
           <button class="x" title="关闭" @click="emit('close')">✕</button>
@@ -145,11 +145,11 @@ const briefSections = computed(() => {
               <h3>时间线<span class="tag">对话自动归集</span></h3>
               <div class="tl">
                 <div v-for="(e, i) in events" :key="i" class="tl-item"
-                     :class="{ big: e.big, future: e.fu && e.status === 'pending' }">
+                     :class="{ big: e.big, closed: e.closed, future: e.fu && e.status === 'pending' }">
                   <span class="d">{{ dispLabel(e) }}</span>
                   <template v-if="e.big">
                     <span class="tt">
-                      <span class="node-b">{{ e.big }}</span>
+                      <span class="node-b" :class="{ ok: e.closed }">{{ e.big }}</span>
                       <span class="b">{{ zhPunct(e.text) }}</span>
                     </span>
                   </template>
@@ -272,10 +272,12 @@ h3 .tag { font-size: 11px; font-weight: 400; letter-spacing: 0;
 .tl-item.big::before { left: -21px; top: 6px; width: 12px; height: 12px;
   background: #fff; border: 3px solid var(--ink-blue); box-shadow: 0 0 0 2px var(--accent-soft); }
 .tl-item.big .tt .b { font-size: 14.5px; font-weight: 600; }
+.tl-item.big.closed::before { border-color: var(--ok); }   /* 结案节点:绿色终点 */
 .tl-item.future::before { background: #fff; border: 2px dashed var(--sub);
   box-shadow: none; width: 8px; height: 8px; }
 .node-b { flex: none; font-size: 10.5px; border: 1px solid var(--ink-blue); color: var(--ink-blue);
   border-radius: 4px; padding: 0 6px; font-weight: 600; letter-spacing: .04em; }
+.node-b.ok { border-color: var(--ok); color: var(--ok); }
 .chip { display: inline-block; background: rgba(255,255,255,.75); color: var(--ink-blue);
   border: 1px dashed var(--grid-line); border-radius: 6px; padding: 0 8px; font-size: 11.5px; }
 .fu-done { color: var(--sub); font-size: 11.5px; }

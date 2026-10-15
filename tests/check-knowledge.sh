@@ -4,12 +4,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 K="$ROOT/knowledge"
 
-for f in milestones.md sleep.md nutrition.md emotion.md activities.md tantrum-cdc.md anticipatory.md weaning.md toilet.md growth.md child-mind.md eczema.md newborn.md screen.md toys.md fears.md books.md; do
+for f in milestones.md sleep.md nutrition.md emotion.md activities.md tantrum-cdc.md anticipatory.md weaning.md toilet.md growth.md child-mind.md eczema.md newborn.md screen.md toys.md fears.md books.md praise.md honesty.md social.md; do
   [ -f "$K/$f" ] || { echo "FAIL: knowledge/$f missing"; exit 1; }
 done
 
 # provenance trio (source + ingest date + verification method) in every knowledge file header
-for f in milestones.md sleep.md nutrition.md emotion.md activities.md tantrum-cdc.md anticipatory.md weaning.md toilet.md growth.md child-mind.md eczema.md newborn.md screen.md toys.md fears.md books.md; do
+for f in milestones.md sleep.md nutrition.md emotion.md activities.md tantrum-cdc.md anticipatory.md weaning.md toilet.md growth.md child-mind.md eczema.md newborn.md screen.md toys.md fears.md books.md praise.md honesty.md social.md; do
   head -12 "$K/$f" | grep -q "入库" || { echo "FAIL: $f header lacks ingest-date line (入库)"; exit 1; }
   head -12 "$K/$f" | grep -q "核对=" || { echo "FAIL: $f header lacks verification method (核对=)"; exit 1; }
 done
@@ -22,7 +22,7 @@ grep -q "| 日期 |" "$K/BACKLOG.md" || { echo "FAIL: BACKLOG.md lacks table hea
 # (must stay in sync with the publish.sh whitelist)
 for f in "$K"/*.md; do
   case "$(basename "$f")" in
-    milestones.md|sleep.md|nutrition.md|emotion.md|activities.md|tantrum-cdc.md|anticipatory.md|weaning.md|toilet.md|growth.md|child-mind.md|eczema.md|newborn.md|screen.md|toys.md|fears.md|books.md|README.md|LICENSE.md|BACKLOG.md) ;;
+    milestones.md|sleep.md|nutrition.md|emotion.md|activities.md|tantrum-cdc.md|anticipatory.md|weaning.md|toilet.md|growth.md|child-mind.md|eczema.md|newborn.md|screen.md|toys.md|fears.md|books.md|praise.md|honesty.md|social.md|README.md|LICENSE.md|BACKLOG.md) ;;
     *) echo "FAIL: unknown root knowledge file '$f' — official set is closed; register it in publish.sh+here, or move it to knowledge/user/ (self-built layer)"; exit 1 ;;
   esac
 done
@@ -39,6 +39,7 @@ root = pathlib.Path(sys.argv[1])
 OFFICIAL = {"milestones.md", "sleep.md", "nutrition.md", "emotion.md", "activities.md",
             "tantrum-cdc.md", "anticipatory.md", "weaning.md", "toilet.md", "growth.md",
             "child-mind.md", "eczema.md", "newborn.md", "screen.md", "toys.md", "fears.md", "books.md",
+            "praise.md", "honesty.md", "social.md",
             "quickref.md"}  # quickref lives in site-src/, not knowledge/
 REMAP = {"tantrum-cdc": "tantrum"}  # only non-same-name site page
 GROUPS = {"健康与身体", "喂养与睡眠", "习惯与界限", "情绪与行为", "发育与玩耍", "参考", "速查"}
@@ -67,6 +68,20 @@ for t in topics:
 for t in topics:
     if not (t.get("title") and t.get("hook") and t.get("src")):
         sys.exit(f"FAIL: knowledge.json entry incomplete: {t.get('file')}")
+# every slug needs a literal redirect line in build-site.sh AND a rendered page in
+# site/ — regression guard (2026-10-15: praise/honesty/social shipped in
+# TOPICS+knowledge.json but the wrapper's literal redirect lines were forgotten,
+# so index linked to 404s and no gate caught it). scripts/ does not ship to the
+# public repo, so the redirect-line check runs only where the file exists; the
+# page-existence check is universal (site/ is distributed).
+import re as _re
+sh_path = root / "scripts/build-site.sh"
+sh = sh_path.read_text("utf-8") if sh_path.exists() else None
+for s in sorted(want_slugs):
+    if sh is not None and not _re.search(_re.escape('"$R"') + r"\s+" + _re.escape(s) + r"\s*>", sh):
+        sys.exit(f"FAIL: build-site.sh lacks redirect line for slug '{s}' (wrapper uses literal per-page redirects: add the line when adding a TOPICS entry)")
+    if not (root / "site" / f"{s}.html").exists():
+        sys.exit(f"FAIL: site/{s}.html missing (run scripts/build-site.sh)")
 EOF
 
 M="$K/milestones.md"

@@ -16,20 +16,42 @@ export function clampInt(v, lo, hi, dflt) {
   return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : dflt
 }
 
+// MM-DD(按当年推断)或 YYYY-MM-DD -> 本地零点 Date;解析失败 null。
+function parseDay(d) {
+  if (!d) return null
+  const full = String(d).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  const short = String(d).match(/^(\d{1,2})-(\d{1,2})$/)
+  if (full) return new Date(+full[1], +full[2] - 1, +full[3])
+  if (short) return new Date(new Date().getFullYear(), +short[1] - 1, +short[2])
+  return null
+}
+
 // Whole days since a MM-DD (treated as this year) or YYYY-MM-DD date.
 // Negative (cross-year artifacts) clamps to null -> caller hides the badge.
 export function daysSince(d) {
-  if (!d) return null
-  const now = new Date()
-  let b = null
-  const full = String(d).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
-  const short = String(d).match(/^(\d{1,2})-(\d{1,2})$/)
-  if (full) b = new Date(+full[1], +full[2] - 1, +full[3])
-  else if (short) b = new Date(now.getFullYear(), +short[1] - 1, +short[2])
+  const b = parseDay(d)
   if (!b || isNaN(b)) return null
+  const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const diff = Math.round((today - b) / 86400000)
   return diff >= 0 ? diff : null
+}
+
+// 问题历时文案(卡行/病历层头/分享卡共用):在管=开题至今天;resolved=
+// 开题至结案日——冻结,不再随时间增长。解析失败/倒挂回退「自 opened」。
+export function issueDayNo(issue) {
+  if (!issue) return ''
+  let d = null
+  if (issue.status === 'resolved' && issue.closed) {
+    const a = parseDay(issue.opened), b = parseDay(issue.closed)
+    if (a && b && !isNaN(a) && !isNaN(b)) {
+      const diff = Math.round((b - a) / 86400000)
+      if (diff >= 0) d = diff
+    }
+  } else {
+    d = daysSince(issue.opened)
+  }
+  return d !== null ? `第 ${d + 1} 天` : `自 ${issue.opened}`
 }
 
 // MM-DD 或 YYYY-MM-DD -> { label, urgency } for due dates (cards, today-local).

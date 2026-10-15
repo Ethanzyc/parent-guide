@@ -7,7 +7,7 @@
 // 本组件只服务卡级(卡片 ⤴)与问题级(详情层)两类家人卡。
 import { ref, computed, watch } from 'vue'
 import { domToPng } from 'modern-screenshot'
-import { monthsAge, nearestMilestone, daysSince, dueKey, zhPunct, fullDate } from '../lib/util.js'
+import { monthsAge, nearestMilestone, dueKey, zhPunct, fullDate, issueDayNo } from '../lib/util.js'
 import { anticipatoryNodes } from '../lib/anticipatory-ref.js'
 
 const props = defineProps({
@@ -63,9 +63,7 @@ const issuePack = computed(() => {
   if (b.redline) rows.push({ kind: 'issue-red', text: b.redline, label: '就医线', fixed: true })
   const srcs = (b.sources || []).map(x => ({ kind: 'issue-src', text: x, label: `依据·${x.slice(0, 8)}` }))
   if (srcs.length) { srcs[0].group = '依据'; rows.push(...srcs) }
-  const d = daysSince(i.opened)
-  const dayNoTxt = d !== null ? `第 ${d + 1} 天` : `自 ${i.opened}`
-  return { rows, st: ISSUE_ST[i.status] || i.status, dayNoTxt, name: i.name }
+  return { rows, st: ISSUE_ST[i.status] || i.status, dayNoTxt: issueDayNo(i), name: i.name }
 })
 
 function rowsFor(b) {
@@ -78,10 +76,9 @@ function rowsFor(b) {
     const rows = []
     for (const i of (kid.issues || [])) {
       if (!(want ? i.status === want : i.status !== 'resolved')) continue
-      const d = daysSince(i.opened)
       rows.push({ kind: 'issue-row', label: i.name, name: i.name,
         st: ISSUE_ST[i.status] || i.status, stRaw: i.status,
-        dayNoTxt: d !== null ? `第 ${d + 1} 天` : `自 ${i.opened}`,
+        dayNoTxt: issueDayNo(i),
         care: i.pendingCare || '', summary: i.summary || '' })
       if (i.brief?.redline)
         rows.push({ kind: 'issue-red', label: `${i.name}·就医线`, text: i.brief.redline, fixed: true })

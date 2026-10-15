@@ -53,7 +53,8 @@ brief 是「口径卡」:节的 key 是机械的(页面渲染需要),节内文�
 ```
 active(进行中,黄 watch) ⇄ watching(观察巩固,灰蓝 plain)
      ↓(须用户拍板「这个问题算解决了吗」)
-resolved(已解决,绿 ok;留档可查,热区/入口卡默认不显示)
+resolved(已解决,绿 ok;留档可查——热区不显示,入口卡默认不进列表、
+     「已解决」计数可点开卡内历史分组)
 ```
 - `pendingCare` 是正交字段,非状态:active 问题可同时挂就医待办(红 todo);
 - active↔watching 由 AI 判断+回复透明(小迁移);resolved 必须用户拍板。
@@ -140,6 +141,9 @@ file mode/单文件导出/打印链路全保持)。
 
 - 顶部三色大数字(demo 已验证):进行中(**active+watching 合计**,黄)/ 待就医
   (pendingCare 计数,红)/ 已解决(resolved 计数,绿),`.num-serif` 同款;
+  「已解决」计数**可点**——卡内展开/收起历史分组(默认收起;config status
+  指到 resolved/all 时不重复提供),分组行=绿徽章+名称+第 N 天(截止结案日,
+  不随时间增长)+结案日期,行同样点开 IssueDetail;
 - 问题行:状态徽章(.st 描边式)+ 名称 + 第 N 天 + 右列(pendingCare 红徽章
   优先,否则派生 next「10-20 · 剩 11 天」);
 - 点行 → IssueDetail;行 hover 无动效(图纸风格)。
@@ -148,22 +152,24 @@ file mode/单文件导出/打印链路全保持)。
 
 自上而下(demo A 版已验证):
 
-1. **头部**:名称 + 状态徽章 + 第 N 天 + meta(立案日/关联计数);
+1. **头部**:名称 + 状态徽章 + 第 N 天(resolved 截止结案日,不随时间增长)
+   + meta(立案日/resolved 加结案日/关联计数);
 2. **当前状态卡**(最重要信息第一屏):summary 大字 + 动作条(就医待办红徽章/
    最近 pending followup 倒计时);
 3. **口径卡**:what(节标题带 judged 日期)→ why 逐条 → how 逐条;
 4. **redline 红框**(存在时);
 5. **时间轴**:聚合该问题名下全部记录,按日期排序:
-   - 大节点(机械事件,见 §6.3):立案(opened)/判定(judged)/方案(strategy.started);
+   - 大节点(机械事件,见 §6.3):立案(opened)/判定(judged)/方案
+     (strategy.started)/结案(resolved 时 closed,绿色终点节点);
    - 普通行:notes(行尾显示原 tags 的 chip);
    - followups:pending=虚线未来节点+倒计时;done/skipped=小字历史节点;
 6. 底部:「分享问题卡」按钮(开 ShareModal level=issue)+ 关闭。
 
 ### 6.3 时间轴节点分级纪律(铁律对齐)
 
-大节点只由**机械事件**驱动(何时立案/何时判定/何时立方案——都是字段的写入),
-AI 不给内容定级。「Rome IV 达标」这类判定 note 显示为普通行,判定信息由
-judged 日期 + brief.what 承载——语义归一留读侧的页面侧镜像。
+大节点只由**机械事件**驱动(何时立案/何时判定/何时立方案/何时结案——都是
+字段的写入),AI 不给内容定级。「Rome IV 达标」这类判定 note 显示为普通行,
+判定信息由 judged 日期 + brief.what 承载——语义归一留读侧的页面侧镜像。
 
 ### 6.4 ShareModal.vue 加 issue 级
 

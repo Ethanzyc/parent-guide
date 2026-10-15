@@ -335,6 +335,7 @@ def execute(argv=None):
 
     p = sub.add_parser("set-issue-brief")
     p.add_argument("--id", required=True)
+    p.add_argument("--name", default=None, help="命名纠正(改显示名,不动内容)")
     p.add_argument("--summary", default=None)
     p.add_argument("--what", default=None)
     p.add_argument("--why", action="append", default=None,
@@ -692,6 +693,9 @@ def execute(argv=None):
         if err:
             return 1, err
         touched = []
+        if args.name is not None:
+            it["name"] = args.name
+            touched.append("name")
         if args.summary is not None:
             it["summary"] = args.summary
             touched.append("summary")
@@ -721,7 +725,7 @@ def execute(argv=None):
             touched.append("judged")
         if not touched:
             return 1, ("ERROR: 至少传一个 "
-                       "--summary/--what/--why/--how/--redline/--pending-care/--judged")
+                       "--name/--summary/--what/--why/--how/--redline/--pending-care/--judged")
         msg = (f"updated issue {args.id}: {'/'.join(touched)}"
                "(why/how 整组覆盖,先读全量再写;brief=分享卡唯一素材源)")
 

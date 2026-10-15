@@ -491,6 +491,11 @@ class T(unittest.TestCase):
         run(self.tmp, "set-issue-brief", "--id", iid, "--why", "")
         it = next(i for i in self.child()["issues"] if i["id"] == iid)
         self.assertNotIn("why", it["brief"])          # 空串=清空该节
+        code, msg = run(self.tmp, "set-issue-brief", "--id", iid,
+                        "--name", "功能性便秘")
+        self.assertEqual(code, 0, msg)
+        it = next(i for i in self.child()["issues"] if i["id"] == iid)
+        self.assertEqual(it["name"], "功能性便秘")    # 命名纠正,其余不动
         code, _ = run(self.tmp, "set-issue-brief", "--id", iid)
         self.assertNotEqual(code, 0)                  # 什么都不传=报错
 

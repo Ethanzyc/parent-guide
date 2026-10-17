@@ -152,6 +152,14 @@
     "group": "发育与玩耍"
   },
   {
+    "file": "english.md",
+    "slug": "english",
+    "title": "英语启蒙",
+    "hook": "双语迷思拆解、真人互动证据与三类工具选择",
+    "src": "自写综述,基于 ASHA/WHO 口径与公开研究整理",
+    "group": "发育与玩耍"
+  },
+  {
     "file": "books.md",
     "slug": "books",
     "title": "育儿书地图",
